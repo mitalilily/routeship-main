@@ -11,6 +11,7 @@ import {
   IconLogin2,
   IconPackageExport,
   IconSettings,
+  IconStar,
   IconTools,
   IconTrack,
   IconTruck,
@@ -20,7 +21,7 @@ import { MdAccountBalanceWallet } from 'react-icons/md'
 import { RiScales3Line } from 'react-icons/ri'
 
 // Components
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { BsCreditCard2Back } from 'react-icons/bs'
 import { CiCalculator1 } from 'react-icons/ci'
 import { IoLocation } from 'react-icons/io5'
@@ -54,6 +55,9 @@ import AdminWeightReconciliationDashboard from 'views/WeightReconciliation/Admin
 import ZoneMappingsPage from 'views/Zones/ZoneMappingsPage'
 
 const HolidayManagement = lazy(() => import('views/B2B/HolidayManagement'))
+const AdditionalChargeMasters = lazy(() => import('views/RateCard/AdditionalChargeMasters'))
+const DieselRates = lazy(() => import('views/RateCard/DieselRates'))
+const InternationalRateCalculator = lazy(() => import('views/Tools/InternationalRateCalculator'))
 
 // ------------------ ROUTES ------------------
 
@@ -134,17 +138,44 @@ const dashRoutes = [
     show: false,
   },
 
-  // Unified B2C and B2B rate cards
+  // Unified rate card workspace
   {
-    path: '/rate-card',
+    category: true,
     name: 'Rate Card',
+    state: 'rateCardCollapse',
     icon: <BsCreditCard2Back size={19} />,
-    component: () => (
-      <AdminRoute>
-        <PlanManagement />
-      </AdminRoute>
-    ),
     layout: '/admin',
+    views: [
+      {
+        path: '/rate-card',
+        name: 'Rate Card',
+        icon: <BsCreditCard2Back />,
+        component: () => <AdminRoute><PlanManagement /></AdminRoute>,
+        layout: '/admin',
+        exact: true,
+      },
+      {
+        path: '/rate-card/additional-charges',
+        name: 'Additional Charges',
+        icon: <IconAdjustments />,
+        component: () => <AdminRoute><Suspense fallback={<div>Loading...</div>}><AdditionalChargeMasters /></Suspense></AdminRoute>,
+        layout: '/admin',
+      },
+      {
+        path: '/rate-card/diesel-rates',
+        name: 'Diesel Rates',
+        icon: <IconCoinRupee />,
+        component: () => <AdminRoute><Suspense fallback={<div>Loading...</div>}><DieselRates /></Suspense></AdminRoute>,
+        layout: '/admin',
+      },
+      {
+        path: '/rate-card/holidays',
+        name: 'Holidays',
+        icon: <IconStar />,
+        component: () => <AdminRoute><Suspense fallback={<div>Loading...</div>}><HolidayManagement /></Suspense></AdminRoute>,
+        layout: '/admin',
+      },
+    ],
   },
 
   // ========== SHIPPING & LOGISTICS ==========
@@ -323,6 +354,13 @@ const dashRoutes = [
             <RateCalculatorPage />
           </AdminRoute>
         ),
+        layout: '/admin',
+      },
+      {
+        path: '/tools/international-rate-calculator',
+        name: 'Int. Rate Calculator',
+        icon: <CiCalculator1 />,
+        component: () => <AdminRoute><Suspense fallback={<div>Loading...</div>}><InternationalRateCalculator /></Suspense></AdminRoute>,
         layout: '/admin',
       },
       {

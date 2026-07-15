@@ -181,6 +181,36 @@ export const b2bAdminService = {
 
   // Pricing Configuration
   // Additional Charges
+  async getAdditionalChargeMasters() {
+    const { data } = await api.get(`${BASE_URL}/additional-charge-masters`)
+    return normalizeArrayPayload(data)
+  },
+
+  async getInternationalRateCards() {
+    const { data } = await api.get(`${BASE_URL}/international-rate-cards`)
+    return normalizeArrayPayload(data)
+  },
+
+  async calculateInternationalRate(payload) {
+    const { data } = await api.post(`${BASE_URL}/international-rate-calculator`, payload)
+    return normalizeArrayPayload(data)
+  },
+
+  async createAdditionalChargeMaster(payload) {
+    const { data } = await api.post(`${BASE_URL}/additional-charge-masters`, payload)
+    return data.data ?? data
+  },
+
+  async updateAdditionalChargeMaster(id, payload) {
+    const { data } = await api.put(`${BASE_URL}/additional-charge-masters/${id}`, payload)
+    return data.data ?? data
+  },
+
+  async deleteAdditionalChargeMaster(id) {
+    const { data } = await api.delete(`${BASE_URL}/additional-charge-masters/${id}`)
+    return data
+  },
+
   async getAdditionalCharges(params = {}) {
     const query = buildQuery(params)
     const { data } = await api.get(`${BASE_URL}/additional-charges${query ? `?${query}` : ''}`)
@@ -196,6 +226,27 @@ export const b2bAdminService = {
     const { data } = await api.post(`${BASE_URL}/additional-charges/import`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
+    return data
+  },
+
+  // Diesel Rates
+  async getDieselRates() {
+    const { data } = await api.get(`${BASE_URL}/diesel-rates`)
+    return normalizeArrayPayload(data)
+  },
+
+  async createDieselRate(payload) {
+    const { data } = await api.post(`${BASE_URL}/diesel-rates`, payload)
+    return data.data ?? data
+  },
+
+  async updateDieselRate(id, payload) {
+    const { data } = await api.put(`${BASE_URL}/diesel-rates/${id}`, payload)
+    return data.data ?? data
+  },
+
+  async deleteDieselRate(id) {
+    const { data } = await api.delete(`${BASE_URL}/diesel-rates/${id}`)
     return data
   },
 

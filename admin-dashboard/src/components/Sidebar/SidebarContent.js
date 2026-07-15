@@ -75,7 +75,8 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
       )
     }
 
-    const active = location.pathname.startsWith(item.layout + item.path.split('/:')[0])
+    const itemPath = item.layout + item.path.split('/:')[0]
+    const active = item.exact ? location.pathname === itemPath : location.pathname.startsWith(itemPath)
     return <NavLink to={item.layout + item.path} key={item.name}>{navButton(item, active)}</NavLink>
   })
 

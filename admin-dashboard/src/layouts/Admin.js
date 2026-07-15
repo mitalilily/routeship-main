@@ -101,7 +101,7 @@ export default function Dashboard(props) {
 
       // If it's a regular admin route, render it
       if (prop.layout === '/admin') {
-        return <Route path={prop.layout + prop.path} component={prop.component} key={key} />
+        return <Route exact={prop.exact} path={prop.layout + prop.path} component={prop.component} key={key} />
       }
 
       return null

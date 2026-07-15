@@ -44,9 +44,23 @@ import {
   updateHolidayController,
 } from '../../controllers/admin/b2b/holiday.controller'
 import {
+  createAdditionalChargeMasterController,
+  createDieselRateController,
+  deleteAdditionalChargeMasterController,
+  deleteDieselRateController,
+  listAdditionalChargeMastersController,
+  listDieselRatesController,
+  updateAdditionalChargeMasterController,
+  updateDieselRateController,
+} from '../../controllers/admin/b2b/rateCardMasters.controller'
+import {
   validateInvoiceContentController,
   validateInvoiceFileController,
 } from '../../controllers/admin/b2b/invoiceValidation.controller'
+import {
+  calculateInternationalRateController,
+  listInternationalRateCardsController,
+} from '../../controllers/admin/b2b/internationalRate.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
 import { requireAuth } from '../../middlewares/requireAuth'
 
@@ -104,6 +118,8 @@ router.delete('/overheads/:id', requireAuth, isAdminMiddleware, deleteOverheadCo
 
 // Rate calculator
 router.post('/calculate-rate', requireAuth, isAdminMiddleware, calculateRateController)
+router.get('/international-rate-cards', requireAuth, isAdminMiddleware, listInternationalRateCardsController)
+router.post('/international-rate-calculator', requireAuth, isAdminMiddleware, calculateInternationalRateController)
 
 // Pricing Configuration
 // Zone States
@@ -113,6 +129,11 @@ router.post('/zone-states/bulk', requireAuth, isAdminMiddleware, bulkCreateZoneS
 router.delete('/zone-states/:id', requireAuth, isAdminMiddleware, deleteZoneStateController)
 
 // Additional Charges
+router.get('/additional-charge-masters', requireAuth, isAdminMiddleware, listAdditionalChargeMastersController)
+router.post('/additional-charge-masters', requireAuth, isAdminMiddleware, createAdditionalChargeMasterController)
+router.put('/additional-charge-masters/:id', requireAuth, isAdminMiddleware, updateAdditionalChargeMasterController)
+router.delete('/additional-charge-masters/:id', requireAuth, isAdminMiddleware, deleteAdditionalChargeMasterController)
+
 router.get('/additional-charges', requireAuth, isAdminMiddleware, getAdditionalChargesController)
 router.post(
   '/additional-charges',
@@ -120,6 +141,12 @@ router.post(
   isAdminMiddleware,
   upsertAdditionalChargesController,
 )
+
+// Diesel Rates
+router.get('/diesel-rates', requireAuth, isAdminMiddleware, listDieselRatesController)
+router.post('/diesel-rates', requireAuth, isAdminMiddleware, createDieselRateController)
+router.put('/diesel-rates/:id', requireAuth, isAdminMiddleware, updateDieselRateController)
+router.delete('/diesel-rates/:id', requireAuth, isAdminMiddleware, deleteDieselRateController)
 router.put('/additional-charges', requireAuth, isAdminMiddleware, upsertAdditionalChargesController)
 router.post(
   '/additional-charges/import',

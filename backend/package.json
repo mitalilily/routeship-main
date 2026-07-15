@@ -26,6 +26,8 @@
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
     "repair:admin-auth": "tsx src/scripts/repairAdminAuth.ts",
     "check:admin-login": "tsx src/scripts/checkAdminLogin.ts",
+    "sync:rate-card-features": "tsx src/scripts/syncRateCardFeatures.ts",
+    "check:rate-card-features": "tsx src/scripts/checkRateCardFeatures.ts",
     "seed:locations": "tsx src/scripts/seedLocations.ts locations.xlsx",
     "import:b2b-oda": "tsx src/scripts/importB2BOdaPincodes.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
