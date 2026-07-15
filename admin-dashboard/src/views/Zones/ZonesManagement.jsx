@@ -202,7 +202,7 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
             >
               <Stack spacing={1} align="flex-start" width="100%">
                 <HStack spacing={2}>
-                  <Tag colorScheme="purple" size="sm">
+                  <Tag colorScheme="blue" size="sm">
                     B2C
                   </Tag>
                   <Text fontWeight="semibold">Consumer Zones</Text>

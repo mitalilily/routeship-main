@@ -653,7 +653,7 @@ export default function AdminBillingInvoices() {
                           <Button
                             size="xs"
                             variant="outline"
-                            colorScheme="purple"
+                            colorScheme="blue"
                             onClick={() => {
                               setAdjForm({ invoiceId: inv.id, type: 'credit', amount: '', notes: '' })
                               setIsAdjModalOpen(true)
@@ -773,7 +773,7 @@ export default function AdminBillingInvoices() {
               <Button variant="ghost" onClick={() => setIsAdjModalOpen(false)}>
                 Cancel
               </Button>
-              <Button colorScheme="purple" onClick={handleAddAdjustment}>
+              <Button colorScheme="blue" onClick={handleAddAdjustment}>
                 Apply
               </Button>
             </HStack>
@@ -930,7 +930,7 @@ export default function AdminBillingInvoices() {
                 Close
               </Button>
               <Button
-                colorScheme="purple"
+                colorScheme="blue"
                 variant="outline"
                 onClick={handleResolveAllDisputes}
                 isLoading={isResolvingAll}

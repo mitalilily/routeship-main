@@ -802,7 +802,7 @@ export default function RateCalculatorPage() {
                 {val}
               </Badge>
             ),
-            edd: (val) => <Text color="purple.500">{val}</Text>,
+            edd: (val) => <Text color="blue.500">{val}</Text>,
             max_slab_weight: (val) => (val != null ? `${val} kg` : '—'),
             chargeable_weight: (val) =>
               val ? (
@@ -822,7 +822,7 @@ export default function RateCalculatorPage() {
               ),
             slabs: (val) =>
               val ? (
-                <Badge colorScheme="purple" variant="subtle">
+                <Badge colorScheme="blue" variant="subtle">
                   {val}
                 </Badge>
               ) : (
@@ -840,7 +840,7 @@ export default function RateCalculatorPage() {
       p={4}
     >
       <Box bg={useColorModeValue('white', 'gray.800')} p={8} borderRadius="2xl" shadow="xl">
-        <Heading size="lg" mb={8} color={useColorModeValue('purple.600', 'purple.300')}>
+        <Heading size="lg" mb={8} color={useColorModeValue('blue.600', 'blue.300')}>
           Rate Calculator
         </Heading>
 
@@ -856,7 +856,7 @@ export default function RateCalculatorPage() {
             <Heading
               size="sm"
               mb={4}
-              color={useColorModeValue('purple.600', 'purple.300')}
+              color={useColorModeValue('blue.600', 'blue.300')}
               borderBottom="1px solid"
               borderColor={useColorModeValue('gray.200', 'gray.600')}
               pb={2}
@@ -865,7 +865,7 @@ export default function RateCalculatorPage() {
             </Heading>
             <Tabs
               variant="soft-rounded"
-              colorScheme="purple"
+              colorScheme="blue"
               onChange={(index) => setShipmentType(index === 0 ? 'b2c' : 'b2b')}
             >
               <TabList>
@@ -910,7 +910,7 @@ export default function RateCalculatorPage() {
             <Button
               type="submit"
               isLoading={isPending || isCalculatingB2B}
-              colorScheme="purple"
+              colorScheme="blue"
               loadingText="Calculating"
             >
               Calculate Rates
@@ -973,16 +973,16 @@ export default function RateCalculatorPage() {
             shadow="lg"
             borderRadius="2xl"
             borderWidth="1px"
-            borderColor={useColorModeValue('purple.100', 'purple.900')}
+            borderColor={useColorModeValue('blue.100', 'blue.900')}
           >
             <Box
               px={4}
               py={3}
               borderBottomWidth="1px"
-              borderColor={useColorModeValue('purple.100', 'purple.800')}
+              borderColor={useColorModeValue('blue.100', 'blue.800')}
             >
               <HStack spacing={2}>
-                <Icon as={BiTachometer} color="purple.400" boxSize={5} />
+                <Icon as={BiTachometer} color="blue.400" boxSize={5} />
                 <Text fontWeight="bold">Fastest Option</Text>
               </HStack>
             </Box>
@@ -992,7 +992,7 @@ export default function RateCalculatorPage() {
                   {highlights.fastest?.displayName}
                 </Text>
                 <Text color="gray.500">Zone {highlights.fastest?.approxZone?.code || '—'}</Text>
-                <Text fontSize="xl" fontWeight="bold" color="purple.500">
+                <Text fontSize="xl" fontWeight="bold" color="blue.500">
                   {highlights.fastest?.edd || '—'}
                 </Text>
                 <Text color="gray.600">Total: {formatCurrency(highlights.fastest?.total)}</Text>

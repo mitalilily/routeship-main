@@ -214,7 +214,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
                   </Text>
                   <Button
                     size="xs"
-                    colorScheme="purple"
+                    colorScheme="blue"
                     rightIcon={<FiExternalLink />}
                     onClick={() => resolvedInvoiceUrl && window.open(resolvedInvoiceUrl, '_blank')}
                     isDisabled={!resolvedInvoiceUrl}

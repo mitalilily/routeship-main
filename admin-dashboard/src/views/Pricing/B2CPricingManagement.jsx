@@ -47,15 +47,15 @@ const B2CPricingManagement = () => {
           <Tabs
             index={subTabIndex}
             onChange={setSubTabIndex}
-            colorScheme="purple"
+            colorScheme="blue"
             variant="enclosed"
           >
             <Box px={6} pt={4} borderBottomWidth="1px" borderColor={borderColor}>
               <TabList>
                 <Tab
                   _selected={{
-                    color: 'purple.600',
-                    borderColor: 'purple.500',
+                    color: 'blue.600',
+                    borderColor: 'blue.500',
                     borderBottomColor: 'transparent',
                   }}
                   fontWeight="medium"
@@ -65,8 +65,8 @@ const B2CPricingManagement = () => {
                 </Tab>
                 <Tab
                   _selected={{
-                    color: 'purple.600',
-                    borderColor: 'purple.500',
+                    color: 'blue.600',
+                    borderColor: 'blue.500',
                     borderBottomColor: 'transparent',
                   }}
                   fontWeight="medium"

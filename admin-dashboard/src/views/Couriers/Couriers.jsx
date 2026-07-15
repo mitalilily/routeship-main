@@ -522,7 +522,7 @@ const Couriers = () => {
               </HStack>
               <HStack spacing={2} justify="center">
                 {formData?.businessType?.includes('b2c') && <Badge colorScheme="blue">B2C</Badge>}
-                {formData?.businessType?.includes('b2b') && <Badge colorScheme="purple">B2B</Badge>}
+                {formData?.businessType?.includes('b2b') && <Badge colorScheme="blue">B2B</Badge>}
                 {(!formData?.businessType || formData.businessType.length === 0) && (
                   <Text fontSize="xs" color="red.500">
                     Select at least one business type

@@ -24,12 +24,12 @@ function SidebarResponsive(props) {
 
   const activeRoute = (routeName) => (location.pathname === routeName ? 'active' : '')
 
-  const drawerBg = useColorModeValue('#FFFFFF', '#16062F')
+  const drawerBg = useColorModeValue('#FFFFFF', '#07132D')
   const activeBg = useColorModeValue('#F5F0FF', 'rgba(255,255,255,0.12)')
   const hoverBg = useColorModeValue('#FAF8FC', 'rgba(255,255,255,0.08)')
   const textColor = useColorModeValue('gray.700', 'gray.100')
   const iconColor = useColorModeValue('gray.500', 'gray.300')
-  const activeTextColor = useColorModeValue('#4B1196', '#FFFFFF')
+  const activeTextColor = useColorModeValue('#0B3DBB', '#FFFFFF')
   const dividerColor = useColorModeValue('rgba(148, 163, 184, 0.28)', 'rgba(148, 163, 184, 0.24)')
 
   const createLinks = (routes) => {

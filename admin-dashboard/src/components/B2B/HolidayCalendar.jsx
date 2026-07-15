@@ -326,7 +326,7 @@ const HolidayCalendar = () => {
   const eventColorMap = {
     red: useColorModeValue('red.500', 'red.400'),
     blue: useColorModeValue('blue.500', 'blue.400'),
-    purple: useColorModeValue('purple.500', 'purple.400'),
+    purple: useColorModeValue('blue.500', 'blue.400'),
   }
 
   const eventStyleGetter = (event) => {

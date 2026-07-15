@@ -18,7 +18,7 @@ import { memo } from 'react'
 const ODAAndCSDSection = memo(({ formData, onFieldChange }) => {
   return (
     <Box>
-      <Text fontSize="md" fontWeight="bold" color="purple.600" mb={4}>
+      <Text fontSize="md" fontWeight="bold" color="blue.600" mb={4}>
         4. ODA & CSD Charges
       </Text>
 
@@ -26,12 +26,12 @@ const ODAAndCSDSection = memo(({ formData, onFieldChange }) => {
       <Box
         mb={4}
         p={4}
-        bg={useColorModeValue('purple.50', 'purple.900')}
+        bg={useColorModeValue('blue.50', 'blue.900')}
         borderRadius="md"
         borderWidth="1px"
-        borderColor={useColorModeValue('purple.200', 'purple.700')}
+        borderColor={useColorModeValue('blue.200', 'blue.700')}
       >
-        <Text fontSize="sm" fontWeight="semibold" color="purple.700" mb={3}>
+        <Text fontSize="sm" fontWeight="semibold" color="blue.700" mb={3}>
           ODA Charges
         </Text>
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>

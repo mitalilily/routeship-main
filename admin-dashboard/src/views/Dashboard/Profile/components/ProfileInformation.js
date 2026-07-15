@@ -232,7 +232,7 @@ const ProfileInformation = ({ user }) => {
           </CardHeader>
           <CardBody px="5px" display="flex" flexDirection="column" gap={2}>
             <Button
-              colorScheme="purple"
+              colorScheme="blue"
               onClick={handleResetPassword}
               isLoading={resetPasswordMutation.isPending}
               loadingText="Resetting"
@@ -245,7 +245,7 @@ const ProfileInformation = ({ user }) => {
               <Flex alignItems={'center'}>
                 <Text
                   fontSize="sm"
-                  color="purple.600"
+                  color="blue.600"
                   fontWeight="bold"
                   mt={2}
                   wordBreak="break-word"

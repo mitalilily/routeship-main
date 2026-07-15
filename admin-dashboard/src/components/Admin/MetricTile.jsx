@@ -11,7 +11,7 @@ export default function MetricTile({
 }) {
   const bg = useColorModeValue('white', 'rgba(14, 23, 43, 0.9)')
   const borderColor = active
-    ? useColorModeValue('rgba(109, 40, 217, 0.34)', 'rgba(249, 115, 22, 0.36)')
+    ? useColorModeValue('rgba(11, 61, 187, 0.34)', 'rgba(249, 115, 22, 0.36)')
     : useColorModeValue('rgba(148, 163, 184, 0.24)', 'rgba(148, 163, 184, 0.16)')
   const titleColor = useColorModeValue('gray.500', 'gray.400')
   const valueColor = useColorModeValue('gray.800', 'white')
@@ -33,7 +33,7 @@ export default function MetricTile({
         onClick
           ? {
               transform: 'translateY(-2px)',
-              borderColor: useColorModeValue('rgba(109, 40, 217, 0.26)', 'rgba(249, 115, 22, 0.28)'),
+              borderColor: useColorModeValue('rgba(11, 61, 187, 0.26)', 'rgba(249, 115, 22, 0.28)'),
               boxShadow: useColorModeValue('0 18px 40px rgba(67, 56, 202, 0.1)', '0 20px 48px rgba(2, 8, 23, 0.42)'),
             }
           : undefined
@@ -50,7 +50,7 @@ export default function MetricTile({
           w="42px"
           h="42px"
           borderRadius="16px"
-          bg={useColorModeValue('rgba(109, 40, 217, 0.08)', 'rgba(255,255,255,0.06)')}
+          bg={useColorModeValue('rgba(11, 61, 187, 0.08)', 'rgba(255,255,255,0.06)')}
           color={accent}
         >
           {icon}

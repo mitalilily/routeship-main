@@ -691,7 +691,7 @@ export default function AdminWallets() {
             <Tooltip label="Adjust Balance">
               <Button
                 size="sm"
-                colorScheme="purple"
+                colorScheme="blue"
                 leftIcon={<IconAdjustments size={16} />}
                 onClick={() => handleAdjustWallet(row)}
               >
@@ -1167,7 +1167,7 @@ export default function AdminWallets() {
                         {line.label}
                       </Text>
                       {line.adminOnly && (
-                        <Text fontSize="xs" color="purple.500" fontWeight="600">
+                        <Text fontSize="xs" color="blue.500" fontWeight="600">
                           Admin
                         </Text>
                       )}

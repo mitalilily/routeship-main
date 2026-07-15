@@ -932,8 +932,8 @@ const AddRateModal = ({
             </Box>
 
             {/* Courier Selection (Required) */}
-            <Box p={3} bg="purple.50" borderRadius="md" borderWidth="1px" borderColor="purple.200">
-              <Text fontSize="sm" fontWeight="semibold" color="purple.700" mb={3}>
+            <Box p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+              <Text fontSize="sm" fontWeight="semibold" color="blue.700" mb={3}>
                 Courier Selection
               </Text>
               {isCourierScopeLocked ? (
@@ -989,12 +989,12 @@ const AddRateModal = ({
                 </FormControl>
               )}
               {(formData.courierId || formData.serviceProvider) && (
-                <Box mt={3} pt={3} borderTop="1px solid" borderColor="purple.200">
+                <Box mt={3} pt={3} borderTop="1px solid" borderColor="blue.200">
                   <HStack>
                     <Text fontSize="sm" color="gray.600" minW="120px">
                       Scope:
                     </Text>
-                    <Badge colorScheme="purple">{courierScope}</Badge>
+                    <Badge colorScheme="blue">{courierScope}</Badge>
                   </HStack>
                 </Box>
               )}

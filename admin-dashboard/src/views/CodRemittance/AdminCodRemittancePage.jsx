@@ -793,7 +793,7 @@ export default function AdminCodRemittancePage() {
             <StatLabel fontSize="sm" color="gray.500" fontWeight="bold" mb="4px">
               Users with Pending
             </StatLabel>
-            <StatNumber fontSize="2xl" fontWeight="bold" color="purple.500">
+            <StatNumber fontSize="2xl" fontWeight="bold" color="blue.500">
               {stats?.data?.usersWithPending || 0}
             </StatNumber>
             <StatHelpText fontSize="xs" color="gray.400">
@@ -875,11 +875,11 @@ export default function AdminCodRemittancePage() {
                 Expected from courier partners
               </Text>
             </Box>
-            <Box p={3} bg="purple.50" borderRadius="md" borderWidth={1} borderColor="purple.200">
+            <Box p={3} bg="blue.50" borderRadius="md" borderWidth={1} borderColor="blue.200">
               <Text fontSize="xs" color="gray.600" fontWeight="700">
                 Customers
               </Text>
-              <Text fontSize="xl" fontWeight="800" color="purple.600">
+              <Text fontSize="xl" fontWeight="800" color="blue.600">
                 {payableSummary.customerCount || 0}
               </Text>
               <Text fontSize="xs" color="gray.500">
@@ -1103,7 +1103,7 @@ export default function AdminCodRemittancePage() {
         <Button colorScheme="green" size="sm" onClick={handleOpenBulkSettlement}>
           Bulk Settle Seller
         </Button>
-        <Button colorScheme="purple" size="sm" onClick={onCsvUploadOpen}>
+        <Button colorScheme="blue" size="sm" onClick={onCsvUploadOpen}>
           Upload Settlement CSV
         </Button>
         <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
@@ -1634,7 +1634,7 @@ export default function AdminCodRemittancePage() {
               Cancel
             </Button>
             <Button
-              colorScheme="purple"
+              colorScheme="blue"
               onClick={handleUploadCsv}
               isLoading={previewCsvMutation.isPending}
             >

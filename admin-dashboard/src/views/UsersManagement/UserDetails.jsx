@@ -429,7 +429,7 @@ const TeamTab = ({ userId }) => {
       </Text>
     ),
     role: (value) => (
-      <Badge colorScheme="purple" variant="subtle">
+      <Badge colorScheme="blue" variant="subtle">
         {value ? value.toUpperCase() : '—'}
       </Badge>
     ),

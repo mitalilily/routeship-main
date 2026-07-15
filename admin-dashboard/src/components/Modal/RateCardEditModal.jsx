@@ -363,12 +363,12 @@ export const RateCardEditModal = ({
         <Box
           mb={4}
           p={4}
-          bg={isEdit ? 'purple.50' : 'blue.50'}
+          bg={isEdit ? 'blue.50' : 'blue.50'}
           borderRadius="md"
           border="1px solid"
-          borderColor={isEdit ? 'purple.200' : 'blue.200'}
+          borderColor={isEdit ? 'blue.200' : 'blue.200'}
         >
-          <Text fontWeight="bold" fontSize="md" mb={2} color={isEdit ? 'purple.700' : 'blue.700'}>
+          <Text fontWeight="bold" fontSize="md" mb={2} color={isEdit ? 'blue.700' : 'blue.700'}>
             {isEdit ? 'Current Rate Information' : 'Selected Courier Information'}
           </Text>
           <Stack spacing={2}>

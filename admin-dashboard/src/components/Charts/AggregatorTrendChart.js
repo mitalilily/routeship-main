@@ -163,14 +163,14 @@ const AggregatorTrendChart = ({ data = [] }) => {
   return (
     <>
       <CardHeader
-        bg={useColorModeValue('purple.50', 'purple.900')}
+        bg={useColorModeValue('blue.50', 'blue.900')}
         borderBottom="1px"
         borderColor={borderColor}
         py={4}
         px={6}
       >
         <HStack>
-          <Icon as={IconWorld} w={5} h={5} color={useColorModeValue('purple.600', 'purple.300')} />
+          <Icon as={IconWorld} w={5} h={5} color={useColorModeValue('blue.600', 'blue.300')} />
           <Text fontSize="md" color={textColor} fontWeight="600">
             Orders by Shipping Aggregator
           </Text>

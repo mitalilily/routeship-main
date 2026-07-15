@@ -8,7 +8,7 @@ export const globalStyles = {
   styles: {
     global: (props) => ({
       body: {
-        bg: mode('#F6F7FB', '#16062F')(props),
+        bg: mode('#F6F7FB', '#07132D')(props),
         color: mode('gray.800', 'gray.100')(props),
         fontFamily: "'Open Sans', 'Segoe UI', sans-serif",
         backgroundImage: 'none',

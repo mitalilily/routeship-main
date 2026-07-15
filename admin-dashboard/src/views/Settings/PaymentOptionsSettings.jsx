@@ -170,7 +170,7 @@ export default function PaymentOptionsSettings() {
             <Switch
               isChecked={formData.codEnabled}
               onChange={() => handleToggle('codEnabled')}
-              colorScheme="purple"
+              colorScheme="blue"
               size="lg"
             />
           </Flex>
@@ -193,7 +193,7 @@ export default function PaymentOptionsSettings() {
             <Switch
               isChecked={formData.prepaidEnabled}
               onChange={() => handleToggle('prepaidEnabled')}
-              colorScheme="purple"
+              colorScheme="blue"
               size="lg"
             />
           </Flex>
@@ -273,7 +273,7 @@ export default function PaymentOptionsSettings() {
           <Button
             onClick={handleSave}
             leftIcon={<FiSave />}
-            colorScheme="purple"
+            colorScheme="blue"
             isLoading={updatePaymentOptions.isPending}
             loadingText="Saving..."
           >

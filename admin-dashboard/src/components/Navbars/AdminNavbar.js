@@ -19,7 +19,7 @@ export default function AdminNavbar(props) {
   let secondaryText = useColorModeValue('gray.500', 'gray.400')
   let navbarPosition = 'fixed'
   let navbarShadow = 'none'
-  let navbarBg = useColorModeValue('#FFFFFF', '#16062F')
+  let navbarBg = useColorModeValue('#FFFFFF', '#07132D')
   let navbarBorder = useColorModeValue('#E8E4ED', 'rgba(255,255,255,0.08)')
   let secondaryMargin = '0px'
   let paddingX = '18px'

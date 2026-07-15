@@ -7,7 +7,7 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
   const location = useLocation()
   const [openGroups, setOpenGroups] = React.useState({})
   const collapsed = sidebarWidth <= 160
-  const sidebarBg = useColorModeValue('#FFFFFF', '#16062F')
+  const sidebarBg = useColorModeValue('#FFFFFF', '#07132D')
   const borderColor = useColorModeValue('#E8E4ED', 'rgba(255,255,255,0.08)')
   const textColor = useColorModeValue('#514A58', 'whiteAlpha.800')
   const mutedColor = useColorModeValue('#817889', 'whiteAlpha.600')

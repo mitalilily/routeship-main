@@ -483,7 +483,7 @@ export default function DeveloperLogs() {
     classification: (_value, row) => (
       <Box maxW="240px">
         <HStack spacing={2} mb={2} wrap="wrap">
-          <Badge colorScheme="purple" borderRadius="md" px={2}>
+          <Badge colorScheme="blue" borderRadius="md" px={2}>
             {row.root_cause_label}
           </Badge>
         </HStack>
@@ -837,7 +837,7 @@ export default function DeveloperLogs() {
                 >
                   {shopifyOAuthCredentials.configured ? 'Configured' : 'Missing'}
                 </Badge>
-                <Badge colorScheme="purple" borderRadius="md" px={2}>
+                <Badge colorScheme="blue" borderRadius="md" px={2}>
                   {shopifyOAuthCredentials.credentialsSource || 'env'}
                 </Badge>
               </HStack>
@@ -988,7 +988,7 @@ function DrawerPlacement({
               <Badge colorScheme={issue.status_label === 'resolved' ? 'green' : 'red'}>
                 {issue.status_label === 'resolved' ? 'RESOLVED' : 'OPEN'}
               </Badge>
-              <Badge colorScheme="purple">{issue.root_cause_label}</Badge>
+              <Badge colorScheme="blue">{issue.root_cause_label}</Badge>
               <Badge colorScheme="blue">{ISSUE_OWNER_LABELS[issue.issue_owner] || 'Unknown'}</Badge>
               <Badge colorScheme={issue.action_required === 'ignore' ? 'gray' : 'orange'}>
                 {ACTION_REQUIRED_LABELS[issue.action_required] || 'Review'}

@@ -152,7 +152,7 @@ export default function AdminChangePassword() {
           <FormErrorMessage>{errors.confirmPassword}</FormErrorMessage>
         </FormControl>
 
-        <Button colorScheme="purple" onClick={onSubmit} isLoading={loading} loadingText="Updating...">
+        <Button colorScheme="blue" onClick={onSubmit} isLoading={loading} loadingText="Updating...">
           Change Password
         </Button>
       </Box>

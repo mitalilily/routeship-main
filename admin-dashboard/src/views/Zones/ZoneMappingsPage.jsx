@@ -450,7 +450,7 @@ const ZoneMappingsPage = () => {
       {/* Zone Info Card */}
       <Box
         p={4}
-        bgGradient="linear(to-r, blue.400, purple.500)"
+        bgGradient="linear(to-r, blue.400, blue.500)"
         color="white"
         borderRadius="md"
         boxShadow="lg"
@@ -639,7 +639,7 @@ const ZoneMappingsPage = () => {
             {selectedRows.length} row{selectedRows.length > 1 ? 's' : ''} selected
           </Text>
           {isB2B && (
-            <Button colorScheme="purple" onClick={() => setIsBulkFlagsModalOpen(true)}>
+            <Button colorScheme="blue" onClick={() => setIsBulkFlagsModalOpen(true)}>
               Update Attributes
             </Button>
           )}
@@ -718,7 +718,7 @@ const ZoneMappingsPage = () => {
                 Cancel
               </Button>
               <Button
-                colorScheme="purple"
+                colorScheme="blue"
                 onClick={handleBulkUpdateFlags}
                 isLoading={bulkUpdateFlags.isPending}
               >

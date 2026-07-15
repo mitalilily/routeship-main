@@ -316,7 +316,7 @@ export default function AdminTicketDashboard() {
             <Button size="sm" colorScheme="blue" onClick={() => handleView(row.id)}>
               View Details
             </Button>
-            <Button size="sm" colorScheme="purple" onClick={() => handleEdit(row.id)}>
+            <Button size="sm" colorScheme="blue" onClick={() => handleEdit(row.id)}>
               Edit
             </Button>
           </HStack>

@@ -199,7 +199,7 @@ const ServiceabilityPage = () => {
             return Array.isArray(tags) ? (
               <HStack spacing={1}>
                 {tags.map((tag, idx) => (
-                  <Badge key={idx} colorScheme="purple">
+                  <Badge key={idx} colorScheme="blue">
                     {tag}
                   </Badge>
                 ))}

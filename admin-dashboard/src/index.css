@@ -4,14 +4,14 @@
 
 .dark .rdp {
   --rdp-cell-size: 40px;
-  --rdp-accent-color: #4B1196;
+  --rdp-accent-color: #0B3DBB;
   --rdp-background-color: #1A1A1A; /* text-primary */
   --rdp-accent-color-dark: #B10313;
   --rdp-text-color: #F5F7FA; /* bg-default */
 }
 
 .light .rdp {
-  --rdp-accent-color: #4B1196;
+  --rdp-accent-color: #0B3DBB;
   --rdp-accent-color-dark: #B10313;
   --rdp-text-color: #1A1A1A; /* text-primary */
 }

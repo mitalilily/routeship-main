@@ -115,7 +115,7 @@ const Blogs = () => {
         <Wrap spacing={1}>
           {tagsArray.slice(0, 2).map((tag, idx) => (
             <WrapItem key={idx}>
-              <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} borderRadius="md">
+              <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} borderRadius="md">
                 {tag}
               </Badge>
             </WrapItem>
