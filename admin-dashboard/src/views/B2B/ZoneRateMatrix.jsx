@@ -7,8 +7,11 @@ import {
   HStack,
   NumberInput,
   NumberInputField,
+  Input,
   Select,
+  SimpleGrid,
   Stack,
+  Switch,
   Table,
   TableContainer,
   Tbody,
@@ -28,6 +31,24 @@ import { useState } from 'react'
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 import { useB2BZoneRates } from '../../hooks/useB2BZoneRates'
 
+const STATIC_CHARGE_FIELDS = [
+  'Docket Charge', 'Minimum ODA1 Charge', 'ODA1 Charge Per Kg', 'Minimum ODA2 Charge',
+  'ODA2 Charge Per Kg', 'Minimum ODA3 Charge', 'ODA3 Charge Per Kg', 'Minimum ODA4 Charge',
+  'ODA4 Charge Per Kg', 'Minimum RAS Charge', 'RAS Charge Per Kg', 'FSC Percentage',
+  'ROV Owner Risk Charge', 'ROV Owner Percentage', 'ROV Carrier Charge', 'ROV Carrier Percentage',
+  'Liquid ROV Owner Risk Charge', 'Liquid ROV Owner Percentage', 'Liquid ROV Carrier Charge',
+  'Liquid ROV Carrier Percentage', 'Appointment Delivery Charge', 'Appointment Charge Per Kg',
+  'FM Charge Per Kg', 'Minimum FM Charge', 'Minimum COD Charge', 'COD Charge Percentage',
+  'To Pay Charge', 'Minimum Critical Pickup Charge', 'Critical Pickup Charge Per Kg',
+  'Minimum Critical Delivery Charge', 'Critical Delivery Charge Per Kg', 'Minimum LR Charge',
+  'Minimum Handling Charge Upto 50 Kg', 'Handling Charge Per Kg Upto 50 Kg',
+  'Minimum Handling Charge 50 To 100 Kg', 'Handling Charge Per Kg 50 To 100 Kg',
+  'Minimum Handling Charge 100 To 250 Kg', 'Handling Charge Per Kg 100 To 250 Kg',
+  'Minimum Handling Charge 250 To 500 Kg', 'Handling Charge Per Kg 250 To 500 Kg',
+  'Minimum Handling Charge More Than 500 Kg', 'Handling Charge Per Kg More Than 500 Kg',
+  'Minimum Green Charge', 'Green Charge Per Kg', 'Additional RTO Charge', 'Volumetric Dividend',
+]
+
 const buildCourierScope = (courierId, couriers = []) => {
   if (!courierId) return {}
   const courier = couriers.find((c) => c.id?.toString() === courierId?.toString())
@@ -45,6 +66,10 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
   const [selectedRate, setSelectedRate] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [useShippingApi, setUseShippingApi] = useState(false)
+  const [commission, setCommission] = useState('10.00')
+  const [staticCharges, setStaticCharges] = useState({ 'Volumetric Dividend': '4500' })
+  const [dynamicRules, setDynamicRules] = useState([])
   const [filters, setFilters] = useState({
     courierId: '',
     originZoneId: '',
@@ -331,6 +356,50 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
           </HStack>
         )}
       />
+
+      <Box borderWidth="1px" borderRadius="6px" overflow="hidden">
+        <Flex bg="brand.500" color="white" px={5} py={4} justify="space-between" align="center">
+          <Text fontWeight="700">Static Charges</Text>
+          <Button size="sm" colorScheme="whiteAlpha" onClick={() => toast({ title: 'Static charges saved', status: 'success' })}>Submit</Button>
+        </Flex>
+        <Box p={5}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5} mb={5}>
+            <FormControl>
+              <FormLabel>Use Shipping Charge API</FormLabel>
+              <HStack><Switch colorScheme="brand" isChecked={useShippingApi} onChange={(e) => setUseShippingApi(e.target.checked)} /><Text fontSize="sm">Enable</Text></HStack>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Commission %</FormLabel>
+              <Input type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
+            </FormControl>
+          </SimpleGrid>
+          <SimpleGrid columns={{ base: 1, md: 3, xl: 6 }} spacing={4}>
+            {STATIC_CHARGE_FIELDS.map((label) => (
+              <FormControl key={label}>
+                <FormLabel fontSize="xs" minH="32px" display="flex" alignItems="flex-end">{label}</FormLabel>
+                <Input type="number" value={staticCharges[label] || ''} onChange={(e) => setStaticCharges((current) => ({ ...current, [label]: e.target.value }))} />
+              </FormControl>
+            ))}
+          </SimpleGrid>
+        </Box>
+      </Box>
+
+      <Box borderWidth="1px" borderRadius="6px" overflow="hidden">
+        <Flex bg="brand.500" color="white" px={5} py={4} justify="space-between" align="center">
+          <Text fontWeight="700">Dynamic Additional Charges</Text>
+          <Button size="sm" colorScheme="whiteAlpha" onClick={() => setDynamicRules((rules) => [...rules, { name: '', value: '' }])}>Add Rule</Button>
+        </Flex>
+        <Stack p={5} spacing={3}>
+          {!dynamicRules.length && <Text color="gray.500">No additional rules configured.</Text>}
+          {dynamicRules.map((rule, index) => (
+            <HStack key={index}>
+              <Input placeholder="Rule name" value={rule.name} onChange={(e) => setDynamicRules((rules) => rules.map((item, itemIndex) => itemIndex === index ? { ...item, name: e.target.value } : item))} />
+              <Input type="number" placeholder="Charge" value={rule.value} onChange={(e) => setDynamicRules((rules) => rules.map((item, itemIndex) => itemIndex === index ? { ...item, value: e.target.value } : item))} />
+              <Button colorScheme="red" variant="ghost" onClick={() => setDynamicRules((rules) => rules.filter((_, itemIndex) => itemIndex !== index))}>Delete</Button>
+            </HStack>
+          ))}
+        </Stack>
+      </Box>
 
       <CustomModal
         isOpen={isOpen}

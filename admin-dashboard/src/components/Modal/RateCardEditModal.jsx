@@ -10,6 +10,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
 } from '@chakra-ui/react'
 import { useUpdateShippingRate } from 'hooks/useCouriers'
@@ -26,6 +27,19 @@ const normalizeMode = (value) => {
 }
 const makeCourierKey = (courierId, serviceProvider) =>
   `${courierId || ''}__${normalizeProvider(serviceProvider)}`
+
+const B2C_CHARGE_FIELDS = [
+  'FSC Percentage',
+  'Minimum COD Charge',
+  'COD Charge Percentage',
+  'To Pay Charge',
+  'Minimum RAS Charge',
+  'RAS Charge Per Kg',
+  'Minimum Critical Pickup Charge',
+  'Critical Pickup Charge Per Kg',
+  'Minimum Critical Delivery Charge',
+  'Critical Delivery Charge Per Kg',
+]
 
 export const RateCardEditModal = ({
   isOpen,
@@ -71,6 +85,9 @@ export const RateCardEditModal = ({
       other_charges: data?.other_charges ?? '',
       mode: data?.mode ?? '',
       zone_slabs: {},
+      use_shipping_charge_api: Boolean(data?.use_shipping_charge_api),
+      additional_charges: data?.additional_charges || {},
+      addition_rules: data?.addition_rules || [{ rule_type: 'Additional Step', from_kg: '0.50', step_kg: '0.50', label: 'Additional 500 GM' }],
     }
 
     zones.forEach((zone) => {
@@ -200,6 +217,9 @@ export const RateCardEditModal = ({
       previous_service_provider: data?.service_provider || data?.serviceProvider,
       rates,
       zone_slabs: isB2C ? form.zone_slabs : undefined,
+      use_shipping_charge_api: form.use_shipping_charge_api,
+      additional_charges: form.additional_charges,
+      addition_rules: form.addition_rules,
       businessType,
     }
 
@@ -460,6 +480,40 @@ export const RateCardEditModal = ({
       </Box>
 
       <Divider mb={4} />
+
+      {isB2C && (
+        <Stack spacing={5} mb={6}>
+          <Box>
+            <Flex justify="space-between" align="center" mb={3}>
+              <Text fontWeight="bold">Additions (Additional Step / Per KG After)</Text>
+              <Button size="sm" variant="outline" colorScheme="orange" onClick={() => setForm((current) => ({ ...current, addition_rules: [...(current.addition_rules || []), { rule_type: 'Additional Step', from_kg: '', step_kg: '', label: '' }] }))}>Add Addition Row</Button>
+            </Flex>
+            <Stack spacing={3}>
+              {(form.addition_rules || []).map((rule, index) => (
+                <SimpleGrid key={index} columns={{ base: 1, md: 2, xl: 5 }} spacing={3}>
+                  <FormControl><FormLabel>Rule Type</FormLabel><Select value={rule.rule_type} onChange={(e) => setForm((current) => ({ ...current, addition_rules: current.addition_rules.map((item, itemIndex) => itemIndex === index ? { ...item, rule_type: e.target.value } : item) }))}><option>Additional Step</option><option>Per KG After</option></Select></FormControl>
+                  <FormControl><FormLabel>From (kg)</FormLabel><Input type="number" value={rule.from_kg} onChange={(e) => setForm((current) => ({ ...current, addition_rules: current.addition_rules.map((item, itemIndex) => itemIndex === index ? { ...item, from_kg: e.target.value } : item) }))} /></FormControl>
+                  <FormControl><FormLabel>Step (kg)</FormLabel><Input type="number" value={rule.step_kg} onChange={(e) => setForm((current) => ({ ...current, addition_rules: current.addition_rules.map((item, itemIndex) => itemIndex === index ? { ...item, step_kg: e.target.value } : item) }))} /></FormControl>
+                  <FormControl><FormLabel>Label</FormLabel><Input value={rule.label} onChange={(e) => setForm((current) => ({ ...current, addition_rules: current.addition_rules.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item) }))} /></FormControl>
+                  <FormControl><FormLabel>&nbsp;</FormLabel><Button colorScheme="red" variant="ghost" onClick={() => setForm((current) => ({ ...current, addition_rules: current.addition_rules.filter((_, itemIndex) => itemIndex !== index) }))}>Delete</Button></FormControl>
+                </SimpleGrid>
+              ))}
+            </Stack>
+          </Box>
+          <FormControl>
+            <FormLabel>Use Shipping Charge API</FormLabel>
+            <Flex align="center" gap={2}><Switch colorScheme="brand" isChecked={form.use_shipping_charge_api} onChange={(e) => handleChange('use_shipping_charge_api', e.target.checked)} /><Text fontSize="sm">Enable</Text></Flex>
+          </FormControl>
+          <SimpleGrid columns={{ base: 1, md: 2, xl: 5 }} spacing={4}>
+            {B2C_CHARGE_FIELDS.map((label) => (
+              <FormControl key={label}>
+                <FormLabel fontSize="sm">{label}</FormLabel>
+                <Input type="number" value={form.additional_charges?.[label] || ''} onChange={(e) => setForm((current) => ({ ...current, additional_charges: { ...(current.additional_charges || {}), [label]: e.target.value } }))} />
+              </FormControl>
+            ))}
+          </SimpleGrid>
+        </Stack>
+      )}
 
       {isB2C && (
         <Box

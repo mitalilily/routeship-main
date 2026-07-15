@@ -11,18 +11,16 @@ import {
   IconLogin2,
   IconPackageExport,
   IconSettings,
-  IconStar,
   IconTools,
   IconTrack,
   IconTruck,
-  IconUser,
 } from '@tabler/icons-react'
 import { FaMoneyBill } from 'react-icons/fa'
 import { MdAccountBalanceWallet } from 'react-icons/md'
 import { RiScales3Line } from 'react-icons/ri'
 
 // Components
-import { lazy, Suspense } from 'react'
+import { lazy } from 'react'
 import { BsCreditCard2Back } from 'react-icons/bs'
 import { CiCalculator1 } from 'react-icons/ci'
 import { IoLocation } from 'react-icons/io5'
@@ -50,16 +48,11 @@ import AboutUsEditor from 'views/Support/AboutUsEditor'
 import AdminTicketDashboard from 'views/Support/AdminTicketsDashboard'
 import OrderTrackingPage from 'views/Tools/OrderTrackingPage'
 import RateCalculatorPage from 'views/Tools/RateCalculatorPage'
-import UserDetails from 'views/UsersManagement/UserDetails'
-import UsersManagementPage from 'views/UsersManagement/UsersManagementPage'
 import AdminWallets from 'views/Wallets/AdminWallets'
 import AdminDisputeManagement from 'views/WeightReconciliation/AdminDisputeManagement'
 import AdminWeightReconciliationDashboard from 'views/WeightReconciliation/AdminWeightReconciliationDashboard'
 import ZoneMappingsPage from 'views/Zones/ZoneMappingsPage'
 
-// Lazy load pricing management pages
-const B2BPricingManagement = lazy(() => import('views/Pricing/B2BPricingManagement'))
-const B2CPricingManagement = lazy(() => import('views/Pricing/B2CPricingManagement'))
 const HolidayManagement = lazy(() => import('views/B2B/HolidayManagement'))
 
 // ------------------ ROUTES ------------------
@@ -128,29 +121,6 @@ const dashRoutes = [
   },
 
   // ========== USER & BUSINESS MANAGEMENT ==========
-  // Users Management
-  {
-    path: '/users-management/:id',
-    name: 'User Details',
-    component: () => (
-      <AdminRoute>
-        <UserDetails />
-      </AdminRoute>
-    ),
-    layout: '/admin',
-    show: false,
-  },
-  {
-    path: '/users-management',
-    name: 'Users Management',
-    icon: <IconUser size={20} />,
-    component: () => (
-      <AdminRoute>
-        <UsersManagementPage />
-      </AdminRoute>
-    ),
-    layout: '/admin',
-  },
   {
     path: '/notifications',
     name: 'Notifications',
@@ -164,11 +134,11 @@ const dashRoutes = [
     show: false,
   },
 
-  // Plan Management
+  // Unified B2C and B2B rate cards
   {
-    path: '/plans',
-    name: 'Plan Management',
-    icon: <IconStar size={19} />,
+    path: '/rate-card',
+    name: 'Rate Card',
+    icon: <BsCreditCard2Back size={19} />,
     component: () => (
       <AdminRoute>
         <PlanManagement />
@@ -241,32 +211,6 @@ const dashRoutes = [
         layout: '/admin',
       },
 
-      {
-        path: '/pricing/b2b',
-        name: 'B2B',
-        icon: <BsCreditCard2Back />,
-        component: () => (
-          <AdminRoute>
-            <Suspense fallback={<div>Loading B2B...</div>}>
-              <B2BPricingManagement />
-            </Suspense>
-          </AdminRoute>
-        ),
-        layout: '/admin',
-      },
-      {
-        path: '/pricing/b2c',
-        name: 'B2C',
-        icon: <BsCreditCard2Back />,
-        component: () => (
-          <AdminRoute>
-            <Suspense fallback={<div>Loading B2C...</div>}>
-              <B2CPricingManagement />
-            </Suspense>
-          </AdminRoute>
-        ),
-        layout: '/admin',
-      },
     ],
   },
 

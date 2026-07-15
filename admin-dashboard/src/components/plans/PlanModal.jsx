@@ -6,7 +6,7 @@ const PlanModal = ({ isOpen, onClose, plan }) => {
     <CustomModal
       isOpen={isOpen}
       onClose={onClose}
-      title={plan ? 'Edit Plan' : 'Create Plan'}
+      title={plan ? 'Edit Rate Card' : 'Add Rate Card'}
       hideFooter
     >
       <PlanForm plan={plan} onClose={onClose} />

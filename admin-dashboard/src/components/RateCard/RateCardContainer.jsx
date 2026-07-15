@@ -155,7 +155,7 @@ const downloadCSV = (allCouriers = [], allZones = [], existingData = [], filters
   }
 }
 
-export const RateCardContainer = ({ forceBusinessType = null, embedded = false }) => {
+export const RateCardContainer = ({ forceBusinessType = null, forcePlanId = '', embedded = false }) => {
   const toast = useToast()
 
   const businessTypes = ['B2B', 'B2C']
@@ -198,13 +198,17 @@ export const RateCardContainer = ({ forceBusinessType = null, embedded = false }
 
   // Update selectedPlanId when plans load - default to first plan
   useEffect(() => {
+    if (forcePlanId) {
+      setSelectedPlanId(forcePlanId)
+      return
+    }
     if (plans?.length > 0) {
       // Always set to first plan if not set, or if current selection is invalid
       if (!selectedPlanId || !plans.find((p) => p.id === selectedPlanId)) {
         setSelectedPlanId(plans[0].id)
       }
     }
-  }, [plans, selectedPlanId])
+  }, [plans, selectedPlanId, forcePlanId])
 
   // Combine user filters with internal query constraints for API
   const queryFilters = useMemo(() => {
@@ -336,7 +340,7 @@ export const RateCardContainer = ({ forceBusinessType = null, embedded = false }
       {!isB2BSelected && (
         <>
           {/* Plan Selector */}
-          {plans?.length > 0 && (
+          {!forcePlanId && plans?.length > 0 && (
             <Box mb={4}>
               <HStack spacing={3} align="center">
                 <Text fontSize="sm" fontWeight="medium" color="gray.700" minW="80px">

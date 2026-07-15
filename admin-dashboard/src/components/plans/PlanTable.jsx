@@ -1,116 +1,78 @@
-import { CheckCircleIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
 import {
+  Badge,
   Button,
   HStack,
-  IconButton,
-  Tag,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverFooter,
-  PopoverHeader,
-  PopoverTrigger,
-  Portal,
+  Spinner,
+  Switch,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
 } from '@chakra-ui/react'
-import StatusBadge from 'components/Badge/StatusBadge'
-import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
-const PlanTable = ({ data, loading, onEdit, onDelete, onActivate }) => {
-  const captions = ['Name', 'Description', 'Business Type', 'Status']
-  const columnKeys = ['name', 'description', 'business_type', 'is_active']
-
-  const renderers = {
-    business_type: (value) => (
-      <Tag colorScheme={value === 'b2b' ? 'blue' : 'orange'} variant="subtle">
-        {String(value || 'b2c').toUpperCase()}
-      </Tag>
-    ),
-    is_active: (val) => (
-      <StatusBadge status={val ? 'Active' : 'Inactive'} type={val ? 'success' : 'error'} />
-    ),
-  }
-
-  const renderActions = (row) => {
-    const isBasicPlan = row?.name.toLowerCase() === 'basic' // Prevent basic plan deactivation
-
-    return (
-      <HStack spacing={3}>
-        {/* Edit Button */}
-        <IconButton
-          aria-label="Edit"
-          icon={<EditIcon />}
-          size="sm"
-          colorScheme="yellow"
-          onClick={() => onEdit(row)}
-        />
-
-        {/* Delete Button with Popover */}
-        {row?.is_active ? (
-          <Popover placement="top" isLazy>
-            <PopoverTrigger>
-              <IconButton
-                aria-label="Delete"
-                icon={<DeleteIcon />}
-                size="sm"
-                colorScheme="red"
-                isDisabled={isBasicPlan} // cannot delete basic plan
-              />
-            </PopoverTrigger>
-
-            <Portal>
-              <PopoverContent>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverHeader fontWeight="bold">Confirm Delete</PopoverHeader>
-                <PopoverBody>
-                  <Text>
-                    Deleting this plan will mark it as <b>inactive</b> and assign the{' '}
-                    <b>basic plan for the same business type</b> to all users currently on this
-                    plan.
-                  </Text>
-                </PopoverBody>
-                <PopoverFooter display="flex" justifyContent="flex-end" gap={2}>
-                  <Button size="sm" variant="outline">
-                    Cancel
-                  </Button>
-                  <Button size="sm" colorScheme="red" onClick={() => onDelete(row.id)}>
-                    Confirm
-                  </Button>
-                </PopoverFooter>
-              </PopoverContent>
-            </Portal>
-          </Popover>
-        ) : null}
-
-        {!isBasicPlan && !row?.is_active ? (
-          <Button
-            aria-label="activate"
-            leftIcon={<CheckCircleIcon />}
-            size="sm"
-            colorScheme="messenger"
-            onClick={() => onActivate?.({ ...row, is_active: true })}
-          >
-            Activate
-          </Button>
-        ) : null}
-      </HStack>
-    )
-  }
+const PlanTable = ({ data, loading, onEdit, onDelete, onActivate, onSetRate }) => {
+  if (loading) return <Spinner color="brand.500" />
 
   return (
-    <GenericTable
-      title="Plans"
-      data={data}
-      captions={captions}
-      columnKeys={columnKeys}
-      renderers={renderers}
-      renderActions={renderActions}
-      loading={loading}
-      paginated={false}
-    />
+    <TableContainer border="1px solid" borderColor="gray.200" borderRadius="6px">
+      <Table variant="simple">
+        <Thead bg="gray.50">
+          <Tr>
+            <Th>ID</Th>
+            <Th>Name</Th>
+            <Th>Type</Th>
+            <Th>Plan Status</Th>
+            <Th>Action</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {data.map((plan, index) => (
+            <Tr key={plan.id}>
+              <Td>{plan.id || index + 1}</Td>
+              <Td fontWeight="600">{plan.name}</Td>
+              <Td>
+                <Badge colorScheme={plan.business_type === 'b2b' ? 'blue' : 'orange'}>
+                  {String(plan.business_type || 'b2c').toUpperCase()}
+                </Badge>
+              </Td>
+              <Td>
+                <HStack>
+                  <Switch
+                    colorScheme="green"
+                    isChecked={Boolean(plan.is_active)}
+                    onChange={(event) => onActivate({ ...plan, is_active: event.target.checked })}
+                  />
+                  <Text color={plan.is_active ? 'green.600' : 'gray.500'}>
+                    {plan.is_active ? 'Active' : 'Inactive'}
+                  </Text>
+                </HStack>
+              </Td>
+              <Td>
+                <HStack spacing={2}>
+                  <Button size="sm" colorScheme="brand" onClick={() => onSetRate(plan)}>
+                    Set Rate
+                  </Button>
+                  <Button size="sm" colorScheme="orange" leftIcon={<EditIcon />} onClick={() => onEdit(plan)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" colorScheme="red" leftIcon={<DeleteIcon />} onClick={() => onDelete(plan.id)}>
+                    Delete
+                  </Button>
+                </HStack>
+              </Td>
+            </Tr>
+          ))}
+          {!data.length && (
+            <Tr><Td colSpan={5} py={10} textAlign="center" color="gray.500">No rate card plans found.</Td></Tr>
+          )}
+        </Tbody>
+      </Table>
+    </TableContainer>
   )
 }
 
