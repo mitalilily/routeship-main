@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken'
 
@@ -8,8 +8,18 @@ import path from 'path'
 const env = process.env.NODE_ENV || 'development'
 dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
 
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET!
-const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET!
+const legacySecret = process.env.JWT_SECRET || process.env.SESSION_SECRET
+const secretSeed = legacySecret || process.env.DATABASE_URL
+
+if (!secretSeed) {
+  throw new Error('ACCESS_TOKEN_SECRET and REFRESH_TOKEN_SECRET are required')
+}
+
+const deriveSecret = (purpose: string) =>
+  createHash('sha256').update(`routeship:${purpose}:${secretSeed}`).digest('hex')
+
+const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || deriveSecret('access')
+const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || deriveSecret('refresh')
 
 export interface RefreshPayload {
   sub: string // userId
