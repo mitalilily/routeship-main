@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const getDefaultApiBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'admin.shiplifi.com') {
-    return 'https://api.shiplifi.com/api'
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `${window.location.origin}/api`
   }
 
   return 'http://localhost:5003/api'

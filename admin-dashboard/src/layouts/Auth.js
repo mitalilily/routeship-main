@@ -1,6 +1,5 @@
 // chakra imports
 import { Box, ChakraProvider } from '@chakra-ui/react'
-import Footer from 'components/Footer/Footer.js'
 // core components
 import '@fontsource/open-sans/400.css'
 import '@fontsource/open-sans/600.css'
@@ -86,9 +85,6 @@ export default function Pages(props) {
               <Redirect from="/auth" to="/auth/signin" />
             </Switch>
           </Box>
-        </Box>
-        <Box px="24px" mx="auto" width="1044px" maxW="100%">
-          <Footer />
         </Box>
       </Box>
     </ChakraProvider>

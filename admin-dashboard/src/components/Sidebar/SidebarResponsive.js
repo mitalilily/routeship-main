@@ -24,12 +24,12 @@ function SidebarResponsive(props) {
 
   const activeRoute = (routeName) => (location.pathname === routeName ? 'active' : '')
 
-  const drawerBg = useColorModeValue('#111113', '#111113')
-  const activeBg = useColorModeValue('rgba(75, 17, 150, 0.16)', 'rgba(75, 17, 150, 0.16)')
-  const hoverBg = useColorModeValue('rgba(255, 255, 255, 0.06)', 'rgba(148, 163, 184, 0.14)')
+  const drawerBg = useColorModeValue('#FFFFFF', '#16062F')
+  const activeBg = useColorModeValue('#F5F0FF', 'rgba(255,255,255,0.12)')
+  const hoverBg = useColorModeValue('#FAF8FC', 'rgba(255,255,255,0.08)')
   const textColor = useColorModeValue('gray.700', 'gray.100')
   const iconColor = useColorModeValue('gray.500', 'gray.300')
-  const activeTextColor = '#FFFFFF'
+  const activeTextColor = useColorModeValue('#4B1196', '#FFFFFF')
   const dividerColor = useColorModeValue('rgba(148, 163, 184, 0.28)', 'rgba(148, 163, 184, 0.24)')
 
   const createLinks = (routes) => {
@@ -72,8 +72,8 @@ function SidebarResponsive(props) {
             >
               <Flex align="center">
                 <IconBox
-                  bg={isActive ? 'rgba(75, 17, 150, 0.18)' : 'rgba(255,255,255,0.06)'}
-                  color={isActive ? activeTextColor : iconColor}
+                  bg={isActive ? 'brand.500' : 'gray.50'}
+                  color={isActive ? 'white' : iconColor}
                   h="30px"
                   w="30px"
                   me="12px"
@@ -97,10 +97,7 @@ function SidebarResponsive(props) {
   const brand = (
     <Box pt="24px" mb="10px">
       <Flex align="center" justify="center" gap="10px" mb="16px" fontWeight="bold">
-        <Box as="img" src="/brand/routeship-mark.png" alt="RouteShip" h="32px" w="32px" objectFit="contain" />
-        <Text fontSize="sm" color={textColor} fontWeight="700">
-          {logoText}
-        </Text>
+        <Box as="img" src="/brand/routeship-logo.png" alt={logoText} h="72px" w="180px" objectFit="contain" />
       </Flex>
       <Box h="1px" bg={dividerColor} mx="4px" mb="12px" />
     </Box>
@@ -127,7 +124,7 @@ function SidebarResponsive(props) {
         finalFocusRef={btnRef}
       >
         <DrawerOverlay bg="blackAlpha.500" backdropFilter="blur(5px)" />
-        <DrawerContent w="280px" maxW="280px" borderRadius="0 18px 18px 0" bg={drawerBg}>
+        <DrawerContent w="280px" maxW="280px" borderRadius="0" bg={drawerBg}>
           <DrawerCloseButton _focus={{ boxShadow: 'none' }} color={textColor} />
           <DrawerBody px="14px" pt="2">
             <Box maxW="100%" h="100vh">

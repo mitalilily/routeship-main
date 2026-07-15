@@ -10,7 +10,7 @@ export const useSocket = () => {
   useEffect(() => {
     if (!userId) return
 
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://api.shiplifi.com')
+    const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin)
 
     socket.emit('register', userId)
 

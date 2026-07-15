@@ -3,256 +3,111 @@ import { Box, Button, Collapse, Flex, Stack, Text, useColorModeValue } from '@ch
 import React, { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-const BRAND_RED = '#4B1196'
-const BRAND_CHARCOAL = '#34343B'
-
 const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
   const location = useLocation()
-  const [state, setState] = React.useState({})
-
-  const sidebarBg = useColorModeValue('#111113', '#111113')
-  const sidebarBorder = useColorModeValue('rgba(255,255,255,0.06)', 'rgba(255,255,255,0.06)')
-  const sidebarShadow = useColorModeValue('14px 0 32px rgba(17, 17, 19, 0.22)', '14px 0 34px rgba(5, 4, 10, 0.45)')
-  const activeBg = useColorModeValue('rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)')
-  const hoverBg = useColorModeValue('rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)')
-  const activeBorder = useColorModeValue('rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)')
-  const hoverBorder = useColorModeValue('rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)')
-  const iconBg = useColorModeValue('rgba(255,255,255,0.06)', 'rgba(255,255,255,0.06)')
-  const iconActiveBg = useColorModeValue('rgba(75,17,150,0.18)', 'rgba(75,17,150,0.18)')
-  const textColor = useColorModeValue('rgba(255,255,255,0.8)', 'rgba(255,255,255,0.8)')
-  const iconColor = useColorModeValue('rgba(255,255,255,0.56)', 'rgba(255,255,255,0.56)')
-  const dividerColor = useColorModeValue('rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)')
-  const thumbColor = useColorModeValue('rgba(255,255,255,0.18)', 'rgba(255,255,255,0.18)')
-  const brandCardBg = useColorModeValue(
-    'rgba(255,255,255,0.04)',
-    'rgba(255,255,255,0.04)',
-  )
-  const brandCardBorder = useColorModeValue('rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)')
-  const brandText = useColorModeValue('white', 'white')
-  const collapsedLogoBg = useColorModeValue('rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)')
-
-  const activeRoute = (routeName) => location.pathname.startsWith(routeName)
-
-  const toggleCollapse = (key) => {
-    setState((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+  const [openGroups, setOpenGroups] = React.useState({})
+  const collapsed = sidebarWidth <= 160
+  const sidebarBg = useColorModeValue('#FFFFFF', '#16062F')
+  const borderColor = useColorModeValue('#E8E4ED', 'rgba(255,255,255,0.08)')
+  const textColor = useColorModeValue('#514A58', 'whiteAlpha.800')
+  const mutedColor = useColorModeValue('#817889', 'whiteAlpha.600')
+  const hoverBg = useColorModeValue('#FAF8FC', 'whiteAlpha.100')
+  const activeBg = useColorModeValue('#F5F0FF', 'whiteAlpha.200')
+  const inactiveIconBg = useColorModeValue('#F0EDF3', 'whiteAlpha.100')
 
   useEffect(() => {
     routes.forEach((route) => {
-      if (route.category && route.views) {
-        const isChildActive = route.views.some((view) =>
-          location.pathname.startsWith(view.layout + view.path.split('/:')[0]),
-        )
-        if (isChildActive) {
-          setState((prev) => ({ ...prev, [route.state]: true }))
-        }
+      if (route.category && route.views?.some((view) => location.pathname.startsWith(view.layout + view.path.split('/:')[0]))) {
+        setOpenGroups((current) => ({ ...current, [route.state]: true }))
       }
     })
   }, [location.pathname, routes])
 
-  const collapsed = sidebarWidth <= 160
-  const compact = sidebarWidth > 160 && sidebarWidth < 220
-  const textSize = compact ? 'sm' : 'sm'
-  const showText = !collapsed
-
-  const renderLinkButton = (prop, isActive) => (
+  const navButton = (item, active, category = false) => (
     <Button
-      justifyContent={collapsed ? 'center' : 'flex-start'}
       w="100%"
-      bg={isActive ? activeBg : 'transparent'}
-      borderRadius="10px"
-      mb="1"
-      px={collapsed ? '2' : '3'}
-      py="10px"
-      h="auto"
-      border="1px solid"
-      borderColor={isActive ? 'rgba(75,17,150,0.28)' : 'transparent'}
-      _hover={{
-        bg: hoverBg,
-        transform: 'translateX(2px)',
-        borderColor: hoverBorder,
-      }}
-      _active={{ transform: 'scale(0.98)' }}
-      transition="all 0.2s ease"
+      h="42px"
+      px={collapsed ? 2 : 3}
+      justifyContent={collapsed ? 'center' : 'flex-start'}
+      borderRadius="6px"
+      variant="ghost"
+      bg={active ? activeBg : 'transparent'}
+      color={active ? 'brand.500' : textColor}
+      borderLeft="3px solid"
+      borderLeftColor={active ? 'accent.400' : 'transparent'}
+      _hover={{ bg: hoverBg, color: 'brand.500' }}
     >
-      <Flex align="center" gap="10px" w="100%">
-        {prop.icon && (
-          <Box
-            p="6px"
-            borderRadius="8px"
-            bg={isActive ? iconActiveBg : iconBg}
-            color={isActive ? '#FFFFFF' : iconColor}
-            fontSize={collapsed ? '20px' : '18px'}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
+      <Flex align="center" w="100%" gap={3}>
+        {item.icon && (
+          <Flex
+            w="28px"
+            h="28px"
+            flexShrink={0}
+            align="center"
+            justify="center"
+            borderRadius="6px"
+            bg={active ? 'brand.500' : inactiveIconBg}
+            color={active ? 'white' : mutedColor}
           >
-            {prop.icon}
-          </Box>
+            {item.icon}
+          </Flex>
         )}
-        {showText && (
-              <Text color={isActive ? 'white' : textColor} fontWeight={isActive ? '700' : '600'} fontSize={textSize}>
-                {prop.name}
-              </Text>
+        {!collapsed && <Text fontSize="sm" fontWeight={active ? '700' : '600'}>{item.name}</Text>}
+        {!collapsed && category && (
+          <ChevronDownIcon ml="auto" transform={openGroups[item.state] ? 'rotate(180deg)' : 'none'} transition="transform .2s" />
         )}
       </Flex>
     </Button>
   )
 
-  const renderLinks = (items) =>
-    items
-      .filter((prop) => prop.show !== false)
-      .map((prop) => {
-        if (prop.redirect) return null
+  const renderRoutes = (items) => items.filter((item) => item.show !== false && !item.redirect).map((item) => {
+    if (item.category) {
+      const active = item.views.some((view) => location.pathname.startsWith(view.layout + view.path.split('/:')[0]))
+      return (
+        <Box key={item.name}>
+          <Box onClick={() => setOpenGroups((current) => ({ ...current, [item.state]: !current[item.state] }))}>
+            {navButton(item, active, true)}
+          </Box>
+          <Collapse in={openGroups[item.state]} animateOpacity>
+            <Stack spacing={1} pl={collapsed ? 0 : 3} mt={1}>{renderRoutes(item.views)}</Stack>
+          </Collapse>
+        </Box>
+      )
+    }
 
-        if (prop.category) {
-          const isChildActive = prop.views.some((view) =>
-            location.pathname.startsWith(view.layout + view.path.split('/:')[0]),
-          )
-
-          return (
-            <Box key={prop.name} mb="1">
-              <Button
-                onClick={() => toggleCollapse(prop.state)}
-                justifyContent={collapsed ? 'center' : 'space-between'}
-                w="100%"
-                bg={isChildActive ? activeBg : 'transparent'}
-                borderRadius="10px"
-                mb="1"
-                px={collapsed ? '2' : '3'}
-                py="10px"
-                h="auto"
-                border="1px solid"
-                borderColor={isChildActive ? activeBorder : 'transparent'}
-                _hover={{
-                  bg: hoverBg,
-                  transform: 'translateX(2px)',
-                }}
-                transition="all 0.2s ease"
-              >
-                <Flex align="center" gap="10px" w="100%">
-                  <Box
-                    p="6px"
-                    borderRadius="8px"
-                    bg={isChildActive ? iconActiveBg : iconBg}
-                    color={isChildActive ? '#FFFFFF' : iconColor}
-                    fontSize={collapsed ? '20px' : '18px'}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    {prop.icon}
-                  </Box>
-                  {showText && (
-                    <Text
-                      color={isChildActive ? 'white' : textColor}
-                      fontWeight={isChildActive ? '700' : '600'}
-                      fontSize={textSize}
-                      textAlign="left"
-                      flex="1"
-                    >
-                      {prop.name}
-                    </Text>
-                  )}
-                </Flex>
-                {showText && (
-                  <Box
-                    transition="transform 0.2s"
-                    transform={state[prop.state] ? 'rotate(180deg)' : 'rotate(0deg)'}
-                    color={isChildActive ? BRAND_RED : iconColor}
-                  >
-                    <ChevronDownIcon />
-                  </Box>
-                )}
-              </Button>
-              <Collapse in={state[prop.state]} animateOpacity>
-                <Box pl={showText ? '12px' : '0'} pr={showText ? '8px' : '0'} mt="1">
-                  <Stack spacing="1">{renderLinks(prop.views)}</Stack>
-                </Box>
-              </Collapse>
-            </Box>
-          )
-        }
-
-        const isActive = activeRoute(prop.layout + prop.path)
-        return (
-          <NavLink to={prop.layout + prop.path} key={prop.name}>
-            {renderLinkButton(prop, isActive)}
-          </NavLink>
-        )
-      })
+    const active = location.pathname.startsWith(item.layout + item.path.split('/:')[0])
+    return <NavLink to={item.layout + item.path} key={item.name}>{navButton(item, active)}</NavLink>
+  })
 
   return (
     <Box
-      pt="20px"
-      pb="20px"
       h="100vh"
       w={`${sidebarWidth}px`}
       bg={sidebarBg}
       borderRight="1px solid"
-      borderColor={sidebarBorder}
-      boxShadow={sidebarShadow}
+      borderColor={borderColor}
+      boxShadow="6px 0 24px rgba(43, 10, 85, 0.05)"
       position="fixed"
       left="0"
       top="0"
-      transition="width 0.25s ease"
       overflowY="auto"
       overflowX="hidden"
-      pr="2"
-      css={{
-        scrollbarWidth: 'thin',
-        '&::-webkit-scrollbar': { width: '5px' },
-        '&::-webkit-scrollbar-track': { background: 'transparent' },
-        '&::-webkit-scrollbar-thumb': {
-          background: thumbColor,
-          borderRadius: '4px',
-        },
-      }}
+      transition="width .25s ease"
+      css={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { background: '#D8D0DF' } }}
     >
-      <Box mb="20px" px="14px" textAlign="center" transition="all 0.3s ease">
-        {showText ? (
-          <Flex
-            align="center"
-            justify="center"
-            gap="10px"
-            px="12px"
-            py="10px"
-            borderRadius="8px"
-            bg={brandCardBg}
-            border="1px solid"
-            borderColor={brandCardBorder}
-          >
-            <Box as="img" src="/brand/routeship-mark.png" alt="RouteShip" h="40px" w="40px" objectFit="contain" />
-            <Box textAlign="left">
-              <Text fontWeight="800" fontSize="15px" color={brandText}>
-                {logoText}
-              </Text>
-              <Text fontSize="10px" fontWeight="700" letterSpacing="1px" textTransform="uppercase" color="rgba(255,255,255,0.56)">
-                Admin Console
-              </Text>
-            </Box>
-          </Flex>
-        ) : (
-          <Box
-            as="img"
-            src="/brand/routeship-mark.png"
-            alt="RouteShip"
-            h="38px"
-            w="38px"
-            mx="auto"
-            objectFit="contain"
-            p="2px"
-            borderRadius="10px"
-            bg={collapsedLogoBg}
-          />
-        )}
-      </Box>
-
-      <Box h="1px" bg={dividerColor} mx="14px" mb="14px" />
-
-      <Stack direction="column" spacing="0.5" px="10px">
-        {renderLinks(routes)}
-      </Stack>
+      <Flex h="84px" px={collapsed ? 3 : 5} align="center" borderBottom="1px solid" borderColor={borderColor}>
+        <Box
+          as="img"
+          src={collapsed ? '/brand/routeship-mark.png' : '/brand/routeship-logo.png'}
+          alt={logoText}
+          w={collapsed ? '42px' : '176px'}
+          h={collapsed ? '42px' : '70px'}
+          objectFit="contain"
+          objectPosition="left center"
+        />
+      </Flex>
+      {!collapsed && <Text px={5} pt={5} pb={2} fontSize="10px" fontWeight="800" color={mutedColor} textTransform="uppercase">Admin Workspace</Text>}
+      <Stack spacing={1} px={3} pb={6}>{renderRoutes(routes)}</Stack>
     </Box>
   )
 }

@@ -37,16 +37,19 @@ const dividerStyles = {
 const componentOverrides = {
   components: {
     Input: {
+      baseStyle: { field: { borderRadius: '6px' } },
       defaultProps: {
         focusBorderColor: 'brand.500',
       },
     },
     Select: {
+      baseStyle: { field: { borderRadius: '6px' } },
       defaultProps: {
         focusBorderColor: 'brand.500',
       },
     },
     Textarea: {
+      baseStyle: { borderRadius: '6px' },
       defaultProps: {
         focusBorderColor: 'brand.500',
       },
@@ -74,7 +77,7 @@ const componentOverrides = {
     Modal: {
       baseStyle: {
         dialog: {
-          borderRadius: '12px',
+          borderRadius: '8px',
           borderWidth: '1px',
           borderColor: 'gray.200',
           boxShadow: '0 24px 52px rgba(17, 17, 19, 0.18)',
@@ -87,7 +90,7 @@ const componentOverrides = {
     },
     Badge: {
       baseStyle: {
-        borderRadius: '8px',
+        borderRadius: '4px',
         textTransform: 'none',
         px: '2.5',
         py: '1',

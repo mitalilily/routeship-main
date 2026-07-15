@@ -18,7 +18,7 @@ const Card = {
         props.colorMode === 'dark'
           ? '0 18px 40px rgba(5, 4, 10, 0.35)'
           : '0 16px 36px rgba(29, 21, 46, 0.06)',
-      borderRadius: '22px',
+      borderRadius: '6px',
       overflow: 'hidden',
     }),
   },

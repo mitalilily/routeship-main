@@ -15,9 +15,9 @@ function Sidebar(props) {
   let sidebarRadius = '0px'
   let sidebarMargins = '0px'
   if (sidebarVariant === 'opaque') {
-    sidebarBg = useColorModeValue('#111113', '#111113')
-    sidebarRadius = '18px'
-    sidebarMargins = '16px 0px 16px 16px'
+    sidebarBg = useColorModeValue('#FFFFFF', '#16062F')
+    sidebarRadius = '0px'
+    sidebarMargins = '0px'
   }
 
   // SIDEBAR
@@ -32,9 +32,9 @@ function Sidebar(props) {
           minW="200px"
           ms={{ sm: '16px' }}
           my={{ sm: '16px' }}
-          h="calc(100vh - 32px)"
-          ps="20px"
-          pe="20px"
+          h="100vh"
+          ps="0"
+          pe="0"
           m={sidebarMargins}
           borderRadius={sidebarRadius}
         >
