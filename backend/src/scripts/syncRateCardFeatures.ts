@@ -35,6 +35,18 @@ const sync = async () => {
         currency varchar(3) NOT NULL DEFAULT 'INR', estimated_days varchar(40), is_active boolean NOT NULL DEFAULT true,
         created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
       );
+      CREATE TABLE IF NOT EXISTS routeship_b2c_courier_rate_configs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(), plan_id uuid NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+        courier_id integer NOT NULL, service_provider varchar(100) NOT NULL DEFAULT '', mode varchar(50) NOT NULL DEFAULT 'surface',
+        use_shipping_charge_api boolean NOT NULL DEFAULT false, fsc_percentage numeric(8,2),
+        minimum_cod_charge numeric(10,2), cod_charge_percentage numeric(8,2), to_pay_charge numeric(10,2),
+        minimum_ras_charge numeric(10,2), ras_charge_per_kg numeric(10,2),
+        minimum_critical_pickup_charge numeric(10,2), critical_pickup_charge_per_kg numeric(10,2),
+        minimum_critical_delivery_charge numeric(10,2), critical_delivery_charge_per_kg numeric(10,2),
+        addition_rules jsonb NOT NULL DEFAULT '[]'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT b2c_courier_rate_config_scope_unique UNIQUE (plan_id, courier_id, service_provider, mode)
+      );
       CREATE TABLE IF NOT EXISTS shiplifi_holidays (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name varchar(200) NOT NULL, date date NOT NULL, description text,
         type varchar(50) NOT NULL, state varchar(200), courier_id integer, service_provider varchar(100),
@@ -47,6 +59,17 @@ const sync = async () => {
       ALTER TABLE routeship_international_rate_cards ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_international_rates ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE shiplifi_holidays ALTER COLUMN id SET DEFAULT gen_random_uuid();
+      ALTER TABLE routeship_b2c_courier_rate_configs ALTER COLUMN id SET DEFAULT gen_random_uuid();
+      INSERT INTO shiplifi_zones (id, code, name, description, business_type)
+      VALUES
+        (gen_random_uuid(), 'A', 'ZONE A', 'Within city and local shipments.', 'B2C'),
+        (gen_random_uuid(), 'B', 'ZONE B', 'Metro city to metro city.', 'B2C'),
+        (gen_random_uuid(), 'C', 'ZONE C', 'Metro to non-metro and non-metro to metro.', 'B2C'),
+        (gen_random_uuid(), 'D', 'ZONE D', 'Rest of India.', 'B2C'),
+        (gen_random_uuid(), 'E', 'ZONE E', 'Northeast, Jammu and Kashmir, and special regions.', 'B2C'),
+        (gen_random_uuid(), 'F', 'ZONE F', 'Remote and ODA service locations.', 'B2C')
+      ON CONFLICT (code, business_type) DO UPDATE
+        SET name = EXCLUDED.name, description = EXCLUDED.description, updated_at = now();
     `)
 
     const existing = await client.query(`SELECT id FROM routeship_international_rate_cards WHERE name = $1 LIMIT 1`, ['INTERNATIONAL PURCHASE RATES'])

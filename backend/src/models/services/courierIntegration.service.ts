@@ -4,7 +4,7 @@ import type { ShippingRateFilters } from '../../controllers/admin/courier.contro
 import { db } from '../client'
 import { couriers } from '../schema/couriers'
 import { courierSummary } from '../schema/courierSummary'
-import { shippingRates } from '../schema/shippingRates'
+import { b2cCourierRateConfigs, shippingRates } from '../schema/shippingRates'
 import { zones } from '../schema/zones'
 import { getUserPlanId } from './plan.service'
 import {
@@ -230,6 +230,20 @@ export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
 
   let result = Object.values(grouped)
 
+  if (filters.business_type === 'b2c' && filters.plan_id) {
+    const configs = await db
+      .select()
+      .from(b2cCourierRateConfigs)
+      .where(eq(b2cCourierRateConfigs.planId, filters.plan_id))
+    const configMap = new Map(
+      configs.map((config) => [
+        `${config.courierId}_${config.planId}_${normalizeB2CServiceProvider(config.serviceProvider)}_${normalizeB2CShippingMode(config.mode)}`,
+        config,
+      ]),
+    )
+    result = result.map((rate) => ({ ...rate, b2c_config: configMap.get(getB2CGroupKey(rate)) || null }))
+  }
+
   // Debug: Log first result to verify service_provider is included
   if (result.length > 0) {
     console.log(`[getShippingRates] Returning ${result.length} grouped rates`)
@@ -266,6 +280,7 @@ export interface ShippingRateUpdatePayload {
   businessType?: 'b2b' | 'b2c'
   rates?: any
   zone_slabs?: Record<string, { forward?: RateCardSlabInput[]; rto?: RateCardSlabInput[] }>
+  b2c_config?: Record<string, any>
 }
 
 const toMoney = (v: any): string => {
@@ -321,6 +336,7 @@ export const updateShippingRate = async (
     rates,
     zone_slabs,
     previous_mode,
+    b2c_config,
   } = updates
 
   console.log('MODE!', mode)
@@ -452,6 +468,42 @@ export const updateShippingRate = async (
   }
   if (savedRows === 0) {
     throw new Error('Add at least one zone rate or B2C slab before saving a rate card')
+  }
+
+  if (businessType === 'b2c' && b2c_config) {
+    const nullableMoney = (value: any) =>
+      value === undefined || value === null || value === '' ? null : toMoney(value)
+    const configValues = {
+      planId,
+      courierId,
+      serviceProvider: normalizedServiceProvider || '',
+      mode: normalizedMode,
+      useShippingChargeApi: Boolean(b2c_config.useShippingChargeApi),
+      fscPercentage: nullableMoney(b2c_config.fscPercentage),
+      minimumCodCharge: nullableMoney(b2c_config.minimumCodCharge),
+      codChargePercentage: nullableMoney(b2c_config.codChargePercentage),
+      toPayCharge: nullableMoney(b2c_config.toPayCharge),
+      minimumRasCharge: nullableMoney(b2c_config.minimumRasCharge),
+      rasChargePerKg: nullableMoney(b2c_config.rasChargePerKg),
+      minimumCriticalPickupCharge: nullableMoney(b2c_config.minimumCriticalPickupCharge),
+      criticalPickupChargePerKg: nullableMoney(b2c_config.criticalPickupChargePerKg),
+      minimumCriticalDeliveryCharge: nullableMoney(b2c_config.minimumCriticalDeliveryCharge),
+      criticalDeliveryChargePerKg: nullableMoney(b2c_config.criticalDeliveryChargePerKg),
+      additionRules: Array.isArray(b2c_config.additionRules) ? b2c_config.additionRules : [],
+      updatedAt: new Date(),
+    }
+    await db
+      .insert(b2cCourierRateConfigs)
+      .values(configValues)
+      .onConflictDoUpdate({
+        target: [
+          b2cCourierRateConfigs.planId,
+          b2cCourierRateConfigs.courierId,
+          b2cCourierRateConfigs.serviceProvider,
+          b2cCourierRateConfigs.mode,
+        ],
+        set: configValues,
+      })
   }
 
   return { success: true, savedRows }

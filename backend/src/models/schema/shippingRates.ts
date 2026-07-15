@@ -1,4 +1,4 @@
-import { decimal, integer, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import { boolean, decimal, integer, jsonb, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { plans } from './plans'
 
 export const shippingRates = pgTable('shipping_rates', {
@@ -35,3 +35,36 @@ export const shippingRateSlabs = pgTable('shipping_rate_slabs', {
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 })
+
+export const b2cCourierRateConfigs = pgTable(
+  'routeship_b2c_courier_rate_configs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    planId: uuid('plan_id').references(() => plans.id, { onDelete: 'cascade' }).notNull(),
+    courierId: integer('courier_id').notNull(),
+    serviceProvider: varchar('service_provider', { length: 100 }).notNull().default(''),
+    mode: varchar('mode', { length: 50 }).notNull().default('surface'),
+    useShippingChargeApi: boolean('use_shipping_charge_api').notNull().default(false),
+    fscPercentage: decimal('fsc_percentage', { precision: 8, scale: 2 }),
+    minimumCodCharge: decimal('minimum_cod_charge', { precision: 10, scale: 2 }),
+    codChargePercentage: decimal('cod_charge_percentage', { precision: 8, scale: 2 }),
+    toPayCharge: decimal('to_pay_charge', { precision: 10, scale: 2 }),
+    minimumRasCharge: decimal('minimum_ras_charge', { precision: 10, scale: 2 }),
+    rasChargePerKg: decimal('ras_charge_per_kg', { precision: 10, scale: 2 }),
+    minimumCriticalPickupCharge: decimal('minimum_critical_pickup_charge', { precision: 10, scale: 2 }),
+    criticalPickupChargePerKg: decimal('critical_pickup_charge_per_kg', { precision: 10, scale: 2 }),
+    minimumCriticalDeliveryCharge: decimal('minimum_critical_delivery_charge', { precision: 10, scale: 2 }),
+    criticalDeliveryChargePerKg: decimal('critical_delivery_charge_per_kg', { precision: 10, scale: 2 }),
+    additionRules: jsonb('addition_rules').$type<Array<Record<string, unknown>>>().notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    scopeUnique: uniqueIndex('b2c_courier_rate_config_scope_unique').on(
+      table.planId,
+      table.courierId,
+      table.serviceProvider,
+      table.mode,
+    ),
+  }),
+)
