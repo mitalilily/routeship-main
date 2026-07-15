@@ -24,6 +24,8 @@
     "seed:basic-plan": "tsx src/scripts/seedBasicPlan.ts",
     "assign:basic-plan": "tsx src/scripts/assignBasicPlans.ts",
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
+    "repair:admin-auth": "tsx src/scripts/repairAdminAuth.ts",
+    "check:admin-login": "tsx src/scripts/checkAdminLogin.ts",
     "seed:locations": "tsx src/scripts/seedLocations.ts locations.xlsx",
     "import:b2b-oda": "tsx src/scripts/importB2BOdaPincodes.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
