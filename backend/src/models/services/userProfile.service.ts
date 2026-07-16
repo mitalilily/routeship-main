@@ -18,6 +18,39 @@ import { userProfiles } from '../schema/userProfile'
 import { users } from '../schema/users'
 import { listUserPlanAssignments } from './plan.service'
 
+const EMPTY_COMPANY: CompanyInfo = {
+  businessName: '',
+  brandName: '',
+  city: '',
+  companyContactNumber: '',
+  pincode: '',
+  state: '',
+  profilePicture: '',
+  POCEmailVerified: false,
+  POCPhoneVerified: false,
+  companyAddress: '',
+  contactPerson: '',
+  contactNumber: '',
+  contactEmail: '',
+  companyEmail: '',
+  companyLogoUrl: '',
+  website: '',
+}
+
+const DEFAULT_PROFILE: Omit<typeof userProfiles.$inferInsert, 'userId' | 'id'> = {
+  onboardingStep: 0,
+  monthlyOrderCount: '0-100',
+  companyInfo: EMPTY_COMPANY,
+  domesticKyc: { status: 'pending', updatedAt: null },
+  bankDetails: null,
+  gstDetails: null,
+  businessType: [],
+  approved: false,
+  onboardingComplete: false,
+  salesChannels: {},
+  profileComplete: false,
+}
+
 /**
  * Fetch the profile for a specific userId (returns null if none exists)
  */
@@ -71,6 +104,26 @@ export const upsertUserProfile = async (userId: string, input: IUserProfileDB) =
   const payload: any = Object.fromEntries(
     Object.entries(input).filter(([, v]) => v !== undefined),
   ) as IUserProfileDB
+
+  if (!existing) {
+    const profile = {
+      ...DEFAULT_PROFILE,
+      ...payload,
+      userId,
+      companyInfo: {
+        ...EMPTY_COMPANY,
+        ...(payload.companyInfo ?? {}),
+      },
+      businessType: payload.businessType ?? DEFAULT_PROFILE.businessType,
+      salesChannels: payload.salesChannels ?? DEFAULT_PROFILE.salesChannels,
+      domesticKyc: payload.domesticKyc ?? DEFAULT_PROFILE.domesticKyc,
+      bankDetails: payload.bankDetails ?? DEFAULT_PROFILE.bankDetails,
+      gstDetails: payload.gstDetails ?? DEFAULT_PROFILE.gstDetails,
+    }
+
+    const [created] = await db.insert(userProfiles).values(profile).returning()
+    return created
+  }
 
   // Merge JSONB blocks (keeps untouched keys intact)
   const merged = {
