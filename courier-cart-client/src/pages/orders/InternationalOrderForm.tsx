@@ -11,10 +11,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type React from 'react'
 import { FiChevronUp, FiPlus, FiTrash2, FiX } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 import { toast } from '../../components/UI/Toast'
+import { usePickupAddresses } from '../../hooks/Pickup/usePickupAddresses'
 
 const BRAND_PURPLE = '#7357FF'
 const PAGE_BG = '#F4F5F9'
@@ -166,11 +168,14 @@ function Field({
 }
 
 export default function InternationalOrderForm() {
+  const navigate = useNavigate()
   const [paymentMethod, setPaymentMethod] = useState('prepaid')
   const [rov, setRov] = useState('owner-risk')
   const [itemType, setItemType] = useState('non-commercial')
   const [itemCategory, setItemCategory] = useState('document')
   const [shippingMode, setShippingMode] = useState('')
+  const [selectedPickupId, setSelectedPickupId] = useState('')
+  const { data: pickupData } = usePickupAddresses({ page: 1, limit: 100 })
   const [products, setProducts] = useState<ProductRow[]>([
     { id: 1, productName: '', sku: '', unitPrice: '', quantity: '' },
   ])
@@ -208,6 +213,27 @@ export default function InternationalOrderForm() {
   }, [packages])
 
   const applicableWeight = Math.max(packageTotals.physical, packageTotals.volumetric)
+  const pickupAddresses = pickupData?.pickupAddresses ?? []
+  const selectedPickup = pickupAddresses.find((row) => row.pickupId === selectedPickupId)
+
+  useEffect(() => {
+    if (selectedPickupId || pickupAddresses.length === 0) return
+
+    const defaultPickup = pickupAddresses.find((row) => row.isPrimary) ?? pickupAddresses[0]
+    setSelectedPickupId(defaultPickup.pickupId)
+  }, [pickupAddresses, selectedPickupId])
+
+  const formatPickupAddress = (row: (typeof pickupAddresses)[number]) => {
+    const pickup = row.pickup
+    return [
+      pickup?.addressNickname || pickup?.contactName || 'Warehouse',
+      [pickup?.addressLine1, pickup?.addressLine2, pickup?.landmark].filter(Boolean).join(', '),
+      [pickup?.city, pickup?.state].filter(Boolean).join(', '),
+      pickup?.pincode,
+    ]
+      .filter(Boolean)
+      .join(' - ')
+  }
 
   const updateProduct = (id: number, field: keyof ProductRow, value: string) => {
     setProducts((current) =>
@@ -227,12 +253,28 @@ export default function InternationalOrderForm() {
         <Section title="Pickup From">
           <Stack direction="row" spacing={1.6} alignItems="center">
             <TextField
-              value="SRIRAM | 56 7th main - srirampuram, Bangalore, Karnataka - 560021"
+              select
+              value={selectedPickupId}
+              onChange={(event) => setSelectedPickupId(event.target.value)}
+              placeholder="Select saved warehouse address"
               size="small"
               sx={{ ...fieldSx, width: { xs: '100%', md: 840 } }}
-            />
+            >
+              {pickupAddresses.length === 0 ? (
+                <MenuItem value="" disabled>
+                  No saved warehouse address found
+                </MenuItem>
+              ) : (
+                pickupAddresses.map((row) => (
+                  <MenuItem key={row.pickupId} value={row.pickupId}>
+                    {formatPickupAddress(row)}
+                  </MenuItem>
+                ))
+              )}
+            </TextField>
             <Button
               variant="contained"
+              onClick={() => navigate('/settings/manage_pickups')}
               sx={{
                 minWidth: 40,
                 height: 34,
@@ -244,6 +286,12 @@ export default function InternationalOrderForm() {
               <FiPlus size={18} />
             </Button>
           </Stack>
+          {selectedPickup ? (
+            <Typography sx={{ color: MUTED, fontSize: '0.72rem', mt: 1 }}>
+              Pickup contact: {selectedPickup.pickup?.contactName || '-'} -{' '}
+              {selectedPickup.pickup?.contactPhone || '-'}
+            </Typography>
+          ) : null}
         </Section>
 
         <Section
