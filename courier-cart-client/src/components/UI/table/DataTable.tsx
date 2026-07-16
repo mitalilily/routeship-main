@@ -25,14 +25,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { MdExpandLess, MdExpandMore, MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md'
 import CustomCheckbox from '../inputs/CustomCheckbox'
 
-const TEXT_PRIMARY = '#111111'
+const TEXT_PRIMARY = '#07132D'
 const TEXT_SECONDARY = '#6B7280'
-const BORDER = 'rgba(17,17,17,0.08)'
+const BORDER = '#EEE8E4'
 const BG = '#FFFFFF'
 
-/* UPDATED HEADER */
-const HEADER_BG = '#e6e6e6'
-const HEADER_TEXT = 'black'
+const HEADER_BG = '#F7F4F2'
+const HEADER_TEXT = '#615853'
 
 export interface Column<T> {
   id: keyof T
@@ -203,10 +202,10 @@ export default function DataTable<T extends { id: string | number }>(props: Data
       sx={{
         p: 0,
         position: 'relative',
-        borderRadius: 4,
+        borderRadius: 0,
         border: `1px solid ${BORDER}`,
         bgcolor: BG,
-        boxShadow: '0 12px 28px rgba(0,0,0,0.04)',
+        boxShadow: '0 6px 18px rgba(17,17,19,0.04)',
         overflow: 'hidden',
       }}
     >
@@ -350,14 +349,14 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                     sx={{
                       bgcolor: HEADER_BG,
                       minWidth: column.minWidth,
-                      py: 1.6,
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      py: 1.15,
+                      borderBottom: '1px solid #DED5D0',
                       ...(column.stickyRight
                         ? {
                             position: 'sticky',
                             right: 0,
                             zIndex: 4,
-                            boxShadow: '-12px 0 18px -18px rgba(15,23,42,0.7)',
+                            boxShadow: '-8px 0 14px -14px rgba(15,23,42,0.55)',
                           }
                         : {}),
                     }}
@@ -379,8 +378,8 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                             fontWeight: 800,
                             color: HEADER_TEXT,
                             fontFamily: "'Inter','Poppins',sans-serif",
-                            letterSpacing: '0.08em',
-                            textTransform: 'uppercase',
+                            letterSpacing: 0,
+                            textTransform: 'none',
                             maxWidth: 170,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -393,9 +392,9 @@ export default function DataTable<T extends { id: string | number }>(props: Data
 
                       {column.sortable &&
                         (active && sortDir === 'asc' ? (
-                          <MdKeyboardArrowUp size={16} color="#ff4d5a" />
+                          <MdKeyboardArrowUp size={16} color="#0B3DBB" />
                         ) : (
-                          <MdKeyboardArrowDown size={16} color={active ? '#ff4d5a' : '#B5B5B5'} />
+                          <MdKeyboardArrowDown size={16} color={active ? '#0B3DBB' : '#A4958D'} />
                         ))}
                     </Stack>
                   </TableCell>
@@ -444,7 +443,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                         transition: 'all .18s ease',
                         cursor: onRowClick ? 'pointer' : 'default',
                         '&:hover': {
-                          bgcolor: '#FAFAFA',
+                          bgcolor: '#FFFDF8',
                         },
                       }}
                     >
@@ -491,15 +490,15 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                               textOverflow: 'ellipsis',
                               fontSize: isCompactDesktop ? '0.78rem' : '0.85rem',
                               color: '#111111',
-                              py: isCompactDesktop ? 0.85 : 1,
-                              borderBottom: '1px solid rgba(17,17,17,0.05)',
+                              py: isCompactDesktop ? 0.7 : 0.85,
+                              borderBottom: '1px solid #F1E6E0',
                               ...(column.stickyRight
                                 ? {
                                     position: 'sticky',
                                     right: 0,
                                     zIndex: 2,
                                     bgcolor: BG,
-                                    boxShadow: '-12px 0 18px -18px rgba(15,23,42,0.7)',
+                                    boxShadow: '-8px 0 14px -14px rgba(15,23,42,0.55)',
                                   }
                                 : {}),
                             }}
@@ -527,7 +526,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                               ref={expandedRef}
                               sx={{
                                 p: 2,
-                                bgcolor: '#FAFAFA',
+                                bgcolor: '#FFFDF8',
                               }}
                             >
                               {renderExpandedRow(row)}

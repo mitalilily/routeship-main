@@ -22,8 +22,8 @@ interface InsightsCardProps {
 
 type InsightType = 'good' | 'warning' | 'notice'
 
-const BRAND_PRIMARY = '#E85500'
-const BRAND_ACCENT = '#4B1196'
+const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_ACCENT = '#E85500'
 
 export default function InsightsCard({ operational, trends, actions }: InsightsCardProps) {
   const insights: Array<{
@@ -83,10 +83,10 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
   }
 
   return (
-    <Card sx={{ height: '100%', borderRadius: 2.6, border: `1px solid ${alpha(BRAND_PRIMARY, 0.14)}`, boxShadow: `0 8px 20px ${alpha(BRAND_PRIMARY, 0.08)}` }}>
+    <Card sx={{ height: '100%', borderRadius: 0, border: `1px solid ${alpha(BRAND_PRIMARY, 0.14)}`, boxShadow: `0 6px 18px ${alpha(BRAND_PRIMARY, 0.06)}` }}>
       <CardContent sx={{ p: 2.2 }}>
         <Stack direction="row" spacing={1.1} alignItems="center" mb={1.8}>
-          <Box sx={{ width: 34, height: 34, borderRadius: 1.8, display: 'grid', placeItems: 'center', bgcolor: alpha(BRAND_ACCENT, 0.16), color: '#8a3e00' }}>
+          <Box sx={{ width: 34, height: 34, borderRadius: 0, display: 'grid', placeItems: 'center', bgcolor: alpha(BRAND_ACCENT, 0.16), color: '#8a3e00' }}>
             <MdLightbulb size={20} />
           </Box>
           <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#17171A' }}>Smart Insights</Typography>
@@ -98,7 +98,7 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
               key={idx}
               sx={{
                 p: 1.2,
-                borderRadius: 2,
+                borderRadius: 0,
                 border: `1px solid ${palette[insight.type].border}`,
                 bgcolor: palette[insight.type].bg,
               }}

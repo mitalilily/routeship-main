@@ -11,7 +11,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi'
 
-const BRAND_ORANGE = '#E85500'
+const BRAND_ORANGE = '#0B3DBB'
 const BRAND_DARK = '#0f172a'
 const BG_LIGHT = '#f8fafc'
 
@@ -52,8 +52,8 @@ export default function MerchantDashboard() {
           gridTemplateColumns: { xs: '1fr', md: '280px 1fr', lg: '280px 1fr 320px' },
           gap: { xs: 0, md: 3 },
           background: '#ffffff',
-          borderRadius: { xs: '20px', md: '32px' },
-          boxShadow: '0 15px 50px rgba(0, 0, 0, 0.08)',
+          borderRadius: 0,
+          boxShadow: '0 10px 28px rgba(17, 17, 19, 0.08)',
           overflow: 'hidden',
         }}
       >
@@ -93,7 +93,7 @@ export default function MerchantDashboard() {
               gap: 2,
               p: 2,
               background: '#f1f5f9',
-              borderRadius: '16px',
+              borderRadius: 0,
               mb: 4,
               cursor: 'pointer',
               transition: 'all 0.3s ease',
@@ -134,7 +134,7 @@ export default function MerchantDashboard() {
                   alignItems: 'center',
                   gap: 2.5,
                   p: '12px 16px',
-                  borderRadius: '12px',
+                  borderRadius: 0,
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   background: activeNav === item.id ? BRAND_ORANGE : 'transparent',
@@ -160,7 +160,7 @@ export default function MerchantDashboard() {
               height: '120px',
               margin: '20px -12px -12px',
               background: `linear-gradient(135deg, ${BRAND_ORANGE}15 0%, #3b82f615 100%)`,
-              borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+              borderRadius: 0,
               opacity: 0.6,
             }}
           />
@@ -172,7 +172,7 @@ export default function MerchantDashboard() {
               alignItems: 'center',
               gap: 2,
               p: '12px 16px',
-              borderRadius: '12px',
+              borderRadius: 0,
               cursor: 'pointer',
               color: '#64748b',
               transition: 'all 0.3s ease',
@@ -227,7 +227,7 @@ export default function MerchantDashboard() {
               sx={{
                 flex: 1,
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
+                  borderRadius: 0,
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
                   '&:hover': { border: `1px solid ${BRAND_ORANGE}40` },
@@ -245,7 +245,7 @@ export default function MerchantDashboard() {
               sx={{
                 background: BRAND_ORANGE,
                 px: 3,
-                borderRadius: '12px',
+                borderRadius: 0,
                 fontWeight: 700,
                 textTransform: 'none',
                 fontSize: '0.95rem',
@@ -272,14 +272,13 @@ export default function MerchantDashboard() {
                 <Card
                   sx={{
                     p: 2.5,
-                    borderRadius: '16px',
+                    borderRadius: 0,
                     border: '1px solid #e2e8f0',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
                     '&:hover': {
-                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
-                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 22px rgba(0, 0, 0, 0.1)',
                     },
                   }}
                 >
@@ -339,7 +338,7 @@ export default function MerchantDashboard() {
                   onMouseLeave={() => setHoveredCard(null)}
                   sx={{
                     p: 3,
-                    borderRadius: '16px',
+                    borderRadius: 0,
                     border: '1px solid #e2e8f0',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                     display: 'flex',
@@ -348,8 +347,7 @@ export default function MerchantDashboard() {
                     transition: 'all 0.3s ease',
                     background: hoveredCard === shipment.id ? '#f8fafc' : '#ffffff',
                     '&:hover': {
-                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
-                      transform: 'translateX(4px)',
+                      boxShadow: '0 8px 22px rgba(0, 0, 0, 0.1)',
                     },
                   }}
                 >
@@ -370,7 +368,7 @@ export default function MerchantDashboard() {
                         py: 0.75,
                         background: `${shipment.color}15`,
                         color: shipment.color,
-                        borderRadius: '8px',
+                        borderRadius: 0,
                         fontSize: '0.8rem',
                         fontWeight: 700,
                         mb: 0.5,

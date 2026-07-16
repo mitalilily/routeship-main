@@ -58,15 +58,15 @@ export default function RevenueChart({ chartData, ChartComponent, formatCurrency
     <Card
       sx={{
         height: '100%',
-        borderRadius: '16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        borderRadius: 0,
+        boxShadow: '0 6px 18px rgba(17,17,19,0.05)',
+        border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
         background: theme.palette.mode === 'dark'
           ? `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.05)} 0%, transparent 100%)`
           : 'white',
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2.2 }}>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
           <MdTrendingUp style={{ marginRight: 8, verticalAlign: 'middle', color: theme.palette.success.main }} />
           Revenue Trend (Last 7 Days)

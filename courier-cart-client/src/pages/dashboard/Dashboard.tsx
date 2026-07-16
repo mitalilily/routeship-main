@@ -46,11 +46,11 @@ const widgetComponents: Record<string, React.ComponentType<any>> = {
   topDestinations: TopDestinationsCard,
 }
 
-const BRAND_PRIMARY = '#E85500'
-const BRAND_TEXT = '#17171A'
+const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_TEXT = '#07132D'
 const TEXT_MUTED = '#6B7280'
-const CARD_BORDER = 'rgba(17, 24, 39, 0.08)'
-const CARD_SHADOW = '0 2px 12px rgba(15, 23, 42, 0.06)'
+const CARD_BORDER = '#EEE8E4'
+const CARD_SHADOW = '0 6px 18px rgba(17, 17, 19, 0.05)'
 
 export default function Dashboard() {
   const { data: stats, isLoading, error, refetch, isRefetching } = useMerchantDashboardStats()
@@ -292,7 +292,7 @@ export default function Dashboard() {
       <Box
         sx={{
           minHeight: '58vh',
-          borderRadius: 3,
+          borderRadius: 0,
           display: 'grid',
           placeItems: 'center',
           border: `1px solid ${CARD_BORDER}`,
@@ -315,7 +315,7 @@ export default function Dashboard() {
       <Box
         sx={{
           minHeight: '58vh',
-          borderRadius: 3,
+          borderRadius: 0,
           display: 'grid',
           placeItems: 'center',
           border: `1px solid ${CARD_BORDER}`,
@@ -374,7 +374,7 @@ export default function Dashboard() {
               variant="outlined"
               sx={{
                 textTransform: 'none',
-                borderRadius: 1.5,
+                borderRadius: 0,
                 fontWeight: 600,
               }}
             >
@@ -386,7 +386,7 @@ export default function Dashboard() {
               variant="contained"
               sx={{
                 textTransform: 'none',
-                borderRadius: 1.5,
+                borderRadius: 0,
                 fontWeight: 600,
                 bgcolor: BRAND_PRIMARY,
                 '&:hover': { bgcolor: '#B8040E' },
@@ -404,7 +404,7 @@ export default function Dashboard() {
           sx={{
             mb: 3,
             p: 2.5,
-            borderRadius: 3,
+            borderRadius: 0,
             bgcolor: '#ffffff',
             border: `1px solid ${CARD_BORDER}`,
             boxShadow: CARD_SHADOW,
@@ -419,7 +419,7 @@ export default function Dashboard() {
                 key={item.message}
                 sx={{
                   p: 1.5,
-                  borderRadius: 2,
+                  borderRadius: 0,
                   bgcolor: item.priority === 'high' ? alpha('#EF4444', 0.05) : alpha('#3B82F6', 0.05),
                   border: `1px solid ${item.priority === 'high' ? alpha('#EF4444', 0.2) : alpha('#3B82F6', 0.2)}`,
                   transition: 'all 200ms ease',
@@ -447,7 +447,7 @@ export default function Dashboard() {
             <Box
               sx={{
                 p: { xs: 1.5, md: 2 },
-                borderRadius: 2.5,
+                borderRadius: 0,
                 bgcolor: '#ffffff',
                 border: `1px solid ${CARD_BORDER}`,
                 boxShadow: CARD_SHADOW,
@@ -484,8 +484,8 @@ export default function Dashboard() {
                   to right,
                   transparent 0,
                   transparent calc((100% / 12) - 1px),
-                  ${alpha('#E85500', 0.08)} calc((100% / 12) - 1px),
-                  ${alpha('#E85500', 0.08)} calc(100% / 12)
+                  ${alpha(BRAND_PRIMARY, 0.08)} calc((100% / 12) - 1px),
+                  ${alpha(BRAND_PRIMARY, 0.08)} calc(100% / 12)
                 )
               `,
             }}

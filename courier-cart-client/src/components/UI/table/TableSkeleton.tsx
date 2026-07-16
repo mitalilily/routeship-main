@@ -31,10 +31,10 @@ const TableSkeleton: React.FC<SkeletonDataTableProps> = ({
   return (
     <Box
       sx={{
-        borderRadius: 4,
-        border: '1px solid rgba(17,17,17,0.08)',
+        borderRadius: 0,
+        border: '1px solid #EEE8E4',
         bgcolor: '#FFFFFF',
-        boxShadow: '0 12px 28px rgba(0,0,0,0.04)',
+        boxShadow: '0 6px 18px rgba(17,17,19,0.04)',
         overflow: 'hidden',
       }}
     >
@@ -46,7 +46,7 @@ const TableSkeleton: React.FC<SkeletonDataTableProps> = ({
         sx={{
           px: 3,
           py: 1.25,
-          borderBottom: '1px solid rgba(17,17,17,0.08)',
+          borderBottom: '1px solid #EEE8E4',
         }}
       >
         <Stack spacing={0.6}>
@@ -60,7 +60,7 @@ const TableSkeleton: React.FC<SkeletonDataTableProps> = ({
           variant="rounded"
           width={170}
           height={36}
-          sx={{ borderRadius: 999, bgcolor: 'rgba(15, 23, 42, 0.08)' }}
+          sx={{ borderRadius: 0, bgcolor: 'rgba(15, 23, 42, 0.08)' }}
         />
       </Stack>
 
@@ -69,7 +69,7 @@ const TableSkeleton: React.FC<SkeletonDataTableProps> = ({
           <TableHead>
             <TableRow>
               {columns.map((_, colIdx) => (
-                <TableCell key={colIdx} sx={{ bgcolor: '#e6e6e6', py: 1.6 }}>
+                <TableCell key={colIdx} sx={{ bgcolor: '#F7F4F2', py: 1.15 }}>
                   <Skeleton
                     variant="text"
                     width={90}
@@ -88,8 +88,8 @@ const TableSkeleton: React.FC<SkeletonDataTableProps> = ({
                   <TableCell
                     key={colIdx}
                     sx={{
-                      py: 1.3,
-                      borderBottom: '1px solid rgba(17,17,17,0.05)',
+                      py: 1,
+                      borderBottom: '1px solid #F1E6E0',
                     }}
                   >
                     <Skeleton

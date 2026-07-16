@@ -28,16 +28,16 @@ export default function FinancialHealthCard({
     <Card
       sx={{
         height: '100%',
-        borderRadius: '16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        border: `2px solid ${isLowBalance ? theme.palette.error.main : isHealthy ? theme.palette.success.main : theme.palette.warning.main}`,
+        borderRadius: 0,
+        boxShadow: '0 6px 18px rgba(17,17,19,0.05)',
+        border: `1px solid ${isLowBalance ? theme.palette.error.main : isHealthy ? theme.palette.success.main : theme.palette.warning.main}`,
         background: `linear-gradient(135deg, ${alpha(
           isLowBalance ? theme.palette.error.main : isHealthy ? theme.palette.success.main : theme.palette.warning.main,
           0.05,
         )} 0%, transparent 100%)`,
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2.2 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Box
@@ -46,7 +46,7 @@ export default function FinancialHealthCard({
                   isLowBalance ? theme.palette.error.main : isHealthy ? theme.palette.success.main : theme.palette.warning.main,
                   0.1,
                 ),
-                borderRadius: '10px',
+                borderRadius: 0,
                 p: 1,
                 display: 'flex',
                 alignItems: 'center',
@@ -86,11 +86,11 @@ export default function FinancialHealthCard({
             variant="determinate"
             value={healthScore}
             sx={{
-              height: 8,
-              borderRadius: 4,
+              height: 6,
+              borderRadius: 0,
               bgcolor: alpha(theme.palette.divider, 0.1),
               '& .MuiLinearProgress-bar': {
-                borderRadius: 4,
+                borderRadius: 0,
                 bgcolor: isHealthy ? theme.palette.success.main : isLowBalance ? theme.palette.error.main : theme.palette.warning.main,
               },
             }}
@@ -102,14 +102,13 @@ export default function FinancialHealthCard({
             sx={{
               p: 2.5,
               bgcolor: alpha(theme.palette.primary.main, 0.08),
-              borderRadius: '12px',
-              border: `1.5px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              borderRadius: 0,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
               cursor: 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
                 bgcolor: alpha(theme.palette.primary.main, 0.12),
-                transform: 'translateY(-2px)',
-                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
               },
             }}
             onClick={() => navigate('/billing/wallet_transactions')}
@@ -151,13 +150,12 @@ export default function FinancialHealthCard({
             sx={{
               p: 2.5,
               bgcolor: alpha(theme.palette.warning.main, 0.08),
-              borderRadius: '12px',
-              border: `1.5px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+              borderRadius: 0,
+              border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
               cursor: 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
                 bgcolor: alpha(theme.palette.warning.main, 0.12),
-                transform: 'translateY(-2px)',
               },
             }}
             onClick={() => navigate('/cod-remittance')}

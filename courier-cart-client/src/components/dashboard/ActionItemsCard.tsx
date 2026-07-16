@@ -13,8 +13,8 @@ interface ActionItemsCardProps {
   formatCurrency: (amount: number) => string
 }
 
-const BRAND_PRIMARY = '#E85500'
-const BRAND_ACCENT = '#4B1196'
+const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_ACCENT = '#E85500'
 
 export default function ActionItemsCard({ actions, formatCurrency }: ActionItemsCardProps) {
   const navigate = useNavigate()
@@ -62,10 +62,10 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
   }>
 
   return (
-    <Card sx={{ height: '100%', borderRadius: 2.6, border: `1px solid ${alpha(BRAND_PRIMARY, 0.14)}`, boxShadow: `0 8px 20px ${alpha(BRAND_PRIMARY, 0.08)}` }}>
+    <Card sx={{ height: '100%', borderRadius: 0, border: `1px solid ${alpha(BRAND_PRIMARY, 0.14)}`, boxShadow: `0 6px 18px ${alpha(BRAND_PRIMARY, 0.06)}` }}>
       <CardContent sx={{ p: 1.8 }}>
         <Stack direction="row" spacing={0.9} alignItems="center" mb={1.35}>
-          <Box sx={{ width: 30, height: 30, borderRadius: 1.5, display: 'grid', placeItems: 'center', bgcolor: alpha(BRAND_PRIMARY, 0.12), color: BRAND_PRIMARY }}>
+          <Box sx={{ width: 30, height: 30, borderRadius: 0, display: 'grid', placeItems: 'center', bgcolor: alpha(BRAND_PRIMARY, 0.12), color: BRAND_PRIMARY }}>
             <MdNotificationsActive size={18} />
           </Box>
           <Typography sx={{ fontSize: '0.94rem', fontWeight: 800, color: '#17171A' }}>Action Required</Typography>
@@ -78,12 +78,12 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
               onClick={() => navigate(item.path)}
               sx={{
                 p: 0.95,
-                borderRadius: 2,
+                borderRadius: 0,
                 border: `1px solid ${alpha(item.color, 0.28)}`,
                 bgcolor: item.bg,
                 cursor: 'pointer',
                 transition: 'all .2s ease',
-                '&:hover': { transform: 'translateX(3px)' },
+                '&:hover': { borderColor: item.color },
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">

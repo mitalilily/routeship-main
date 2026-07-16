@@ -7,7 +7,7 @@ interface DashboardHeaderProps {
   onCustomize?: () => void
 }
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#0B3DBB'
 export default function DashboardHeader({
   isRefetching,
   onRefresh,
@@ -20,14 +20,14 @@ export default function DashboardHeader({
       sx={{
         mb: 2.1,
         p: { xs: 2.2, md: 2.8 },
-        borderRadius: 5,
+        borderRadius: 0,
         border: `1px solid ${alpha(BRAND_PRIMARY, 0.18)}`,
         background: `linear-gradient(135deg, ${alpha('#141416', 0.98)} 0%, ${alpha(
           '#1D1D21',
           0.98,
         )} 48%, ${alpha(BRAND_PRIMARY, 0.9)} 100%)`,
         color: '#fff',
-        boxShadow: '0 26px 56px rgba(20, 20, 20, 0.12)',
+        boxShadow: '0 10px 24px rgba(20, 20, 20, 0.1)',
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -82,7 +82,7 @@ export default function DashboardHeader({
                 sx={{
                   px: 1.15,
                   py: 0.7,
-                  borderRadius: 999,
+                  borderRadius: 0,
                   border: `1px solid ${alpha('#fff', 0.18)}`,
                   bgcolor: alpha('#fff', 0.08),
                 }}
@@ -106,7 +106,7 @@ export default function DashboardHeader({
                 color: 'black',
                 textTransform: 'none',
                 fontWeight: 700,
-                borderRadius: 999,
+                borderRadius: 0,
                 px: 1.5,
                 '&:hover': { borderColor: '#fff', bgcolor: alpha('#fff', 0.12) },
               }}
@@ -131,7 +131,7 @@ export default function DashboardHeader({
               color: 'ButtonFace',
               textTransform: 'none',
               fontWeight: 800,
-              borderRadius: 999,
+              borderRadius: 0,
               px: 1.7,
               '&:hover': { bgcolor: alpha('#fff', 0.9) },
             }}

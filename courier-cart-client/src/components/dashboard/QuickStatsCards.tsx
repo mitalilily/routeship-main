@@ -24,7 +24,7 @@ interface QuickStatsCardsProps {
   formatCurrency: (amount: number) => string
 }
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#0B3DBB'
 
 export default function QuickStatsCards({
   todayOps,
@@ -68,21 +68,19 @@ export default function QuickStatsCards({
           <Card
             onClick={stat.onClick}
             sx={{
-              borderRadius: 4,
-              border: `1px solid ${alpha('#111113', 0.08)}`,
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(247,242,239,0.98) 100%)',
-              boxShadow: '0 18px 34px rgba(17, 17, 19, 0.06)',
+              borderRadius: 0,
+              border: `1px solid ${alpha('#07132D', 0.1)}`,
+              background: '#FFFFFF',
+              boxShadow: '0 6px 18px rgba(17, 17, 19, 0.05)',
               cursor: 'pointer',
               transition: 'all .2s ease',
               '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: `0 22px 38px ${alpha(BRAND_PRIMARY, 0.12)}`,
+                boxShadow: `0 8px 22px ${alpha(BRAND_PRIMARY, 0.1)}`,
                 borderColor: alpha(stat.color, 0.35),
               },
             }}
           >
-            <CardContent sx={{ p: 2 }}>
+            <CardContent sx={{ p: 1.6 }}>
               <Stack spacing={1}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography sx={{ fontSize: '11px', fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: alpha('#1B1B1F', 0.7) }}>
@@ -92,7 +90,7 @@ export default function QuickStatsCards({
                     sx={{
                       width: 32,
                       height: 32,
-                      borderRadius: 1.6,
+                      borderRadius: 0,
                       display: 'grid',
                       placeItems: 'center',
                       color: stat.color,

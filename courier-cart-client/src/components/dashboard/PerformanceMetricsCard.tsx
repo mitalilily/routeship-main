@@ -20,20 +20,20 @@ export default function PerformanceMetricsCard({
     <Card
       sx={{
         height: '100%',
-        borderRadius: '16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        borderRadius: 0,
+        boxShadow: '0 6px 18px rgba(17,17,19,0.05)',
+        border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
         background: theme.palette.mode === 'dark'
           ? `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.05)} 0%, transparent 100%)`
           : 'white',
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2.2 }}>
         <Stack direction="row" spacing={1.5} alignItems="center" mb={2.5}>
           <Box
             sx={{
               bgcolor: alpha(theme.palette.info.main, 0.1),
-              borderRadius: '10px',
+              borderRadius: 0,
               p: 1,
               display: 'flex',
               alignItems: 'center',
@@ -64,7 +64,7 @@ export default function PerformanceMetricsCard({
             <LinearProgress
               variant="determinate"
               value={operational.deliverySuccessRate || 0}
-              sx={{ height: 8, borderRadius: 4 }}
+              sx={{ height: 6, borderRadius: 0 }}
               color="success"
             />
           </Box>
@@ -80,7 +80,7 @@ export default function PerformanceMetricsCard({
             <LinearProgress
               variant="determinate"
               value={operational.ndrRate || 0}
-              sx={{ height: 8, borderRadius: 4 }}
+              sx={{ height: 6, borderRadius: 0 }}
               color="error"
             />
           </Box>
@@ -96,7 +96,7 @@ export default function PerformanceMetricsCard({
             <LinearProgress
               variant="determinate"
               value={operational.rtoRate || 0}
-              sx={{ height: 8, borderRadius: 4 }}
+              sx={{ height: 6, borderRadius: 0 }}
               color="warning"
             />
           </Box>

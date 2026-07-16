@@ -67,10 +67,10 @@ const ICON_SIZE_BI = 20 // Bootstrap Icons
 const ICON_SIZE_CG = 20 // css.gg
 const ICON_SIZE_HI = 20 // Heroicons
 const ICON_SIZE_RI = 18 // Remix Icon
-const BRAND_ORANGE = '#E85500'
+const BRAND_BLUE = '#0B3DBB'
 const BRAND_SURFACE = '#FFFFFF'
-const BRAND_INK = '#16062F'
-const BRAND_BORDER = '#E9E1F2'
+const BRAND_INK = '#07132D'
+const BRAND_BORDER = '#EEE8E4'
 const LOGO_SRC = '/brand/routeship-mark.png'
 
 const navItems: NavItem[] = [
@@ -308,8 +308,8 @@ export default function Sidebar({
         flexDirection: 'column',
         background: BRAND_SURFACE,
         color: BRAND_INK,
-        borderRight: `2px solid ${BRAND_BORDER}`,
-        boxShadow: '2px 0 8px rgba(0, 0, 0, 0.06)',
+        borderRight: `1px solid ${BRAND_BORDER}`,
+        boxShadow: '2px 0 8px rgba(17, 17, 19, 0.04)',
         zIndex: 1200,
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -406,9 +406,9 @@ export default function Sidebar({
                     mb: 0.5,
                     borderRadius: 1.5,
                     justifyContent: shouldShowExpanded ? 'flex-start' : 'center',
-                    background: isActive_ ? alpha(BRAND_ORANGE, 0.1) : 'transparent',
-                    border: `1px solid ${isActive_ ? alpha(BRAND_ORANGE, 0.3) : alpha(BRAND_INK, 0.08)}`,
-                    color: isActive_ ? BRAND_ORANGE : '#999999',
+                    background: isActive_ ? alpha(BRAND_BLUE, 0.08) : 'transparent',
+                    border: `1px solid ${isActive_ ? alpha(BRAND_BLUE, 0.26) : alpha(BRAND_INK, 0.08)}`,
+                    color: isActive_ ? BRAND_BLUE : '#7D716A',
                     transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative',
                     overflow: 'hidden',
@@ -417,15 +417,15 @@ export default function Sidebar({
                       position: 'absolute',
                       inset: 0,
                       background: isActive_
-                        ? `linear-gradient(135deg, ${alpha(BRAND_ORANGE, 0.05)} 0%, transparent 100%)`
+                        ? `linear-gradient(135deg, ${alpha(BRAND_BLUE, 0.04)} 0%, transparent 100%)`
                         : 'transparent',
                       opacity: 0,
                       transition: 'opacity 200ms ease',
                     },
                     '&:hover': {
-                      background: isActive_ ? alpha(BRAND_ORANGE, 0.15) : alpha(BRAND_INK, 0.04),
-                      borderColor: isActive_ ? alpha(BRAND_ORANGE, 0.4) : alpha(BRAND_INK, 0.15),
-                      color: isActive_ ? BRAND_ORANGE : '#666666',
+                      background: isActive_ ? alpha(BRAND_BLUE, 0.12) : alpha(BRAND_INK, 0.04),
+                      borderColor: isActive_ ? alpha(BRAND_BLUE, 0.34) : alpha(BRAND_INK, 0.15),
+                      color: isActive_ ? BRAND_BLUE : '#615853',
                       transform: 'translateY(-1px)',
                       boxShadow: `0 4px 12px ${alpha(BRAND_INK, 0.08)}`,
                       '&::before': {
@@ -476,19 +476,19 @@ export default function Sidebar({
                             px: 1.5,
                             mb: 0.25,
                             borderRadius: 1,
-                            color: childIsActive ? BRAND_ORANGE : '#999999',
-                            background: childIsActive ? alpha(BRAND_ORANGE, 0.08) : 'transparent',
-                            border: `1px solid ${childIsActive ? alpha(BRAND_ORANGE, 0.2) : alpha(BRAND_INK, 0.08)}`,
+                            color: childIsActive ? BRAND_BLUE : '#7D716A',
+                            background: childIsActive ? alpha(BRAND_BLUE, 0.08) : 'transparent',
+                            border: `1px solid ${childIsActive ? alpha(BRAND_BLUE, 0.22) : alpha(BRAND_INK, 0.08)}`,
                             fontSize: '0.85rem',
                             fontWeight: childIsActive ? 600 : 500,
                             '&:hover': {
                               background: childIsActive
-                                ? alpha(BRAND_ORANGE, 0.12)
+                                ? alpha(BRAND_BLUE, 0.12)
                                 : alpha(BRAND_INK, 0.04),
                               borderColor: childIsActive
-                                ? alpha(BRAND_ORANGE, 0.3)
+                                ? alpha(BRAND_BLUE, 0.3)
                                 : alpha(BRAND_INK, 0.12),
-                              color: childIsActive ? BRAND_ORANGE : '#666666',
+                              color: childIsActive ? BRAND_BLUE : '#615853',
                             },
                           }}
                         >
@@ -558,8 +558,8 @@ export default function Sidebar({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1.5,
-                      background: active ? alpha(BRAND_ORANGE, 0.08) : 'transparent',
-                      color: active ? BRAND_ORANGE : BRAND_INK,
+                      background: active ? alpha(BRAND_BLUE, 0.08) : 'transparent',
+                      color: active ? BRAND_BLUE : BRAND_INK,
                       transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                       borderRadius: 1,
                       position: 'relative',
@@ -572,12 +572,12 @@ export default function Sidebar({
                         transform: 'translateY(-50%)',
                         width: active ? '3px' : '0px',
                         height: active ? '60%' : '0%',
-                        background: BRAND_ORANGE,
+                        background: BRAND_BLUE,
                         borderRadius: '0 2px 2px 0',
                         transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                       },
                       '&:hover': {
-                        background: active ? alpha(BRAND_ORANGE, 0.15) : alpha(BRAND_INK, 0.06),
+                        background: active ? alpha(BRAND_BLUE, 0.15) : alpha(BRAND_INK, 0.06),
                         transform: 'translateX(4px)',
                         '&::before': {
                           height: '70%',

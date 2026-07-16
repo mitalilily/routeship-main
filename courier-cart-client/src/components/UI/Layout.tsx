@@ -34,7 +34,7 @@ export default function Layout() {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #EEEBE8 0%, #E7E0DB 100%)',
+        background: '#F7F4F2',
         scrollbarGutter: 'stable',
       }}
     >
@@ -92,7 +92,7 @@ export default function Layout() {
             minHeight: 0,
             overflowY: 'auto',
             p: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            backgroundColor: '#FFFDF8',
           }}
         >
           <Box
@@ -128,7 +128,7 @@ export default function Layout() {
               width: '100%',
               px: { xs: 0.6, md: 0.2 },
               pt: 0.4,
-              borderTop: '1px solid rgba(17, 17, 19, 0.08)',
+              borderTop: '1px solid #EEE8E4',
             }}
           >
             <Box

@@ -167,8 +167,8 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          borderRadius: 0,
+          boxShadow: '0 10px 28px rgba(17,17,19,0.12)',
         },
       }}
     >
@@ -178,7 +178,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
             <Box
               sx={{
                 bgcolor: alpha(theme.palette.primary.main, 0.1),
-                borderRadius: '10px',
+                borderRadius: 0,
                 p: 1,
                 display: 'flex',
                 alignItems: 'center',
@@ -225,7 +225,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
                   key={widgetId}
                   sx={{
                     p: 2,
-                    borderRadius: '12px',
+                    borderRadius: 0,
                     border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
                     bgcolor: alpha(theme.palette.background.paper, 0.5),
                     transition: 'all 0.2s',
@@ -274,7 +274,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
                   key={widgetId}
                   sx={{
                     p: 2,
-                    borderRadius: '12px',
+                    borderRadius: 0,
                     border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
                     bgcolor: alpha(theme.palette.background.paper, 0.5),
                     transition: 'all 0.2s',
@@ -288,7 +288,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
                       <Box
                         sx={{
                           bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           px: 1,
                           py: 0.5,
                           minWidth: 32,
@@ -387,11 +387,11 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
                     },
                     '& .MuiSlider-track': {
                       height: 6,
-                      borderRadius: 3,
+                      borderRadius: 0,
                     },
                     '& .MuiSlider-rail': {
                       height: 6,
-                      borderRadius: 3,
+                      borderRadius: 0,
                       opacity: 0.3,
                     },
                     '& .MuiSlider-mark': {

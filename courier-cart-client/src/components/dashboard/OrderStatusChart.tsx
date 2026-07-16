@@ -150,25 +150,24 @@ export default function OrderStatusChart({ chartData, ChartComponent }: OrderSta
     <Card
       sx={{
         height: '100%',
-        borderRadius: '16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        borderRadius: 0,
+        boxShadow: '0 6px 18px rgba(17,17,19,0.05)',
+        border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
         background: theme.palette.mode === 'dark'
           ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, transparent 100%)`
           : 'white',
         transition: 'all 0.3s',
         '&:hover': {
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 22px rgba(17,17,19,0.08)',
         },
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2.2 }}>
         <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
           <Box
             sx={{
               bgcolor: alpha(theme.palette.primary.main, 0.1),
-              borderRadius: '10px',
+              borderRadius: 0,
               p: 1,
               display: 'flex',
               alignItems: 'center',

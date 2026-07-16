@@ -1,18 +1,18 @@
 import { alpha, createTheme } from '@mui/material/styles'
 
+const BRAND_BLUE = '#0B3DBB'
+const BRAND_BLUE_DARK = '#09339E'
+const BRAND_BLUE_LIGHT = '#4975E8'
 const BRAND_ORANGE = '#E85500'
 const BRAND_ORANGE_DARK = '#C23E00'
-const BRAND_ORANGE_LIGHT = '#FF8C3C'
-const BRAND_GREEN = '#4B1196'
-const BRAND_GREEN_DARK = '#2B0A55'
-const BRAND_GREEN_LIGHT = '#8D55DC'
-const BRAND_INK = '#16062F'
-const BRAND_SLATE = '#40364E'
-const BRAND_MUTED = '#746A80'
-const BRAND_CANVAS = '#F8F6FB'
+const BRAND_ORANGE_LIGHT = '#FF7A1A'
+const BRAND_INK = '#07132D'
+const BRAND_SLATE = '#34343B'
+const BRAND_MUTED = '#65708A'
+const BRAND_CANVAS = '#F7F4F2'
 const BRAND_SURFACE = '#FFFFFF'
-const BRAND_SURFACE_ALT = '#FCFAFE'
-const BRAND_BORDER = '#E9E1F2'
+const BRAND_SURFACE_ALT = '#FFFDF8'
+const BRAND_BORDER = '#EEE8E4'
 
 const theme = createTheme({
   breakpoints: {
@@ -27,15 +27,15 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: BRAND_ORANGE,
-      light: BRAND_ORANGE_LIGHT,
-      dark: BRAND_ORANGE_DARK,
+      main: BRAND_BLUE,
+      light: BRAND_BLUE_LIGHT,
+      dark: BRAND_BLUE_DARK,
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: BRAND_GREEN,
-      light: BRAND_GREEN_LIGHT,
-      dark: BRAND_GREEN_DARK,
+      main: BRAND_ORANGE,
+      light: BRAND_ORANGE_LIGHT,
+      dark: BRAND_ORANGE_DARK,
       contrastText: '#FFFFFF',
     },
     background: {
@@ -52,17 +52,17 @@ const theme = createTheme({
       main: '#C62828',
     },
     warning: {
-      main: '#C97A12',
+      main: '#D97706',
     },
     info: {
-      main: '#2563EB',
+      main: BRAND_BLUE_LIGHT,
     },
     success: {
-      main: BRAND_GREEN,
+      main: '#16A34A',
     },
   },
   shape: {
-    borderRadius: 6,
+    borderRadius: 4,
   },
   typography: {
     fontFamily: '"Manrope", "Segoe UI", sans-serif',
@@ -86,7 +86,7 @@ const theme = createTheme({
         },
         body: {
           color: BRAND_INK,
-          background: `linear-gradient(180deg, ${BRAND_CANVAS} 0%, #F1ECF7 100%)`,
+          background: BRAND_CANVAS,
         },
         '#root': {
           minHeight: '100vh',
@@ -99,7 +99,7 @@ const theme = createTheme({
           backgroundImage: 'none',
         },
         rounded: {
-          borderRadius: 8,
+          borderRadius: 4,
         },
       },
     },
@@ -108,10 +108,10 @@ const theme = createTheme({
         root: {
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 8,
+          borderRadius: 4,
           backgroundColor: alpha(BRAND_SURFACE, 0.98),
           border: `1px solid ${BRAND_BORDER}`,
-          boxShadow: '0 22px 60px rgba(20, 20, 20, 0.08)',
+          boxShadow: '0 8px 22px rgba(17, 17, 19, 0.06)',
         },
       },
     },
@@ -138,19 +138,19 @@ const theme = createTheme({
           },
         },
         containedPrimary: {
-          background: `linear-gradient(135deg, ${BRAND_ORANGE} 0%, ${BRAND_ORANGE_DARK} 100%)`,
+          background: BRAND_BLUE,
           color: '#FFFFFF',
           '&:hover': {
-            background: `linear-gradient(135deg, ${BRAND_ORANGE_DARK} 0%, #9A3000 100%)`,
-            boxShadow: `0 16px 32px ${alpha(BRAND_ORANGE, 0.32)}`,
+            background: BRAND_BLUE_DARK,
+            boxShadow: `0 10px 20px ${alpha(BRAND_BLUE, 0.22)}`,
           },
         },
         containedSecondary: {
-          background: `linear-gradient(135deg, ${BRAND_GREEN} 0%, ${BRAND_GREEN_DARK} 100%)`,
+          background: BRAND_ORANGE,
           color: '#FFFFFF',
           '&:hover': {
-            background: `linear-gradient(135deg, ${BRAND_GREEN_DARK} 0%, #105000 100%)`,
-            boxShadow: `0 16px 30px ${alpha(BRAND_GREEN, 0.28)}`,
+            background: BRAND_ORANGE_DARK,
+            boxShadow: `0 10px 20px ${alpha(BRAND_ORANGE, 0.22)}`,
           },
         },
         outlined: {
@@ -160,14 +160,14 @@ const theme = createTheme({
           backgroundColor: alpha(BRAND_SURFACE, 0.86),
           '&:hover': {
             borderWidth: 1,
-            borderColor: alpha(BRAND_ORANGE, 0.28),
-            backgroundColor: alpha(BRAND_ORANGE, 0.04),
+            borderColor: alpha(BRAND_BLUE, 0.28),
+            backgroundColor: alpha(BRAND_BLUE, 0.04),
           },
         },
         text: {
-          color: BRAND_ORANGE_DARK,
+          color: BRAND_BLUE_DARK,
           '&:hover': {
-            backgroundColor: alpha(BRAND_ORANGE, 0.06),
+            backgroundColor: alpha(BRAND_BLUE, 0.06),
           },
         },
       },
@@ -175,7 +175,7 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 4,
           fontWeight: 800,
           letterSpacing: '0.03em',
         },
@@ -189,21 +189,21 @@ const theme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 4,
           backgroundColor: alpha(BRAND_SURFACE_ALT, 0.96),
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
           '& fieldset': {
             borderColor: alpha(BRAND_INK, 0.1),
           },
           '&:hover fieldset': {
-            borderColor: alpha(BRAND_ORANGE, 0.26),
+            borderColor: alpha(BRAND_BLUE, 0.26),
           },
           '&.Mui-focused': {
             backgroundColor: BRAND_SURFACE,
-            boxShadow: `0 0 0 4px ${alpha(BRAND_ORANGE, 0.08)}`,
+            boxShadow: `0 0 0 3px ${alpha(BRAND_BLUE, 0.1)}`,
           },
           '&.Mui-focused fieldset': {
-            borderColor: BRAND_ORANGE,
+            borderColor: BRAND_BLUE,
           },
         },
         input: {
@@ -218,7 +218,7 @@ const theme = createTheme({
           color: BRAND_MUTED,
           fontWeight: 600,
           '&.Mui-focused': {
-            color: BRAND_ORANGE,
+            color: BRAND_BLUE,
           },
         },
       },
@@ -226,7 +226,7 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: alpha(BRAND_SURFACE, 0.92),
+          backgroundColor: alpha(BRAND_SURFACE, 0.96),
           color: BRAND_INK,
           border: `1px solid ${alpha(BRAND_INK, 0.06)}`,
           backdropFilter: 'blur(16px)',
@@ -251,14 +251,14 @@ const theme = createTheme({
     MuiTableContainer: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 4,
         },
       },
     },
     MuiTableHead: {
       styleOverrides: {
         root: {
-          backgroundColor: BRAND_SURFACE_ALT,
+          backgroundColor: '#F7F4F2',
         },
       },
     },
@@ -268,8 +268,8 @@ const theme = createTheme({
           color: BRAND_INK,
           fontWeight: 800,
           fontSize: '0.78rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
+          textTransform: 'none',
+          letterSpacing: 0,
           borderBottom: `1px solid ${alpha(BRAND_INK, 0.08)}`,
         },
         body: {
@@ -282,7 +282,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&:hover': {
-            backgroundColor: alpha(BRAND_ORANGE, 0.025),
+            backgroundColor: alpha(BRAND_BLUE, 0.035),
           },
         },
       },
@@ -298,8 +298,8 @@ const theme = createTheme({
       styleOverrides: {
         indicator: {
           height: 3,
-          borderRadius: 2,
-          background: `linear-gradient(90deg, ${BRAND_ORANGE} 0%, ${BRAND_ORANGE_LIGHT} 100%)`,
+          borderRadius: 0,
+          background: BRAND_BLUE,
         },
       },
     },
@@ -311,7 +311,7 @@ const theme = createTheme({
           fontWeight: 800,
           color: BRAND_MUTED,
           '&.Mui-selected': {
-            color: BRAND_ORANGE_DARK,
+            color: BRAND_BLUE_DARK,
           },
         },
       },
@@ -319,7 +319,7 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 8,
+          borderRadius: 4,
           border: `1px solid ${alpha(BRAND_INK, 0.08)}`,
           boxShadow: '0 28px 70px rgba(20, 20, 20, 0.14)',
         },
@@ -328,7 +328,7 @@ const theme = createTheme({
     MuiPopover: {
       styleOverrides: {
         paper: {
-          borderRadius: 8,
+          borderRadius: 4,
           border: `1px solid ${alpha(BRAND_INK, 0.08)}`,
           boxShadow: '0 24px 50px rgba(20, 20, 20, 0.12)',
         },
@@ -337,7 +337,7 @@ const theme = createTheme({
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 4,
         },
       },
     },

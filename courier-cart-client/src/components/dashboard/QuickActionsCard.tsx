@@ -10,7 +10,7 @@ import {
 import { TbTruckDelivery } from 'react-icons/tb'
 import { useNavigate } from 'react-router-dom'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#0B3DBB'
 export default function QuickActionsCard() {
   const navigate = useNavigate()
 
@@ -27,10 +27,10 @@ export default function QuickActionsCard() {
     <Card
       sx={{
         height: '100%',
-        borderRadius: 4,
+        borderRadius: 0,
         border: `1px solid ${alpha('#111113', 0.08)}`,
         background: 'linear-gradient(180deg, rgba(19,19,21,0.98) 0%, rgba(30,30,33,0.98) 100%)',
-        boxShadow: '0 20px 36px rgba(17, 17, 19, 0.14)',
+        boxShadow: '0 10px 24px rgba(17, 17, 19, 0.12)',
       }}
     >
       <CardContent sx={{ p: 2.2 }}>
@@ -39,7 +39,7 @@ export default function QuickActionsCard() {
             sx={{
               width: 34,
               height: 34,
-              borderRadius: 1.8,
+              borderRadius: 0,
               display: 'grid',
               placeItems: 'center',
               bgcolor: alpha('#fff', 0.08),
@@ -64,7 +64,7 @@ export default function QuickActionsCard() {
                   onClick={() => navigate(action.path)}
                   sx={{
                     p: 0.95,
-                    borderRadius: 3,
+                    borderRadius: 0,
                     border: `1px solid ${alpha('#fff', 0.08)}`,
                     bgcolor: alpha('#fff', 0.04),
                     cursor: 'pointer',
@@ -72,7 +72,6 @@ export default function QuickActionsCard() {
                     '&:hover': {
                       bgcolor: alpha('#fff', 0.08),
                       borderColor: alpha(BRAND_PRIMARY, 0.42),
-                      transform: 'translateY(-1px)',
                     },
                   }}
                 >
@@ -81,7 +80,7 @@ export default function QuickActionsCard() {
                       sx={{
                         width: 28,
                         height: 28,
-                        borderRadius: 1.4,
+                        borderRadius: 0,
                       display: 'grid',
                       placeItems: 'center',
                         color: '#fff',
