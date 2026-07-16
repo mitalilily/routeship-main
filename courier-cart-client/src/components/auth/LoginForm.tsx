@@ -1,14 +1,8 @@
 import { Box, Link, Stack, Typography } from '@mui/material'
-import { FiArrowUpRight, FiCheckCircle } from 'react-icons/fi'
+import { FiArrowUpRight } from 'react-icons/fi'
 import PhoneForm from './PhoneForm'
 
 const LANDING_PAGE_URL = 'https://reliable-dusk-717444.netlify.app/'
-
-const highlights = [
-  'Compare courier options in one workspace',
-  'Book, track, and resolve shipment exceptions',
-  'Keep billing and COD movement visible',
-]
 
 export default function LoginForm() {
   return (
@@ -16,98 +10,102 @@ export default function LoginForm() {
       sx={{
         minHeight: '100vh',
         width: '100%',
+        maxWidth: '100vw',
+        overflow: 'hidden',
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', lg: 'minmax(360px, 0.9fr) minmax(520px, 1.1fr)' },
-        backgroundColor: '#FCFAFE',
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '55% 45%' },
+        backgroundColor: '#FFFAF2',
       }}
     >
       <Box
         component="section"
         sx={{
-          minHeight: { xs: 230, lg: '100vh' },
-          display: 'flex',
+          minHeight: '100vh',
+          display: { xs: 'none', lg: 'flex' },
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          p: { xs: 3, sm: 5, lg: 7 },
-          color: '#FFFFFF',
-          background:
-            'linear-gradient(150deg, #16062F 0%, #2B0A55 58%, #4B1196 100%)',
+          p: { lg: 6, xl: 8 },
+          color: '#07132D',
+          backgroundColor: '#FFFAF2',
           position: 'relative',
           overflow: 'hidden',
+          borderRight: '1px solid #EEE5D8',
         }}
       >
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            opacity: 0.12,
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.28) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-            pointerEvents: 'none',
+            backgroundImage: "url('/brand/routeship-network-auth.png')",
+            backgroundPosition: 'center center',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
           }}
         />
 
-        <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+        <Stack
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            flex: 1,
+            justifyContent: 'space-between',
+          }}
+        >
           <Box
             component="img"
             src="/brand/routeship-logo.png"
             alt="RouteShip"
-            sx={{ width: { xs: 172, sm: 210 }, height: 'auto', objectFit: 'contain' }}
+            sx={{ width: { lg: 240, xl: 280 }, height: 'auto', objectFit: 'contain' }}
           />
-          <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>
-            Merchant shipping workspace
-          </Typography>
-        </Stack>
 
-        <Box
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            display: { xs: 'none', lg: 'block' },
-            maxWidth: 520,
-          }}
-        >
-          <Typography
-            component="h1"
-            sx={{ fontSize: 'clamp(2.4rem, 4.8vw, 4.8rem)', lineHeight: 1.02, fontWeight: 800 }}
+          <Box sx={{ maxWidth: 520, mb: { lg: 12, xl: 16 } }}>
+            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
+              <Box sx={{ width: 36, height: 2, backgroundColor: '#FF4B0A' }} />
+              <Typography
+                sx={{
+                  color: '#0B3DBB',
+                  fontSize: '0.75rem',
+                  fontWeight: 900,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Merchant Workspace
+              </Typography>
+            </Stack>
+            <Typography
+              component="h1"
+              sx={{
+                color: '#07132D',
+                fontSize: { lg: '3.4rem', xl: '4.6rem' },
+                lineHeight: 1.04,
+                fontWeight: 850,
+                letterSpacing: 0,
+              }}
+            >
+              Every shipment.
+              <Box component="span" sx={{ display: 'block', color: '#FF4B0A' }}>
+                In clear view.
+              </Box>
+            </Typography>
+          </Box>
+
+          <Link
+            href={LANDING_PAGE_URL}
+            target="_blank"
+            rel="noreferrer"
+            underline="none"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              color: '#07132D',
+              fontWeight: 850,
+              width: 'fit-content',
+            }}
           >
-            Shipping, without the guesswork.
-          </Typography>
-          <Typography sx={{ mt: 2.5, maxWidth: 460, color: 'rgba(255,255,255,0.74)', lineHeight: 1.75 }}>
-            One focused command center for orders, courier choices, delivery updates, and daily
-            exceptions.
-          </Typography>
-          <Stack spacing={1.6} sx={{ mt: 4 }}>
-            {highlights.map((item) => (
-              <Stack key={item} direction="row" spacing={1.5} alignItems="center">
-                <FiCheckCircle size={18} color="#FF7A1A" />
-                <Typography sx={{ color: 'rgba(255,255,255,0.88)', fontWeight: 650 }}>
-                  {item}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-        </Box>
-
-        <Link
-          href={LANDING_PAGE_URL}
-          target="_blank"
-          rel="noreferrer"
-          underline="none"
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            display: { xs: 'none', lg: 'inline-flex' },
-            alignItems: 'center',
-            gap: 1,
-            color: '#FFFFFF',
-            fontWeight: 800,
-            width: 'fit-content',
-          }}
-        >
-          Visit RouteShip <FiArrowUpRight size={17} />
-        </Link>
+            Visit RouteShip <FiArrowUpRight size={17} />
+          </Link>
+        </Stack>
       </Box>
 
       <Box
@@ -116,33 +114,56 @@ export default function LoginForm() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          px: { xs: 2.5, sm: 5, xl: 9 },
+          minWidth: 0,
+          minHeight: '100vh',
+          px: { xs: 3, sm: 6, lg: 7, xl: 8 },
           py: { xs: 4, sm: 6 },
-          minHeight: { lg: '100vh' },
+          backgroundColor: '#FFFDF8',
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 520 }}>
+        <Box sx={{ width: '100%', maxWidth: 430, minWidth: 0 }}>
+          <Box
+            component="img"
+            src="/brand/routeship-logo.png"
+            alt="RouteShip"
+            sx={{
+              display: { xs: 'block', lg: 'none' },
+              width: { xs: 210, sm: 230 },
+              height: 'auto',
+              objectFit: 'contain',
+              mb: 5,
+            }}
+          />
           <Typography
             sx={{
-              color: '#E85500',
+              color: '#0B3DBB',
               fontSize: '0.76rem',
               fontWeight: 900,
               textTransform: 'uppercase',
+              letterSpacing: '0.14em',
               mb: 1.2,
             }}
           >
-            Secure merchant access
+            Merchant Console
           </Typography>
-          <Typography component="h2" sx={{ color: '#16062F', fontSize: { xs: '2rem', sm: '2.5rem' }, fontWeight: 800 }}>
+          <Typography
+            component="h2"
+            sx={{
+              color: '#07132D',
+              fontSize: { xs: '2rem', sm: '2.5rem' },
+              fontWeight: 850,
+              letterSpacing: 0,
+            }}
+          >
             Welcome back
           </Typography>
-          <Typography sx={{ color: '#746A80', lineHeight: 1.7, mt: 1, mb: 4 }}>
-            Sign in to manage shipments across India.
+          <Typography sx={{ color: '#65708A', lineHeight: 1.7, mt: 1.2, mb: 4, fontSize: '0.95rem' }}>
+            Sign in to book, track, reconcile, and manage your RouteShip workspace.
           </Typography>
 
           <PhoneForm />
 
-          <Typography sx={{ color: '#8A8194', fontSize: '0.78rem', textAlign: 'center', mt: 3 }}>
+          <Typography sx={{ color: '#65708A', fontSize: '0.78rem', textAlign: 'center', mt: 3 }}>
             Protected merchant access for your RouteShip workspace
           </Typography>
         </Box>

@@ -12,13 +12,18 @@ import { toast } from '../UI/Toast'
 import EmailVerificationForm from './EmailVerificationForm'
 
 const BRAND_ORANGE = '#E85500'
+const BRAND_BLUE = '#0B3DBB'
 
 const primaryButtonStyles = {
   width: '100%',
-  borderRadius: 4,
-  background: `linear-gradient(135deg, ${BRAND_ORANGE} 0%, #C23E00 100%)`,
+  borderRadius: 1.5,
+  background: BRAND_BLUE,
   boxShadow: 'none',
   minHeight: 52,
+  '&:hover': {
+    background: '#09339E',
+    transform: 'translateY(-1px)',
+  },
 }
 
 interface IPasswordFormProps {
@@ -137,8 +142,9 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
       <Box
         sx={{
           p: 1.5,
-          border: '1px solid rgba(17,17,19,0.08)',
-          backgroundColor: '#faf7f4',
+          border: '1px solid #E7D8C5',
+          borderRadius: 1.5,
+          backgroundColor: '#FFF7EC',
         }}
       >
         <Typography
@@ -165,7 +171,8 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
       <Box
         sx={{
           p: 1.35,
-          border: '1px solid rgba(17,17,19,0.08)',
+          border: '1px solid #E7D8C5',
+          borderRadius: 1.5,
           background: '#fff',
         }}
       >

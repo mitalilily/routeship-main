@@ -20,22 +20,27 @@ import OtpForm from './OtpForm'
 import PasswordLoginForm from './PasswordLoginForm'
 
 const BRAND_ORANGE = '#E85500'
+const BRAND_BLUE = '#0B3DBB'
 const BRAND_DARK = '#141414'
 
 const primaryButtonStyles = {
   width: '100%',
-  borderRadius: 4,
-  background: `linear-gradient(135deg, ${BRAND_ORANGE} 0%, #C23E00 100%)`,
+  borderRadius: 1.5,
+  background: BRAND_BLUE,
   boxShadow: 'none',
   minHeight: 52,
+  '&:hover': {
+    background: '#09339E',
+    transform: 'translateY(-1px)',
+  },
 }
 
 const secondaryButtonStyles = {
   width: '100%',
-  border: '1px solid rgba(20, 20, 20, 0.1)',
+  border: '1px solid #E7D8C5',
   backgroundColor: '#ffffff',
   color: BRAND_DARK,
-  borderRadius: 4,
+  borderRadius: 1.5,
   minHeight: 48,
 }
 
@@ -143,7 +148,7 @@ export default function PhoneForm() {
             </Typography>
 
             <Typography sx={{ color: '#6E6763', fontSize: '0.88rem', lineHeight: 1.6 }}>
-              We’ll send a one-time code to your registered work email for secure access.
+              We'll send a one-time code to your registered work email for secure access.
             </Typography>
           </Box>
 
@@ -218,16 +223,18 @@ export default function PhoneForm() {
 
       <Box
         sx={{
-          border: '1px solid rgba(17,17,19,0.08)',
+          border: '1px solid #E7D8C5',
           background: '#fff',
+          borderRadius: 1.5,
+          overflow: 'hidden',
         }}
       >
         <Box
           sx={{
             px: 1.2,
             py: 1.2,
-            borderBottom: '1px solid rgba(17,17,19,0.08)',
-            background: '#f7f1ed',
+            borderBottom: '1px solid #E7D8C5',
+            background: '#FFF7EC',
           }}
         >
           <ToggleButtonGroup
@@ -250,12 +257,13 @@ export default function PhoneForm() {
                 color: '#6f6a67',
                 px: 1.4,
                 py: 1.15,
+                borderRadius: '6px !important',
                 justifyContent: 'center',
                 backgroundColor: '#fffaf7',
                 '&.Mui-selected': {
-                  color: BRAND_DARK,
+                  color: '#07132D',
                   backgroundColor: '#ffffff',
-                  boxShadow: 'inset 0 0 0 1px rgba(75,17,150,0.18)',
+                  boxShadow: `inset 0 0 0 1px ${BRAND_BLUE}`,
                 },
               },
             }}
