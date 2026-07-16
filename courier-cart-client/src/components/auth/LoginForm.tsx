@@ -69,7 +69,7 @@ export default function LoginForm() {
                   textTransform: 'uppercase',
                 }}
               >
-                Merchant Workspace
+                Console Login
               </Typography>
             </Stack>
             <Typography
@@ -144,7 +144,7 @@ export default function LoginForm() {
               mb: 1.2,
             }}
           >
-            Merchant Console
+            Console Login
           </Typography>
           <Typography
             component="h2"
@@ -158,13 +158,13 @@ export default function LoginForm() {
             Welcome back
           </Typography>
           <Typography sx={{ color: '#65708A', lineHeight: 1.7, mt: 1.2, mb: 4, fontSize: '0.95rem' }}>
-            Sign in to book, track, reconcile, and manage your RouteShip workspace.
+            Sign in to book, track, reconcile, and manage your RouteShip console.
           </Typography>
 
           <PhoneForm />
 
           <Typography sx={{ color: '#65708A', fontSize: '0.78rem', textAlign: 'center', mt: 3 }}>
-            Protected merchant access for your RouteShip workspace
+            Protected access for your RouteShip console
           </Typography>
         </Box>
       </Box>

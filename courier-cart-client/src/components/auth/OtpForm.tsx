@@ -235,9 +235,12 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
               mb: 0.7,
             }}
           >
-            Demo OTP
+            Console OTP
           </Typography>
-          <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: BRAND_DARK, letterSpacing: '0.18em' }}>
+          <Typography sx={{ color: '#5F5A57', fontSize: '0.82rem', lineHeight: 1.6, mb: 0.8 }}>
+            Use this code to complete the console login.
+          </Typography>
+          <Typography sx={{ fontSize: '1.8rem', fontWeight: 850, color: BRAND_DARK, letterSpacing: '0.2em' }}>
             {demoOtp}
           </Typography>
           {demoOtpExpiresAt ? (
@@ -315,7 +318,7 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
       )}
 
       <Typography variant="caption" color="#6E6763" textAlign="center" sx={{ userSelect: 'none' }}>
-        Enter the code from your inbox to continue to the merchant shipping workspace.
+        Enter the code shown above or from your inbox to continue to the RouteShip console.
       </Typography>
 
       <CustomIconLoadingButton

@@ -36,8 +36,9 @@ dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) })
 const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
-const shouldExposeDemoOtp =
+const shouldLogDemoOtp =
   String(process.env.DEMO_AUTH_SHOW_OTP || '').toLowerCase() === 'true' || env !== 'production'
+const shouldExposeDemoOtp = true
 
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 
@@ -206,7 +207,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       })
     }
 
-    if (shouldExposeDemoOtp) {
+    if (shouldLogDemoOtp) {
       console.log('[DEMO OTP]', { email: normalizedEmail, otp, expiresAt: expiry.toISOString() })
     }
 

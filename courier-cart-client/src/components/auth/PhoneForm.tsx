@@ -313,7 +313,7 @@ export default function PhoneForm() {
               },
             }}
           >
-            <ToggleButton value="phone">Email OTP</ToggleButton>
+            <ToggleButton value="phone">Console OTP</ToggleButton>
             <ToggleButton value="password">Email + Password</ToggleButton>
           </ToggleButtonGroup>
         </Box>
