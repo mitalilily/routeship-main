@@ -16,6 +16,7 @@ import { BiInfoCircle, BiListPlus } from 'react-icons/bi'
 import { CgTrack } from 'react-icons/cg'
 import { FaBalanceScaleLeft, FaBox } from 'react-icons/fa'
 import { FaClipboardList as FaFileAlt, FaMoneyBill, FaToolbox, FaUser } from 'react-icons/fa6'
+import { FiGlobe } from 'react-icons/fi'
 import { HiDocumentReport } from 'react-icons/hi'
 import {
   MdDashboard,
@@ -108,6 +109,11 @@ const navItems: NavItem[] = [
         text: 'B2B Orders',
         path: '/orders/b2b/list',
         icon: <MdOutlineAddBusiness size={ICON_SIZE_MD} />,
+      },
+      {
+        text: 'International Orders',
+        path: '/orders/international/list',
+        icon: <FiGlobe size={ICON_SIZE_MD} />,
       },
       {
         text: 'Create Order',

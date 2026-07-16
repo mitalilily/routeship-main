@@ -15,7 +15,8 @@ export default function Layout() {
   const { user } = useAuth()
   const isAdminWorkspace =
     user.role === 'admin' || user.role === 'employee' || Boolean(user.employeeId)
-  const isOrderCreatePage = location.pathname === '/orders/create'
+  const isOrderCreatePage =
+    location.pathname === '/orders/create' || location.pathname === '/orders/international/create'
 
   const handleDrawerToggle = () => {
     setMobileOpen((prev) => !prev)

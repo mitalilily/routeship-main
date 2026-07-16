@@ -21,6 +21,10 @@ const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'))
 const Orders = lazy(() => import('../pages/orders/Orders'))
 const B2COrdersList = lazy(() => import('../components/orders/b2c/B2COrdersList'))
 const B2bOrders = lazy(() => import('../pages/orders/B2bOrders'))
+const InternationalOrders = lazy(() => import('../pages/orders/InternationalOrders'))
+const InternationalOrderCreatePage = lazy(
+  () => import('../pages/orders/InternationalOrderCreatePage'),
+)
 
 // Settings
 const Settings = lazy(() => import('../pages/settings/Settings'))
@@ -166,6 +170,8 @@ export default function AppRoutes() {
             <Route path="/orders/b2c/list" element={<B2COrdersList />} />
             <Route path="/support/about_us" element={<AboutUs />} />
             <Route path="/orders/b2b/list" element={<B2bOrders />} />
+            <Route path="/orders/international/list" element={<InternationalOrders />} />
+            <Route path="/orders/international/create" element={<InternationalOrderCreatePage />} />
             <Route path="/settings/invoice_preferences" element={<InvoicePreferences />} />
             <Route path="/settings/label_config" element={<LabelSettingsPage />} />
             <Route path="/settings/users_management" element={<UsersManagement />} />

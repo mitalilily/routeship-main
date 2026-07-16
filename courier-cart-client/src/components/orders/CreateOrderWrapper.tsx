@@ -1,22 +1,25 @@
 import { Box, Container, Tab, Tabs, Typography } from '@mui/material'
 import { useEffect, useState, type SyntheticEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import InternationalOrderForm from '../../pages/orders/InternationalOrderForm'
 import B2BOrderForm from './b2b/B2BOrderForm'
 import B2COrderFormSteps from './b2c/B2COrderForm'
 
-const getRequestedOrderType = (value: string | null): 'b2c' | 'b2b' =>
-  value === 'b2b' ? 'b2b' : 'b2c'
+type CreateOrderType = 'b2c' | 'b2b' | 'international'
+
+const getRequestedOrderType = (value: string | null): CreateOrderType =>
+  value === 'b2b' || value === 'international' ? value : 'b2c'
 
 const CreateOrderWrapper = () => {
   const [searchParams] = useSearchParams()
   const requestedType = getRequestedOrderType(searchParams.get('type'))
-  const [activeTab, setActiveTab] = useState<'b2c' | 'b2b'>(requestedType)
+  const [activeTab, setActiveTab] = useState<CreateOrderType>(requestedType)
 
   useEffect(() => {
     setActiveTab(requestedType)
   }, [requestedType])
 
-  const handleTabChange = (_event: SyntheticEvent, newValue: 'b2c' | 'b2b') => {
+  const handleTabChange = (_event: SyntheticEvent, newValue: CreateOrderType) => {
     setActiveTab(newValue)
   }
 
@@ -81,11 +84,18 @@ const CreateOrderWrapper = () => {
             >
               <Tab label="B2C Order" value="b2c" />
               <Tab label="B2B Order" value="b2b" />
+              <Tab label="International Order" value="international" />
             </Tabs>
           </Box>
 
           <Box sx={{ height: { md: 'calc(100% - 36px)' }, minHeight: 0 }}>
-            {activeTab === 'b2c' ? <B2COrderFormSteps /> : <B2BOrderForm />}
+            {activeTab === 'b2c' ? (
+              <B2COrderFormSteps />
+            ) : activeTab === 'b2b' ? (
+              <B2BOrderForm />
+            ) : (
+              <InternationalOrderForm />
+            )}
           </Box>
         </Box>
     </Container>

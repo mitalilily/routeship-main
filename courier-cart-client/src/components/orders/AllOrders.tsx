@@ -1467,9 +1467,9 @@ const AllOrders = () => {
     setCreateOrderAnchorEl(e.currentTarget)
   }
 
-  const handleSelectOrderType = (type: 'b2c' | 'b2b') => {
+  const handleSelectOrderType = (type: 'b2c' | 'b2b' | 'international') => {
     // Navigate to create order page based on type
-    navigate(`/orders/create?type=${type}`)
+    navigate(type === 'international' ? '/orders/international/create' : `/orders/create?type=${type}`)
     setCreateOrderAnchorEl(null)
   }
 
@@ -1793,6 +1793,7 @@ const AllOrders = () => {
         {[
           { label: 'Create B2C Order', type: 'b2c' as const },
           { label: 'Create B2B Order', type: 'b2b' as const },
+          { label: 'Create International Order', type: 'international' as const },
         ].map((action) => (
           <Button
             key={action.type}
