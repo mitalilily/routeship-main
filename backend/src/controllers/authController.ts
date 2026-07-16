@@ -211,8 +211,14 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       console.log('[DEMO OTP]', { email: normalizedEmail, otp, expiresAt: expiry.toISOString() })
     }
 
-    // 2. Send OTP via email
-    await sendVerificationEmail(normalizedEmail, otp)
+    // Console/demo OTP login must not depend on SMTP availability. Keep email delivery
+    // best-effort so a mail provider/config issue cannot block authentication.
+    sendVerificationEmail(normalizedEmail, otp).catch((emailError) => {
+      console.error('OTP email delivery failed after OTP was issued:', {
+        email: normalizedEmail,
+        error: emailError?.message || emailError,
+      })
+    })
 
     return res.json({
       message: 'OTP sent successfully to your email',
