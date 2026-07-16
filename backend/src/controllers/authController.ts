@@ -22,7 +22,7 @@ import {
 import axios from 'axios'
 import { OTP_EXPIRY } from '../utils/constants'
 
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '../models/client'
 import { changeAdminPassword, loginAdmin } from '../models/services/adminAuth.service'
 import { employees } from '../schema/schema'
@@ -42,6 +42,42 @@ const shouldLogDemoOtp =
 const shouldExposeDemoOtp = true
 
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
+
+let authColumnRepairPromise: Promise<void> | null = null
+
+const ensureAuthColumns = async () => {
+  if (!authColumnRepairPromise) {
+    authColumnRepairPromise = (async () => {
+      await db.execute(sql`
+        ALTER TABLE "users"
+          ADD COLUMN IF NOT EXISTS "googleId" varchar(64),
+          ADD COLUMN IF NOT EXISTS "pendingEmail" varchar(100),
+          ADD COLUMN IF NOT EXISTS "pendingPhone" varchar(20),
+          ADD COLUMN IF NOT EXISTS "passwordHash" varchar(200),
+          ADD COLUMN IF NOT EXISTS "refreshToken" varchar(500),
+          ADD COLUMN IF NOT EXISTS "refreshTokenExpiresAt" timestamp,
+          ADD COLUMN IF NOT EXISTS "previousRefreshToken" varchar(500),
+          ADD COLUMN IF NOT EXISTS "previousRefreshTokenExpiresAt" timestamp,
+          ADD COLUMN IF NOT EXISTS "emailVerified" boolean DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "phoneVerified" boolean DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "accountVerified" boolean DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "role" varchar(20) DEFAULT 'customer',
+          ADD COLUMN IF NOT EXISTS "profilePicture" varchar(512),
+          ADD COLUMN IF NOT EXISTS "otp" varchar(6),
+          ADD COLUMN IF NOT EXISTS "otpExpiresAt" timestamp with time zone,
+          ADD COLUMN IF NOT EXISTS "emailVerificationToken" varchar(8),
+          ADD COLUMN IF NOT EXISTS "emailVerificationTokenExpiresAt" timestamp with time zone,
+          ADD COLUMN IF NOT EXISTS "createdAt" timestamp with time zone DEFAULT now(),
+          ADD COLUMN IF NOT EXISTS "updatedAt" timestamp with time zone DEFAULT now()
+      `)
+    })().catch((error) => {
+      authColumnRepairPromise = null
+      throw error
+    })
+  }
+
+  await authColumnRepairPromise
+}
 
 const sendSmsViaTwilio = async (phone: string, message: string) => {
   await client.messages.create({
@@ -178,6 +214,8 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
   const expiry = new Date(Date.now() + OTP_EXPIRY)
 
   try {
+    await ensureAuthColumns()
+
     // 1. Look up user by email
     const user = await findUserByEmail(normalizedEmail)
 
