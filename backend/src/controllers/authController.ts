@@ -7,6 +7,7 @@ import {
   clearUserEmailToken,
   clearUserOtpByEmail,
   clampPreviousRefreshTokenExpiry,
+  createUser,
   createUserWithWallet,
   findUserByEmail,
   findUserById,
@@ -198,12 +199,12 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
     if (user) {
       await updateUserOtpByEmail(normalizedEmail, otp, expiry)
     } else {
-      await createUserWithWallet({
+      await createUser({
         email: normalizedEmail,
         otp,
         otpExpiresAt: expiry,
-        onboardingStep: 0,
         emailVerified: false,
+        role: 'customer',
       })
     }
 
