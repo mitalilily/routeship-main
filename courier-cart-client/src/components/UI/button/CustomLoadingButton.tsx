@@ -39,7 +39,6 @@ export default function CustomIconLoadingButton({
       onClick={onClick}
       disabled={isDisabled}
       sx={{
-        ...styles,
         px: 3,
         py: 1.2,
         textTransform: 'none',
@@ -59,6 +58,7 @@ export default function CustomIconLoadingButton({
           color: textColor ?? (variant === 'solid' ? '#FFFFFF' : '#6B7280'),
           borderColor: variant === 'text' ? 'rgba(17, 24, 39, 0.14)' : 'none',
         },
+        ...styles,
       }}
       {...rest}
     >

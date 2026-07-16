@@ -9,23 +9,32 @@ import { toast } from '../UI/Toast'
 const OTP_LENGTH = 6
 const OTP_RESEND_DELAY_MS = 30000
 const BRAND_ORANGE = '#E85500'
+const BRAND_BLUE = '#0B3DBB'
 const BRAND_DARK = '#141414'
 
 const primaryButtonStyles = {
   width: '100%',
-  borderRadius: 4,
-  background: `linear-gradient(135deg, ${BRAND_ORANGE} 0%, #C23E00 100%)`,
+  borderRadius: 1.5,
+  background: BRAND_BLUE,
   boxShadow: 'none',
   minHeight: 52,
+  '&:hover': {
+    background: '#09339E',
+    transform: 'translateY(-1px)',
+  },
 }
 
 const ghostButtonStyles = {
   width: '100%',
-  border: '1px solid rgba(20, 20, 20, 0.1)',
-  color: BRAND_DARK,
+  border: '1px solid #E7D8C5',
+  color: '#07132D',
   backgroundColor: '#ffffff',
-  borderRadius: 4,
+  borderRadius: 1.5,
   minHeight: 48,
+  '&:hover': {
+    borderColor: BRAND_BLUE,
+    backgroundColor: '#F8FBFF',
+  },
 }
 
 type Props = {
@@ -182,9 +191,9 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
       <Box
         sx={{
           p: 1.8,
-          borderRadius: 2,
-          backgroundColor: '#f7f1ed',
-          border: '1px solid rgba(20, 20, 20, 0.08)',
+          borderRadius: 1.5,
+          backgroundColor: '#FFF7EC',
+          border: '1px solid #E7D8C5',
         }}
       >
         <Typography variant="body2" sx={{ color: '#5F5A57', lineHeight: 1.7 }}>
@@ -196,7 +205,8 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
               display: 'inline-flex',
               alignItems: 'center',
               cursor: 'pointer',
-              color: BRAND_ORANGE,
+              color: BRAND_BLUE,
+              fontWeight: 800,
             }}
             onClick={onEditEmail}
           >
@@ -210,7 +220,7 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
         <Box
           sx={{
             p: 1.6,
-            borderRadius: 2,
+            borderRadius: 1.5,
             border: '1px dashed rgba(232, 85, 0, 0.45)',
             backgroundColor: '#fff4ec',
           }}
@@ -274,17 +284,20 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
               '& .MuiOutlinedInput-root': {
                 height: 52,
                 borderRadius: 1.5,
-                backgroundColor: '#fbf7f4',
+                backgroundColor: '#FFFFFF',
                 color: BRAND_DARK,
                 '& fieldset': {
-                  borderColor: 'rgba(20, 20, 20, 0.1)',
+                  borderColor: '#E7D8C5',
                 },
                 '&:hover fieldset': {
-                  borderColor: BRAND_ORANGE,
+                  borderColor: '#8EAAFF',
+                },
+                '&.Mui-focused': {
+                  boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
                 },
                 '&.Mui-focused fieldset': {
-                  borderColor: BRAND_ORANGE,
-                  borderWidth: 2,
+                  borderColor: BRAND_BLUE,
+                  borderWidth: 1,
                 },
               },
             }}

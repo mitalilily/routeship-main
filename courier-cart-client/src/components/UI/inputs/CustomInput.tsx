@@ -46,6 +46,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
       topMargin = true,
       maxLength,
       dense = false,
+      sx,
       ...props
     },
     ref,
@@ -93,35 +94,38 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
           onChange={onChange}
           helperText={helperText}
           fullWidth
-          sx={{
-            width,
-            '& .MuiOutlinedInput-root': {
-              minHeight: dense ? DENSE_CONTROL_MIN_HEIGHT : CONTROL_MIN_HEIGHT,
-              borderRadius: 0,
-              backgroundColor: '#FFFFFF',
-              alignItems: 'center',
-              '& fieldset': {
-                borderColor: 'rgba(17, 24, 39, 0.12)',
+          sx={[
+            {
+              width,
+              '& .MuiOutlinedInput-root': {
+                minHeight: dense ? DENSE_CONTROL_MIN_HEIGHT : CONTROL_MIN_HEIGHT,
+                borderRadius: 0,
+                backgroundColor: '#FFFFFF',
+                alignItems: 'center',
+                '& fieldset': {
+                  borderColor: 'rgba(17, 24, 39, 0.12)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(17, 24, 39, 0.2)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#E85500',
+                },
               },
-              '&:hover fieldset': {
-                borderColor: 'rgba(17, 24, 39, 0.2)',
+              '& .MuiOutlinedInput-input': {
+                padding: dense ? '5px 8px' : '12px 14px',
+                fontSize: dense ? '0.82rem' : '0.95rem',
+                color: '#111827',
+                boxSizing: 'border-box',
               },
-              '&.Mui-focused fieldset': {
-                borderColor: '#E85500',
+              '& .MuiFormHelperText-root': {
+                marginLeft: 0,
+                marginRight: 0,
+                marginTop: dense ? '2px' : '6px',
               },
             },
-            '& .MuiOutlinedInput-input': {
-              padding: dense ? '5px 8px' : '12px 14px',
-              fontSize: dense ? '0.82rem' : '0.95rem',
-              color: '#111827',
-              boxSizing: 'border-box',
-            },
-            '& .MuiFormHelperText-root': {
-              marginLeft: 0,
-              marginRight: 0,
-              marginTop: dense ? '2px' : '6px',
-            },
-          }}
+            ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+          ]}
           placeholder={placeholder}
           inputRef={(el) => {
             // assign to both forwardRef and internalRef

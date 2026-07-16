@@ -8,22 +8,53 @@ import CustomIconLoadingButton from '../UI/button/CustomLoadingButton'
 import CustomInput from '../UI/inputs/CustomInput'
 import { toast } from '../UI/Toast'
 
-const BRAND_NAVY = '#E85500'
-const BRAND_ORANGE = '#4B1196'
+const BRAND_NAVY = '#0B3DBB'
+const BRAND_ORANGE = '#E85500'
 
 const primaryButtonStyles = {
   width: '100%',
-  borderRadius: '12px',
-  background: `linear-gradient(135deg, ${BRAND_NAVY} 0%, #2a5fbe 100%)`,
-  boxShadow: '0 10px 24px rgba(13, 59, 142, 0.24)',
+  borderRadius: 1.5,
+  background: BRAND_NAVY,
+  boxShadow: 'none',
+  minHeight: 52,
+  '&:hover': {
+    background: '#09339E',
+    transform: 'translateY(-1px)',
+  },
 }
 
 const secondaryButtonStyles = {
   width: '100%',
-  border: `1px solid ${alpha(BRAND_NAVY, 0.28)}`,
-  color: BRAND_NAVY,
-  backgroundColor: alpha(BRAND_NAVY, 0.05),
-  borderRadius: '12px',
+  border: '1px solid #E7D8C5',
+  color: '#07132D',
+  backgroundColor: '#FFFFFF',
+  borderRadius: 1.5,
+  minHeight: 48,
+  '&:hover': {
+    borderColor: BRAND_NAVY,
+    backgroundColor: '#F8FBFF',
+  },
+}
+
+const authInputSx = {
+  '& .MuiOutlinedInput-root': {
+    minHeight: 52,
+    borderRadius: '6px',
+    backgroundColor: '#FFFFFF',
+    '& fieldset': {
+      borderColor: '#E7D8C5',
+    },
+    '&:hover fieldset': {
+      borderColor: '#8EAAFF',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: BRAND_NAVY,
+      borderWidth: 1,
+    },
+  },
 }
 
 interface IEmailVerificationProps {
@@ -94,12 +125,12 @@ export default function EmailVerificationForm({
       <Box
         sx={{
           p: 1.6,
-          borderRadius: 2.5,
-          backgroundColor: alpha(BRAND_ORANGE, 0.13),
-          border: `1px solid ${alpha(BRAND_ORANGE, 0.24)}`,
+          borderRadius: 1.5,
+          backgroundColor: '#FFF7EC',
+          border: `1px solid ${alpha(BRAND_ORANGE, 0.18)}`,
         }}
       >
-        <Typography variant="body2" sx={{ color: '#7d4100', lineHeight: 1.6 }}>
+        <Typography variant="body2" sx={{ color: '#5F5A57', lineHeight: 1.6 }}>
           Verification mail sent to <strong>{email}</strong>.
           <Box
             component="span"
@@ -125,6 +156,8 @@ export default function EmailVerificationForm({
         required
         helperText={touched && error}
         error={touched && !!error}
+        topMargin={false}
+        sx={authInputSx}
       />
 
       <CustomIconLoadingButton

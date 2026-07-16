@@ -21,7 +21,6 @@ import PasswordLoginForm from './PasswordLoginForm'
 
 const BRAND_ORANGE = '#E85500'
 const BRAND_BLUE = '#0B3DBB'
-const BRAND_DARK = '#141414'
 
 const primaryButtonStyles = {
   width: '100%',
@@ -39,9 +38,35 @@ const secondaryButtonStyles = {
   width: '100%',
   border: '1px solid #E7D8C5',
   backgroundColor: '#ffffff',
-  color: BRAND_DARK,
+  color: '#07132D',
   borderRadius: 1.5,
   minHeight: 48,
+  boxShadow: 'none',
+  '&:hover': {
+    borderColor: BRAND_BLUE,
+    backgroundColor: '#F8FBFF',
+  },
+}
+
+const authInputSx = {
+  '& .MuiOutlinedInput-root': {
+    minHeight: 52,
+    borderRadius: '6px',
+    backgroundColor: '#FFFFFF',
+    '& fieldset': {
+      borderColor: '#E7D8C5',
+    },
+    '&:hover fieldset': {
+      borderColor: '#8EAAFF',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: BRAND_BLUE,
+      borderWidth: 1,
+    },
+  },
 }
 
 export default function PhoneForm() {
@@ -126,12 +151,13 @@ export default function PhoneForm() {
   const renderOtpEntry = () =>
     step === 0 ? (
       <Box component="form" onSubmit={handleSubmit} width="100%">
-        <Stack spacing={2}>
+        <Stack spacing={2.4}>
           <Box
             sx={{
-              p: 1.5,
-              border: '1px solid rgba(17,17,19,0.08)',
-              background: '#faf7f4',
+              p: 2,
+              border: '1px solid #EEE5D8',
+              borderRadius: 1.5,
+              background: '#FFF7EC',
             }}
           >
             <Typography
@@ -163,16 +189,31 @@ export default function PhoneForm() {
             error={email.length > 0 && !isValidEmail}
             helperText={email.length > 0 && !isValidEmail ? 'Enter a valid email address.' : ''}
             autoFocus
-            prefix={<FiMail color={BRAND_ORANGE} size={15} />}
+            prefix={<FiMail color={BRAND_BLUE} size={15} />}
+            topMargin={false}
+            sx={authInputSx}
           />
 
           <FormControlLabel
-            sx={{ m: 0, alignItems: 'flex-start' }}
+            sx={{
+              m: 0,
+              alignItems: 'flex-start',
+              p: 1.2,
+              borderRadius: 1.5,
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #EEE5D8',
+            }}
             control={
               <CustomCheckbox
                 checked={termsChecked}
                 onChange={(e) => setTermsChecked(e.target.checked)}
                 color="primary"
+                sx={{
+                  '& .MuiBox-root': {
+                    borderColor: termsChecked ? BRAND_BLUE : '#E7D8C5',
+                    color: BRAND_BLUE,
+                  },
+                }}
               />
             }
             label={
@@ -207,7 +248,7 @@ export default function PhoneForm() {
     )
 
   return (
-    <Stack spacing={2.2} alignItems="stretch">
+    <Stack spacing={2.4} alignItems="stretch">
       <Stack spacing={1.2}>
         <Typography
           sx={{
@@ -227,6 +268,7 @@ export default function PhoneForm() {
           background: '#fff',
           borderRadius: 1.5,
           overflow: 'hidden',
+          boxShadow: '0 18px 42px rgba(7, 19, 45, 0.06)',
         }}
       >
         <Box
@@ -259,11 +301,14 @@ export default function PhoneForm() {
                 py: 1.15,
                 borderRadius: '6px !important',
                 justifyContent: 'center',
-                backgroundColor: '#fffaf7',
+                backgroundColor: '#FFFFFF',
                 '&.Mui-selected': {
                   color: '#07132D',
                   backgroundColor: '#ffffff',
                   boxShadow: `inset 0 0 0 1px ${BRAND_BLUE}`,
+                },
+                '&:hover': {
+                  backgroundColor: '#F8FBFF',
                 },
               },
             }}
@@ -273,7 +318,7 @@ export default function PhoneForm() {
           </ToggleButtonGroup>
         </Box>
 
-        <Box sx={{ p: { xs: 1.3, sm: 1.6 } }}>
+        <Box sx={{ p: { xs: 2, sm: 2.4 } }}>
           {preferredLoginMethod === 'phone' ? (
             renderOtpEntry()
           ) : (

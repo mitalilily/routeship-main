@@ -26,6 +26,27 @@ const primaryButtonStyles = {
   },
 }
 
+const authInputSx = {
+  '& .MuiOutlinedInput-root': {
+    minHeight: 52,
+    borderRadius: '6px',
+    backgroundColor: '#FFFFFF',
+    '& fieldset': {
+      borderColor: '#E7D8C5',
+    },
+    '&:hover fieldset': {
+      borderColor: '#8EAAFF',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: BRAND_BLUE,
+      borderWidth: 1,
+    },
+  },
+}
+
 interface IPasswordFormProps {
   setStep: Dispatch<SetStateAction<number>>
   step: number
@@ -141,7 +162,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
     <Stack width="100%" spacing={2.4}>
       <Box
         sx={{
-          p: 1.5,
+          p: 2,
           border: '1px solid #E7D8C5',
           borderRadius: 1.5,
           backgroundColor: '#FFF7EC',
@@ -170,15 +191,15 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
 
       <Box
         sx={{
-          p: 1.35,
+          p: 0,
           border: '1px solid #E7D8C5',
           borderRadius: 1.5,
-          background: '#fff',
+          background: '#FFFFFF',
         }}
       >
-        <Stack spacing={1.1}>
+        <Stack spacing={2.2} sx={{ p: 2 }}>
           <CustomInput
-            prefix={<FiMail color={BRAND_ORANGE} size={15} />}
+            prefix={<FiMail color={BRAND_BLUE} size={15} />}
             type="email"
             name="email"
             id="email"
@@ -189,6 +210,8 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
             required
             helperText={touched.email && errors.email}
             error={touched.email && !!errors.email}
+            topMargin={false}
+            sx={authInputSx}
           />
 
           <CustomInput
@@ -196,7 +219,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
             name="password"
             id="password"
             type="password"
-            prefix={<MdPassword color={BRAND_ORANGE} size={16} />}
+            prefix={<MdPassword color={BRAND_BLUE} size={16} />}
             postfix={
               <Tooltip
                 title={
@@ -206,7 +229,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
                 }
                 arrow
               >
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', color: BRAND_ORANGE }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', color: BRAND_BLUE }}>
                   <MdInfoOutline size={17} />
                 </Box>
               </Tooltip>
@@ -217,17 +240,32 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
             required
             helperText={touched.password && errors.password}
             error={touched.password && !!errors.password}
+            topMargin={false}
+            sx={authInputSx}
           />
         </Stack>
       </Box>
 
       <FormControlLabel
-        sx={{ m: 0, alignItems: 'flex-start' }}
+        sx={{
+          m: 0,
+          alignItems: 'flex-start',
+          p: 1.2,
+          borderRadius: 1.5,
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #EEE5D8',
+        }}
         control={
           <CustomCheckbox
             checked={termsChecked}
             onChange={(e) => setTermsChecked(e.target.checked)}
             color="primary"
+            sx={{
+              '& .MuiBox-root': {
+                borderColor: termsChecked ? BRAND_BLUE : '#E7D8C5',
+                color: BRAND_BLUE,
+              },
+            }}
           />
         }
         label={

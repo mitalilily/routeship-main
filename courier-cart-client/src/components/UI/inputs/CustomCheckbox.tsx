@@ -8,7 +8,7 @@ const CustomTick = ({ checked }: { checked?: boolean }) => (
     height="28"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#3DD598" // Green accent color
+    stroke="currentColor"
     strokeWidth="3"
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -27,9 +27,11 @@ const CustomTick = ({ checked }: { checked?: boolean }) => (
 )
 
 export default function CustomCheckbox(props: CheckboxProps) {
+  const { sx, ...rest } = props
+
   return (
     <Checkbox
-      {...props}
+      {...rest}
       disableRipple={false}
       color="primary"
       icon={
@@ -66,6 +68,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
             justifyContent: 'center',
             position: 'relative',
             backgroundColor: '#FFFFFF', // White background when checked
+            color: '#E85500',
             transition: 'all 0.2s ease',
             overflow: 'visible', // Allow tick to extend outside
             '&:hover': {
@@ -77,24 +80,27 @@ export default function CustomCheckbox(props: CheckboxProps) {
           <CustomTick checked />
         </Box>
       }
-      sx={{
-        padding: '8px',
-        overflow: 'visible', // Allow tick to extend outside checkbox area
-        '&:hover': {
-          backgroundColor: 'rgba(51, 51, 105, 0.04)',
+      sx={[
+        {
+          padding: '8px',
+          overflow: 'visible', // Allow tick to extend outside checkbox area
+          '&:hover': {
+            backgroundColor: 'rgba(51, 51, 105, 0.04)',
+          },
+          '&.Mui-focusVisible': {
+            outline: '2px solid #E85500',
+            outlineOffset: '2px',
+            borderRadius: '4px',
+          },
+          '& .MuiTouchRipple-root': {
+            color: 'rgba(51, 51, 105, 0.3)',
+          },
+          '& svg': {
+            overflow: 'visible', // Ensure SVG tick can extend beyond bounds
+          },
         },
-        '&.Mui-focusVisible': {
-          outline: '2px solid #E85500',
-          outlineOffset: '2px',
-          borderRadius: '4px',
-        },
-        '& .MuiTouchRipple-root': {
-          color: 'rgba(51, 51, 105, 0.3)',
-        },
-        '& svg': {
-          overflow: 'visible', // Ensure SVG tick can extend beyond bounds
-        },
-      }}
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
     />
   )
 }
