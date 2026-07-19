@@ -28,6 +28,7 @@ import { changeAdminPassword, loginAdmin } from '../models/services/adminAuth.se
 import { employees } from '../schema/schema'
 import { sendVerificationEmail } from '../utils/emailSender'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt'
+import { isDemoOtpEnabled } from '../utils/demoAuth'
 
 const env = process.env.NODE_ENV || 'development'
 
@@ -37,9 +38,8 @@ dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) })
 const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
-const shouldLogDemoOtp =
-  String(process.env.DEMO_AUTH_SHOW_OTP || '').toLowerCase() === 'true' || env !== 'production'
-const shouldExposeDemoOtp = true
+const demoOtpEnabled = isDemoOtpEnabled(process.env.DEMO_AUTH_SHOW_OTP)
+const shouldExposeDemoOtp = demoOtpEnabled
 
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 
@@ -246,11 +246,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       })
     }
 
-    if (shouldLogDemoOtp) {
-      console.log('[DEMO OTP]', { email: normalizedEmail, otp, expiresAt: expiry.toISOString() })
-    }
-
-    // Console/demo OTP login must not depend on SMTP availability. Keep email delivery
+    // Onscreen demo OTP login must not depend on SMTP availability. Keep email delivery
     // best-effort so a mail provider/config issue cannot block authentication.
     sendVerificationEmail(normalizedEmail, otp).catch((emailError) => {
       console.error('OTP email delivery failed after OTP was issued:', {

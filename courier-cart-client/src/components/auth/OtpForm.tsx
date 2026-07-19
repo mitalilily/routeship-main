@@ -151,14 +151,6 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
         setSecondsLeft(OTP_RESEND_DELAY_MS / 1000)
         onDemoOtpUpdate?.(data?.demoOtp || '', data?.demoOtpExpiresAt || '')
 
-        if (data?.demoOtp) {
-          console.log('[Demo OTP]', {
-            email: email.toLowerCase().trim(),
-            otp: data.demoOtp,
-            expiresAt: data?.demoOtpExpiresAt,
-          })
-        }
-
         if (timerRef.current) clearTimeout(timerRef.current)
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
 
@@ -184,7 +176,7 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
         setError(err?.response?.data?.error || 'Failed to resend OTP')
       },
     })
-  }, [email, resendOtp, resendEnabled, resending])
+  }, [email, onDemoOtpUpdate, resendOtp, resendEnabled, resending])
 
   return (
     <Stack component="form" onSubmit={handleSubmit} width="100%" mt={1} gap={2}>

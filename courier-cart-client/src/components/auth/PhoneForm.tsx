@@ -108,13 +108,6 @@ export default function PhoneForm() {
         onSuccess: (data: any) => {
           setDemoOtp(data?.demoOtp || '')
           setDemoOtpExpiresAt(data?.demoOtpExpiresAt || '')
-          if (data?.demoOtp) {
-            console.log('[Demo OTP]', {
-              email: email.toLowerCase().trim(),
-              otp: data.demoOtp,
-              expiresAt: data?.demoOtpExpiresAt,
-            })
-          }
           setStep(1)
         },
         onError: (err: any) => {
