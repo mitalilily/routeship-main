@@ -48,6 +48,7 @@ import dashboardRoutes from './routes/dashboard.routes'
 import employeeRoutes from './routes/employee.routes'
 import externalApiRoutes from './routes/externalApi.routes'
 import globalSearchRoutes from './routes/globalSearch.routes'
+import ftlRequestRoutes from './routes/ftlRequest.routes'
 import integrationRoutes from './routes/integrationRoutes'
 import invoicesRoutes from './routes/invoice.routes'
 import invoicePreferencesRoutes from './routes/invoicePreferences.routes'
@@ -203,6 +204,7 @@ app.use('/api/public', publicToolsRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/reports', reportsRoutes)
 app.use('/api/search', globalSearchRoutes)
+app.use('/api', ftlRequestRoutes)
 app.use('/api/serviceability', locationRoutes)
 app.use('/api/user-management', employeeRoutes)
 app.use('/api/label-preference', labelRoutes)

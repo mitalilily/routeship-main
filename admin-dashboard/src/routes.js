@@ -42,6 +42,7 @@ import AdminNdr from 'views/Ops/AdminNdr'
 import AdminRto from 'views/Ops/AdminRto'
 import AdminNotificationsPage from 'views/Notifications/AdminNotificationsPage'
 import Orders from 'views/Orders/Orders'
+import FtlRequests from 'views/FTL/FtlRequests'
 import PlanManagement from 'views/PlanManagement/PlanManagement'
 import ServiceabilityPage from 'views/Serviceability/ServiceabilityPage'
 import PaymentOptionsSettings from 'views/Settings/PaymentOptionsSettings'
@@ -88,6 +89,17 @@ const dashRoutes = [
     component: () => (
       <AdminRoute>
         <Orders />
+      </AdminRoute>
+    ),
+    layout: '/admin',
+  },
+  {
+    path: '/ftl-requests',
+    name: 'FTL Requests',
+    icon: <IconTruck />,
+    component: () => (
+      <AdminRoute>
+        <FtlRequests />
       </AdminRoute>
     ),
     layout: '/admin',

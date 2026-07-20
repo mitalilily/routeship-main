@@ -111,6 +111,11 @@ const navItems: NavItem[] = [
         icon: <MdOutlineAddBusiness size={ICON_SIZE_MD} />,
       },
       {
+        text: 'FTL Requests',
+        path: '/orders/ftl',
+        icon: <MdOutlineAddBusiness size={ICON_SIZE_MD} />,
+      },
+      {
         text: 'International Orders',
         path: '/orders/international/list',
         icon: <FiGlobe size={ICON_SIZE_MD} />,
