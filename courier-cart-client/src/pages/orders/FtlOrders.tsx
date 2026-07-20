@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   Chip,
+  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -15,32 +16,40 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FiRefreshCw, FiSend } from 'react-icons/fi'
 import { createFtlRequest, fetchMyFtlRequests, type FtlRequest, type FtlRequestPayload } from '../../api/ftl.api'
 import { toast } from '../../components/UI/Toast'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
 
 const initialForm: FtlRequestPayload = {
+  firstName: '',
+  lastName: '',
   customerName: '',
   customerPhone: '',
   customerEmail: '',
   companyName: '',
+  originAddressLine1: '',
+  originAddressLine2: '',
   originCity: '',
   originState: '',
   originPincode: '',
+  originCountry: 'India',
   originAddress: '',
+  destinationAddressLine1: '',
+  destinationAddressLine2: '',
   destinationCity: '',
   destinationState: '',
   destinationPincode: '',
+  destinationCountry: 'India',
   destinationAddress: '',
   vehicleType: '',
   materialType: '',
   weightKg: '',
-  truckCount: '1',
   loadingDate: '',
-  notes: '',
 }
+
+const truckTypes = ['Flatbed', 'Refrigerated', 'Dry Van', 'Box Truck', 'Other']
 
 const statusLabels: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' }> = {
   requested: { label: 'Requested', color: 'warning' },
@@ -59,7 +68,6 @@ const formatDate = (value?: string | null) => {
 }
 
 export default function FtlOrders() {
-  const jotformRef = useRef<HTMLDivElement | null>(null)
   const [form, setForm] = useState(initialForm)
   const [requests, setRequests] = useState<FtlRequest[]>([])
   const [loading, setLoading] = useState(false)
@@ -81,16 +89,6 @@ export default function FtlOrders() {
     loadRequests()
   }, [])
 
-  useEffect(() => {
-    if (!jotformRef.current || jotformRef.current.dataset.loaded === 'true') return
-    jotformRef.current.dataset.loaded = 'true'
-    const script = document.createElement('script')
-    script.type = 'text/javascript'
-    script.src = 'https://www.jotform.com/jsform/262000142501434'
-    script.async = true
-    jotformRef.current.appendChild(script)
-  }, [])
-
   const handleChange = (field: keyof FtlRequestPayload) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }))
   }
@@ -99,7 +97,17 @@ export default function FtlOrders() {
     event.preventDefault()
     setSubmitting(true)
     try {
-      await createFtlRequest(form)
+      const customerName = [form.firstName, form.lastName].filter(Boolean).join(' ').trim()
+      const originAddress = [form.originAddressLine1, form.originAddressLine2].filter(Boolean).join(', ')
+      const destinationAddress = [form.destinationAddressLine1, form.destinationAddressLine2]
+        .filter(Boolean)
+        .join(', ')
+      await createFtlRequest({
+        ...form,
+        customerName,
+        originAddress,
+        destinationAddress,
+      })
       toast.open({ message: 'FTL request sent to admin team', severity: 'success' })
       setForm(initialForm)
       await loadRequests()
@@ -125,8 +133,8 @@ export default function FtlOrders() {
     >
       <Stack spacing={2}>
         <Alert severity="info">
-          FTL bookings are handled manually. Submit the internal request below so it reaches the
-          admin panel; the embedded Jotform is also available in the requested format.
+          FTL bookings are handled manually. Submit these details and the admin team will process
+          the booking, then update AWB/status/date in your table below.
         </Alert>
 
         <Card variant="outlined" sx={{ borderRadius: 3 }}>
@@ -135,52 +143,58 @@ export default function FtlOrders() {
               FTL request details
             </Typography>
             <Box component="form" onSubmit={handleSubmit}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                  gap: 2,
-                }}
-              >
-                {[
-                  ['customerName', 'Contact Name *'],
-                  ['customerPhone', 'Contact Phone *'],
-                  ['customerEmail', 'Email'],
-                  ['companyName', 'Company Name'],
-                  ['originCity', 'Origin City *'],
-                  ['originState', 'Origin State'],
-                  ['originPincode', 'Origin Pincode *'],
-                  ['destinationCity', 'Destination City *'],
-                  ['destinationState', 'Destination State'],
-                  ['destinationPincode', 'Destination Pincode *'],
-                  ['vehicleType', 'Vehicle Type *'],
-                  ['materialType', 'Material Type *'],
-                  ['weightKg', 'Weight (kg)'],
-                  ['truckCount', 'Truck Count'],
-                  ['loadingDate', 'Loading Date'],
-                ].map(([field, label]) => (
-                  <Box key={field}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type={field === 'loadingDate' ? 'date' : 'text'}
-                      label={label}
-                      InputLabelProps={field === 'loadingDate' ? { shrink: true } : undefined}
-                      value={form[field as keyof FtlRequestPayload] || ''}
-                      onChange={handleChange(field as keyof FtlRequestPayload)}
-                    />
+              <Stack spacing={2}>
+                <Box>
+                  <Typography sx={{ fontWeight: 700, mb: 1 }}>Full Name *</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <TextField fullWidth required size="small" label="First Name" value={form.firstName} onChange={handleChange('firstName')} />
+                    <TextField fullWidth required size="small" label="Last Name" value={form.lastName} onChange={handleChange('lastName')} />
                   </Box>
-                ))}
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                  <TextField fullWidth required size="small" label="Company Name" value={form.companyName} onChange={handleChange('companyName')} />
+                  <TextField fullWidth required size="small" type="email" label="Email Address" value={form.customerEmail} onChange={handleChange('customerEmail')} />
+                  <TextField fullWidth required size="small" label="Phone Number" value={form.customerPhone} onChange={handleChange('customerPhone')} helperText="Please enter a valid phone number." />
+                </Box>
+
                 <Box>
-                  <TextField fullWidth multiline minRows={2} size="small" label="Pickup Address" value={form.originAddress} onChange={handleChange('originAddress')} />
+                  <Typography sx={{ fontWeight: 700, mb: 1 }}>Pickup Address *</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <TextField fullWidth required size="small" label="Street Address" value={form.originAddressLine1} onChange={handleChange('originAddressLine1')} />
+                    <TextField fullWidth size="small" label="Street Address Line 2" value={form.originAddressLine2} onChange={handleChange('originAddressLine2')} />
+                    <TextField fullWidth required size="small" label="City" value={form.originCity} onChange={handleChange('originCity')} />
+                    <TextField fullWidth required size="small" label="State / Province" value={form.originState} onChange={handleChange('originState')} />
+                    <TextField fullWidth required size="small" label="Postal / Zip Code" value={form.originPincode} onChange={handleChange('originPincode')} />
+                    <TextField fullWidth required size="small" label="Country" value={form.originCountry} onChange={handleChange('originCountry')} />
+                  </Box>
                 </Box>
+
                 <Box>
-                  <TextField fullWidth multiline minRows={2} size="small" label="Delivery Address" value={form.destinationAddress} onChange={handleChange('destinationAddress')} />
+                  <Typography sx={{ fontWeight: 700, mb: 1 }}>Delivery Address *</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <TextField fullWidth required size="small" label="Street Address" value={form.destinationAddressLine1} onChange={handleChange('destinationAddressLine1')} />
+                    <TextField fullWidth size="small" label="Street Address Line 2" value={form.destinationAddressLine2} onChange={handleChange('destinationAddressLine2')} />
+                    <TextField fullWidth required size="small" label="City" value={form.destinationCity} onChange={handleChange('destinationCity')} />
+                    <TextField fullWidth required size="small" label="State / Province" value={form.destinationState} onChange={handleChange('destinationState')} />
+                    <TextField fullWidth required size="small" label="Postal / Zip Code" value={form.destinationPincode} onChange={handleChange('destinationPincode')} />
+                    <TextField fullWidth required size="small" label="Country" value={form.destinationCountry} onChange={handleChange('destinationCountry')} />
+                  </Box>
                 </Box>
-                <Box sx={{ gridColumn: { md: '1 / -1' } }}>
-                  <TextField fullWidth multiline minRows={2} size="small" label="Notes / special instructions" value={form.notes} onChange={handleChange('notes')} />
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                  <TextField fullWidth required size="small" type="date" label="Preferred Pickup Date" InputLabelProps={{ shrink: true }} value={form.loadingDate} onChange={handleChange('loadingDate')} />
+                  <TextField fullWidth required size="small" label="Cargo Description (type of goods)" value={form.materialType} onChange={handleChange('materialType')} />
+                  <TextField fullWidth required size="small" type="number" label="Estimated Total Weight (kg)" value={form.weightKg} onChange={handleChange('weightKg')} inputProps={{ min: 1, max: 50000, step: 'any' }} />
+                  <TextField fullWidth required select size="small" label="Preferred Truck Type" value={form.vehicleType} onChange={handleChange('vehicleType')}>
+                    {truckTypes.map((truckType) => (
+                      <MenuItem key={truckType} value={truckType}>
+                        {truckType}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Box>
-              </Box>
+              </Stack>
               <Button type="submit" variant="contained" startIcon={<FiSend />} disabled={submitting} sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}>
                 {submitting ? 'Submitting...' : 'Send FTL Request'}
               </Button>
@@ -229,14 +243,6 @@ export default function FtlOrders() {
           </CardContent>
         </Card>
 
-        <Card variant="outlined" sx={{ borderRadius: 3 }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-              FTL Jotform
-            </Typography>
-            <Box ref={jotformRef} sx={{ minHeight: 520 }} />
-          </CardContent>
-        </Card>
       </Stack>
     </ListPageLayout>
   )

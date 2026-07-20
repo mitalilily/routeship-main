@@ -1,17 +1,25 @@
 import axiosInstance from './axiosInstance'
 
 export type FtlRequestPayload = {
+  firstName?: string
+  lastName?: string
   customerName: string
   customerPhone: string
   customerEmail?: string
   companyName?: string
+  originAddressLine1?: string
+  originAddressLine2?: string
   originCity: string
   originState?: string
   originPincode: string
+  originCountry?: string
   originAddress?: string
+  destinationAddressLine1?: string
+  destinationAddressLine2?: string
   destinationCity: string
   destinationState?: string
   destinationPincode: string
+  destinationCountry?: string
   destinationAddress?: string
   vehicleType: string
   materialType: string
