@@ -65,13 +65,16 @@ const isXpressbees2Kg = (name: string, mode?: unknown) =>
   !name.toLowerCase().includes('reverse') &&
   /\b2\s*(?:k\.?\s*g\.?|kg|kgs)\b/i.test(name)
 
+const isXpressbeesRouteServiceability = (name: string) =>
+  name.toLowerCase().includes('route serviceability')
+
 const isSupportedProviderCourierSeed = (seed: CourierSeed) => {
   if (seed.serviceProvider === 'delhivery') {
     return seed.id === 99 || seed.id === 100
   }
 
   if (seed.serviceProvider === 'xpressbees') {
-    return isXpressbees2Kg(seed.name, seed.mode)
+    return isXpressbees2Kg(seed.name, seed.mode) || isXpressbeesRouteServiceability(seed.name)
   }
 
   return !seed.name.toLowerCase().includes('reverse')
