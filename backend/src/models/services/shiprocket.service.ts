@@ -894,11 +894,19 @@ const resolveCourierBookingLifecycle = (
     .trim()
     .toLowerCase()
 
-  if (provider === 'shadowfax' || provider === 'ekart') {
+  if (provider === 'shadowfax') {
     return {
       orderStatus: 'pickup_initiated',
       pickupStatus: 'pickup_requested',
       providerLastStatus: 'pickup_initiated',
+    }
+  }
+
+  if (provider === 'ekart') {
+    return {
+      orderStatus: 'booked',
+      pickupStatus: 'pending',
+      providerLastStatus: 'booked',
     }
   }
 
@@ -918,9 +926,9 @@ const resolveCourierBookingLifecycle = (
 
     if (!needsManualManifest) {
       return {
-        orderStatus: 'pickup_initiated',
-        pickupStatus: 'pickup_requested',
-        providerLastStatus: 'pickup_initiated',
+        orderStatus: 'booked',
+        pickupStatus: 'pending',
+        providerLastStatus: 'booked',
       }
     }
   }
@@ -12577,12 +12585,14 @@ export const generateManifestService = async (params: {
               currentOrderStatus,
             )
               ? freshOrder.order_status
+              : integrationType === 'xpressbees'
+              ? 'booked'
               : 'pickup_initiated'
             const updateDataXpress: any = {
               order_status: nextOrderStatus,
               pickup_status:
-                integrationType === 'xpressbees' && nextOrderStatus === 'pickup_initiated'
-                  ? 'pickup_initiated'
+                integrationType === 'xpressbees' && nextOrderStatus === 'booked'
+                  ? 'pending'
                   : nextOrderStatus === 'pickup_initiated'
                   ? 'pickup_requested'
                   : freshOrder.pickup_status ?? null,
@@ -15500,6 +15510,10 @@ const mapProviderTrackingCodeToInternal = (
       cn: 'cancelled',
     },
     xpressbees: {
+      new: 'booked',
+      created: 'booked',
+      booked: 'booked',
+      order_placed: 'booked',
       manifest: 'pickup_initiated',
       manifested: 'pickup_initiated',
       drc: 'pickup_initiated',
@@ -15573,7 +15587,11 @@ const mapProviderTrackingCodeToInternal = (
   return providerCodeMap[provider]?.[code] || commonCodeMap[code] || null
 }
 
-const preserveNonRegressiveTrackingStatus = (currentStatus: string, mappedStatus: string) => {
+const preserveNonRegressiveTrackingStatus = (
+  currentStatus: string,
+  mappedStatus: string,
+  providerKey = '',
+) => {
   const current = normalizeInternalTrackingStatus(currentStatus)
   const mapped = normalizeInternalTrackingStatus(mappedStatus)
   if (!mapped) return current || 'in_transit'
@@ -15598,6 +15616,15 @@ const preserveNonRegressiveTrackingStatus = (currentStatus: string, mappedStatus
     out_for_delivery: 5,
     delivered: 6,
   }
+  const provider = normalizeTrackingStatusCode(providerKey)
+  const carrierBookedCorrectionAllowed =
+    ['ekart', 'xpressbees'].includes(provider) &&
+    current === 'pickup_initiated' &&
+    ['pending', 'booked', 'shipment_created'].includes(mapped)
+  if (carrierBookedCorrectionAllowed) {
+    return mapped
+  }
+
   if (rank[current] !== undefined && rank[mapped] !== undefined && rank[mapped] < rank[current]) {
     return current
   }
@@ -15619,7 +15646,7 @@ const mapLiveTrackingStatusToInternal = (
 
   const providerCodeStatus = mapProviderTrackingCodeToInternal(rawStatus, providerKey)
   if (providerCodeStatus) {
-    return preserveNonRegressiveTrackingStatus(current, providerCodeStatus)
+    return preserveNonRegressiveTrackingStatus(current, providerCodeStatus, providerKey)
   }
 
   // Delhivery and other carriers sometimes include "cancelled" in refusal /
@@ -15665,17 +15692,20 @@ const mapLiveTrackingStatusToInternal = (
     status === 'new' ||
     status.includes('created') ||
     status.includes('booked') ||
-    status.includes('order placed') ||
+    status.includes('order placed')
+  ) {
+    mapped = ['ekart', 'xpressbees'].includes(provider) ? 'booked' : 'pickup_initiated'
+  } else if (
     status.includes('manifest') ||
     status.includes('pickup') ||
     status.includes('picked') ||
     status.includes('assigned for seller pickup') ||
     status.includes('assigned for pickup')
   ) {
-    mapped = provider === 'shadowfax' ? 'pickup_initiated' : 'pickup_initiated'
+    mapped = 'pickup_initiated'
   }
 
-  return preserveNonRegressiveTrackingStatus(current, mapped)
+  return preserveNonRegressiveTrackingStatus(current, mapped, providerKey)
 }
 
 const trackingWebhookEventForStatus = (status: string) => {

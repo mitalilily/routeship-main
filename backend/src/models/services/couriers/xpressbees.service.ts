@@ -928,11 +928,14 @@ export class XpressbeesService {
             if (token) {
               this.apiToken = token
               this.tokenEndpoint = endpoint
-              this.baseApi = baseURL
+              if (!this.isAbsoluteEndpoint(endpoint) || /shipment|xbclientapi/i.test(baseURL)) {
+                this.baseApi = baseURL
+              }
               await this.persistGeneratedToken(token)
               this.log('Generated API token via login credentials', {
                 endpoint,
-                baseApi: baseURL,
+                baseApi: this.baseApi,
+                authBaseApi: baseURL,
                 login: maskedLogin,
               })
               return token
