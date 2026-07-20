@@ -531,7 +531,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       },
       ekart: {
         provider: 'ekart',
-        apiBase: 'https://api.ekartlogistics.com',
+        apiBase: 'https://app.elite.ekartlogistics.in',
+        clientName: '',
         clientId: '',
         username: '',
         hasPassword: false,
@@ -602,7 +603,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         const hasWebhookSecret = Boolean((row.webhookSecret || '').trim())
         acc.ekart = {
           provider: 'ekart',
-          apiBase: row.apiBase || 'https://api.ekartlogistics.com',
+          apiBase: row.apiBase || 'https://app.elite.ekartlogistics.in',
+          clientName: row.clientName || '',
           clientId: row.clientId || '',
           username: row.username || '',
           hasPassword,
@@ -1659,10 +1661,11 @@ export const cancelDelhiveryLtlPickupRequestController = async (
 }
 
 export const updateEkartCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, clientId, username, password, webhookSecret } = req.body || {}
+  const { apiBase, clientName, clientId, username, password, webhookSecret } = req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
     const nextClientId = typeof clientId === 'string' ? clientId.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
     const nextPassword = typeof password === 'string' ? password.trim() : undefined
@@ -1680,7 +1683,10 @@ export const updateEkartCredentialsController = async (req: Request, res: Respon
         updatedAt: new Date(),
       }
       if (nextApiBase !== undefined) {
-        updatePayload.apiBase = nextApiBase || 'https://api.ekartlogistics.com'
+        updatePayload.apiBase = nextApiBase || 'https://app.elite.ekartlogistics.in'
+      }
+      if (nextClientName !== undefined) {
+        updatePayload.clientName = nextClientName
       }
       if (nextClientId !== undefined) {
         updatePayload.clientId = nextClientId
@@ -1702,8 +1708,8 @@ export const updateEkartCredentialsController = async (req: Request, res: Respon
     } else {
       await db.insert(courier_credentials).values({
         provider: 'ekart',
-        apiBase: nextApiBase || 'https://api.ekartlogistics.com',
-        clientName: '',
+        apiBase: nextApiBase || 'https://app.elite.ekartlogistics.in',
+        clientName: nextClientName || '',
         apiKey: '',
         clientId: nextClientId || '',
         username: nextUsername || '',
@@ -1715,6 +1721,7 @@ export const updateEkartCredentialsController = async (req: Request, res: Respon
     const [saved] = await db
       .select({
         apiBase: courier_credentials.apiBase,
+        clientName: courier_credentials.clientName,
         clientId: courier_credentials.clientId,
         username: courier_credentials.username,
         password: courier_credentials.password,
@@ -1729,7 +1736,8 @@ export const updateEkartCredentialsController = async (req: Request, res: Respon
       message: 'Ekart credentials updated successfully',
       data: {
         provider: 'ekart',
-        apiBase: saved?.apiBase || 'https://api.ekartlogistics.com',
+        apiBase: saved?.apiBase || 'https://app.elite.ekartlogistics.in',
+        clientName: saved?.clientName || '',
         clientId: saved?.clientId || '',
         username: saved?.username || '',
         hasPassword: Boolean((saved?.password || '').trim()),

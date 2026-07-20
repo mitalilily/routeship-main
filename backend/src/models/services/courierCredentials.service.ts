@@ -233,6 +233,7 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       username: normalize(row.username),
       password: normalize(row.password),
       baseApi: normalize(row.apiBase),
+      baseAuth: normalize((metadata.baseAuth as string) || (metadata.base_auth as string) || ''),
     }
     return cfg
   }
