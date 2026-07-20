@@ -221,7 +221,7 @@ export default function UserOnboarding() {
             >
               <Box
                 component="img"
-                src="/brand/admin-logo-white.svg"
+                src="/brand/routeship-logo.png"
                 alt="RouteShip"
                 sx={{ width: { xs: 150, md: 176 }, height: 'auto', mb: 2.2 }}
               />

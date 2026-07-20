@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import React from 'react'
 import './loader.css'
-import Logo from '/brand/admin-logo-white.svg'
+import Logo from '/brand/routeship-logo.png'
 
 type Props = {
   night?: boolean

@@ -71,8 +71,8 @@ const BRAND_BLUE = '#0B3DBB'
 const BRAND_SURFACE = '#FFFFFF'
 const BRAND_INK = '#07132D'
 const BRAND_BORDER = '#EEE8E4'
-const LOGO_WORDMARK_SRC = '/brand/admin-logo-colored.svg'
-const LOGO_MARK_SRC = '/brand/admin-logo-mark.svg'
+const LOGO_WORDMARK_SRC = '/brand/routeship-logo.png'
+const LOGO_MARK_SRC = '/brand/routeship-mark.png'
 
 const navItems: NavItem[] = [
   {
