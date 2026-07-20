@@ -54,6 +54,15 @@ assert.doesNotMatch(seedSource, /insert\s+into\s+couriers/i)
 assert.doesNotMatch(seedSource, /ensureFallbackCouriers/)
 assert.match(seedSource, /courier_credentials/)
 
+const delhiverySyncSource = fs.readFileSync(
+  path.resolve(__dirname, 'syncDelhiveryB2CCouriers.ts'),
+  'utf8',
+)
+assert.match(delhiverySyncSource, /DELHIVERY_COURIER_IDS\.EXPRESS/)
+assert.match(delhiverySyncSource, /DELHIVERY_COURIER_IDS\.SURFACE/)
+assert.match(delhiverySyncSource, /getConfiguredCourierProviderSet/)
+assert.doesNotMatch(delhiverySyncSource, /apiKey:\s*['"][A-Za-z0-9]/)
+
   console.log('Credential-gated courier visibility checks passed')
 }
 

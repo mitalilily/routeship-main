@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, pool } from '../models/client'
+import { getConfiguredCourierProviderSet } from '../models/services/courierCredentials.service'
 import { couriers, plans, shippingRates, zones } from '../schema/schema'
 
 type CourierSeed = {
@@ -25,7 +26,7 @@ type ZoneSeed = {
 const courierSeeds: CourierSeed[] = [
   {
     id: 99,
-    name: 'Delhivery Metro Air',
+    name: 'Delhivery Air',
     serviceProvider: 'delhivery',
     mode: 'Air',
     businessTypes: ['b2c'],
@@ -34,7 +35,7 @@ const courierSeeds: CourierSeed[] = [
   },
   {
     id: 100,
-    name: 'Delhivery Metro Surface',
+    name: 'Delhivery Surface',
     serviceProvider: 'delhivery',
     mode: 'Surface',
     businessTypes: ['b2c'],
@@ -214,7 +215,13 @@ async function purgeExistingRates() {
   const courierIds = courierSeeds.map((courier) => courier.id)
   await db
     .delete(shippingRates)
-    .where(and(eq(shippingRates.business_type, 'b2c'), inArray(shippingRates.courier_id, courierIds)))
+    .where(
+      and(
+        eq(shippingRates.business_type, 'b2c'),
+        eq(shippingRates.service_provider, 'delhivery'),
+        inArray(shippingRates.courier_id, courierIds),
+      ),
+    )
   console.log('🧹 Removed existing B2C rates for the configured Delhivery couriers to avoid duplicates')
 }
 
@@ -297,6 +304,10 @@ async function seedRates(planId: string, insertedZones: { id: string; code: stri
 
 async function main() {
   try {
+    const configuredProviders = await getConfiguredCourierProviderSet()
+    if (!configuredProviders.has('delhivery')) {
+      throw new Error('Configure valid Delhivery credentials before seeding its B2C rate card')
+    }
     const plan = await ensureBasicPlan()
     await upsertCouriers()
     const zones = await upsertZones()
