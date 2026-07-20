@@ -1,6 +1,7 @@
 import { Server as HttpServer } from 'http'
 import { Socket, Server as SocketIOServer } from 'socket.io'
 import { setEmployeeOnlineStatus } from '../models/services/employee.service'
+import { corsOriginCallback } from './cors'
 
 let io: SocketIOServer
 
@@ -10,8 +11,9 @@ const activeConnections: Record<string, Set<string>> = {}
 export const initSocketServer = (server: HttpServer) => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: '*', // Replace with frontend URL in production
+      origin: corsOriginCallback,
       methods: ['GET', 'POST'],
+      credentials: true,
     },
     transports: ['websocket', 'polling'],
   })

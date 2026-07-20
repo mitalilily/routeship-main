@@ -49,9 +49,12 @@ export const PlansController = {
       const { id } = req.params
       const plan = await PlansService.deactivate(id)
       if (!plan) return res.status(404).json({ error: 'Plan not found' })
-      res.json({ message: 'Plan deactivated', plan })
+      res.json({ success: true, message: 'Rate card deleted successfully', plan })
     } catch (err) {
-      res.status(500).json({ error: 'Failed to deactivate plan' })
+      res.status(409).json({
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to delete rate card',
+      })
     }
   },
   assignPlanToUser: async (req: Request, res: Response) => {

@@ -23,6 +23,10 @@ const normalizeStateName = (value: string) =>
     .replace(/\s+/g, ' ')
 
 const STATE_ALIASES: Record<string, string[]> = {
+  [normalizeStateName('Andaman and Nicobar Islands')]: [
+    'Andaman and Nicobar Islands',
+    'Andaman and Nicobar',
+  ],
   [normalizeStateName('Jammu and Kashmir')]: ['Jammu and Kashmir', 'Jammu & Kashmir', 'J&K'],
   [normalizeStateName('Puducherry')]: ['Puducherry', 'Pondicherry'],
   [normalizeStateName('Odisha')]: ['Odisha', 'Orissa'],
@@ -657,7 +661,16 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
         'b2bPincodes table schema is not defined. Please ensure the schema is properly imported.',
       )
     }
-    const existingRows = await tx.select().from(b2bPincodes).where(eq(b2bPincodes.zone_id, zoneId))
+    const existingRows = await tx
+      .select()
+      .from(b2bPincodes)
+      .where(
+        and(
+          eq(b2bPincodes.zone_id, zoneId),
+          isNull(b2bPincodes.courier_id),
+          isNull(b2bPincodes.service_provider),
+        ),
+      )
 
     for (const row of existingRows) {
       if (!normalizedSelectedStates.has(normalizeStateName(row.state))) {
@@ -684,29 +697,28 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
       .from(locations)
       .where(or(...stateFilters))
 
+    const allGlobalRows = await tx
+      .select()
+      .from(b2bPincodes)
+      .where(and(isNull(b2bPincodes.courier_id), isNull(b2bPincodes.service_provider)))
+    const existingByPincodeAndState = new Map(
+      allGlobalRows.map((row: any) => [
+        `${row.pincode}|${normalizeStateName(row.state)}`,
+        row,
+      ]),
+    )
+    const rowsToInsert: any[] = []
+    const rowIdsToMove: string[] = []
+
     for (const location of locationRows) {
-      // Since zones are global, pincodes are mapped to zones only (no courier filtering)
-      const [existing] = await tx
-        .select()
-        .from(b2bPincodes)
-        .where(
-          and(
-            eq(b2bPincodes.pincode, location.pincode),
-            eq(b2bPincodes.state, location.state),
-            // Note: b2bPincodes may still have courier_id for rate lookup, but zone mapping is global
-          ),
-        )
-        .limit(1)
+      const existing = existingByPincodeAndState.get(
+        `${location.pincode}|${normalizeStateName(location.state)}`,
+      ) as any
 
       if (existing) {
-        if (existing.zone_id !== zoneId) {
-          await tx
-            .update(b2bPincodes)
-            .set({ zone_id: zoneId })
-            .where(eq(b2bPincodes.id, existing.id))
-        }
+        if (existing.zone_id !== zoneId) rowIdsToMove.push(existing.id)
       } else {
-        await tx.insert(b2bPincodes).values({
+        rowsToInsert.push({
           pincode: location.pincode,
           city: location.city,
           state: location.state,
@@ -723,6 +735,17 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
           is_high_security: false,
         })
       }
+    }
+
+    const chunkSize = 750
+    for (let index = 0; index < rowIdsToMove.length; index += chunkSize) {
+      await tx
+        .update(b2bPincodes)
+        .set({ zone_id: zoneId })
+        .where(inArray(b2bPincodes.id, rowIdsToMove.slice(index, index + chunkSize)))
+    }
+    for (let index = 0; index < rowsToInsert.length; index += chunkSize) {
+      await tx.insert(b2bPincodes).values(rowsToInsert.slice(index, index + chunkSize))
     }
   }
 

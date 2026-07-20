@@ -7,6 +7,7 @@ import http from 'http'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { initSocketServer } from './config/socketServer'
+import { corsOriginCallback } from './config/cors'
 import {
   delhiveryDocumentPushHandler,
   delhiveryScanPushHandler,
@@ -124,46 +125,9 @@ app.use((req, _res, next) => {
   next()
 })
 
-const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '').toLowerCase()
-
-const configuredAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean)
-  .map(normalizeOrigin)
-
-const allowedOrigins = new Set([
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5176',
-  'https://shiplifi.com',
-  'https://www.shiplifi.com',
-  'https://app.shiplifi.com',
-  ...configuredAllowedOrigins,
-])
-
-const isAllowedOrigin = (origin: string) => {
-  const normalizedOrigin = normalizeOrigin(origin)
-
-  if (allowedOrigins.has(normalizedOrigin)) {
-    return true
-  }
-
-  // Allow first-party HTTPS subdomains like preview or alternate app hosts.
-  return /^https:\/\/([a-z0-9-]+\.)*shiplifi\.com$/.test(normalizedOrigin)
-}
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || isAllowedOrigin(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`))
-      }
-    },
+    origin: corsOriginCallback,
     credentials: true,
     exposedHeaders: [
       'Content-Disposition',

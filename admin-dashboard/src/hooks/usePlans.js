@@ -46,11 +46,27 @@ export const useUpdatePlan = () => {
 }
 
 export const useDeletePlan = () => {
+  const toast = useToast()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: PlansService.deletePlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] })
+      toast({
+        title: 'Rate card deleted successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete rate card',
+        description: error?.response?.data?.error || error?.message || 'Please try again.',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      })
     },
   })
 }

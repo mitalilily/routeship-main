@@ -7,7 +7,9 @@ import { useDeletePlan, usePlans, useUpdatePlan } from 'hooks/usePlans'
 import { useState } from 'react'
 
 const PlanManagement = () => {
-  const { data: plans, isLoading } = usePlans()
+  // Deleted rate cards are deactivated by the API so assignments can be moved safely.
+  // Only active cards belong in the rate-card management list.
+  const { data: plans, isLoading } = usePlans({ status: 'active' })
   const deletePlan = useDeletePlan()
   const updatePlan = useUpdatePlan()
   const [selectedPlan, setSelectedPlan] = useState(null)
