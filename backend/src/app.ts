@@ -50,6 +50,7 @@ import externalApiRoutes from './routes/externalApi.routes'
 import globalSearchRoutes from './routes/globalSearch.routes'
 import ftlRequestRoutes from './routes/ftlRequest.routes'
 import integrationRoutes from './routes/integrationRoutes'
+import internationalShipmentRoutes from './routes/internationalShipment.routes'
 import invoicesRoutes from './routes/invoice.routes'
 import invoicePreferencesRoutes from './routes/invoicePreferences.routes'
 import labelRoutes from './routes/labelPreferences.routes'
@@ -205,6 +206,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/reports', reportsRoutes)
 app.use('/api/search', globalSearchRoutes)
 app.use('/api', ftlRequestRoutes)
+app.use('/api', internationalShipmentRoutes)
 app.use('/api/serviceability', locationRoutes)
 app.use('/api/user-management', employeeRoutes)
 app.use('/api/label-preference', labelRoutes)

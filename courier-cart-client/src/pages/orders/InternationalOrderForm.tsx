@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type React from 'react'
 import { FiChevronUp, FiPlus, FiTrash2, FiX } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import { createInternationalShipment } from '../../api/international.api'
 import { toast } from '../../components/UI/Toast'
 import { usePickupAddresses } from '../../hooks/Pickup/usePickupAddresses'
 
@@ -169,12 +170,35 @@ function Field({
 
 export default function InternationalOrderForm() {
   const navigate = useNavigate()
+  const [submitting, setSubmitting] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('prepaid')
   const [rov, setRov] = useState('owner-risk')
   const [itemType, setItemType] = useState('non-commercial')
   const [itemCategory, setItemCategory] = useState('document')
   const [shippingMode, setShippingMode] = useState('')
   const [selectedPickupId, setSelectedPickupId] = useState('')
+  const [consignee, setConsignee] = useState({
+    name: '',
+    mobile: '',
+    alternateMobile: '',
+    email: '',
+    gstin: '',
+    floorNo: '',
+    landmark: '',
+    addressLine1: '',
+    addressLine2: '',
+    pincode: '',
+    city: '',
+    state: '',
+    country: 'US',
+  })
+  const [otherDetails, setOtherDetails] = useState({
+    invoiceNumber: '',
+    orderDate: '',
+    ewayBillNo: '',
+    customerReferenceNo: '',
+    sellerName: '',
+  })
   const { data: pickupData } = usePickupAddresses({ page: 1, limit: 100 })
   const [products, setProducts] = useState<ProductRow[]>([
     { id: 1, productName: '', sku: '', unitPrice: '', quantity: '' },
@@ -245,6 +269,54 @@ export default function InternationalOrderForm() {
     setPackages((current) =>
       current.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     )
+  }
+
+  const updateConsignee = (field: keyof typeof consignee, value: string) => {
+    setConsignee((current) => ({ ...current, [field]: value }))
+  }
+
+  const updateOtherDetails = (field: keyof typeof otherDetails, value: string) => {
+    setOtherDetails((current) => ({ ...current, [field]: value }))
+  }
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      await createInternationalShipment({
+        pickupId: selectedPickupId,
+        consigneeName: consignee.name,
+        consigneePhone: consignee.mobile,
+        consigneeAlternatePhone: consignee.alternateMobile,
+        consigneeEmail: consignee.email,
+        consigneeGstin: consignee.gstin,
+        addressLine1: consignee.addressLine1,
+        addressLine2: consignee.addressLine2,
+        landmark: consignee.landmark,
+        destinationPincode: consignee.pincode,
+        destinationCity: consignee.city,
+        destinationState: consignee.state,
+        destinationCountry: consignee.country,
+        paymentMethod,
+        rov,
+        itemType,
+        itemCategory,
+        shippingMode,
+        products,
+        packages,
+        orderValue: productTotal,
+        applicableWeight,
+        ...otherDetails,
+      })
+      toast.open({ message: 'International shipment sent to admin team', severity: 'success' })
+      navigate('/orders/international/list')
+    } catch (error: any) {
+      toast.open({
+        message: error?.response?.data?.message || 'Failed to submit international shipment',
+        severity: 'error',
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -334,16 +406,16 @@ export default function InternationalOrderForm() {
               </Typography>
               <Grid container spacing={1.6}>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Name" required />
+                  <Field label="Name" required value={consignee.name} onChange={(value) => updateConsignee('name', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Mobile" required />
+                  <Field label="Mobile" required value={consignee.mobile} onChange={(value) => updateConsignee('mobile', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Alternate Mobile" />
+                  <Field label="Alternate Mobile" value={consignee.alternateMobile} onChange={(value) => updateConsignee('alternateMobile', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Email" />
+                  <Field label="Email" value={consignee.email} onChange={(value) => updateConsignee('email', value)} />
                 </Grid>
               </Grid>
 
@@ -352,13 +424,13 @@ export default function InternationalOrderForm() {
               </Typography>
               <Grid container spacing={1.6}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Field label="GSTIN" placeholder="ENTER GSTIN" />
+                  <Field label="GSTIN" placeholder="ENTER GSTIN" value={consignee.gstin} onChange={(value) => updateConsignee('gstin', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Field label="Floor No" placeholder="Eg: 2nd Floor" />
+                  <Field label="Floor No" placeholder="Eg: 2nd Floor" value={consignee.floorNo} onChange={(value) => updateConsignee('floorNo', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Field label="Landmark" placeholder="Eg: Near SBI Bank" />
+                  <Field label="Landmark" placeholder="Eg: Near SBI Bank" value={consignee.landmark} onChange={(value) => updateConsignee('landmark', value)} />
                 </Grid>
               </Grid>
 
@@ -370,22 +442,22 @@ export default function InternationalOrderForm() {
               </Typography>
               <Grid container spacing={1.6}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Field label="Address Line 1" required />
+                  <Field label="Address Line 1" required value={consignee.addressLine1} onChange={(value) => updateConsignee('addressLine1', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Field label="Address Line 2" />
+                  <Field label="Address Line 2" value={consignee.addressLine2} onChange={(value) => updateConsignee('addressLine2', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Pincode" required />
+                  <Field label="Pincode" required value={consignee.pincode} onChange={(value) => updateConsignee('pincode', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="City" required />
+                  <Field label="City" required value={consignee.city} onChange={(value) => updateConsignee('city', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="State" required />
+                  <Field label="State" required value={consignee.state} onChange={(value) => updateConsignee('state', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Country" required value="India" />
+                  <Field label="Country" required value={consignee.country} onChange={(value) => updateConsignee('country', value)} />
                 </Grid>
               </Grid>
             </Box>
@@ -703,20 +775,20 @@ export default function InternationalOrderForm() {
           </Box>
           <Grid container spacing={1.8}>
             <Grid size={{ xs: 12, md: 3 }}>
-              <Field label="Invoice Number" placeholder="Invoice Number" />
+              <Field label="Invoice Number" placeholder="Invoice Number" value={otherDetails.invoiceNumber} onChange={(value) => updateOtherDetails('invoiceNumber', value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
-              <Field label="Order Date" type="date" />
+              <Field label="Order Date" type="date" value={otherDetails.orderDate} onChange={(value) => updateOtherDetails('orderDate', value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
-              <Field label="Eway Bill No" placeholder="Eway Bill No" />
+              <Field label="Eway Bill No" placeholder="Eway Bill No" value={otherDetails.ewayBillNo} onChange={(value) => updateOtherDetails('ewayBillNo', value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }} />
             <Grid size={{ xs: 12, md: 3 }}>
-              <Field label="Customer Reference No" placeholder="Customer Reference No" />
+              <Field label="Customer Reference No" placeholder="Customer Reference No" value={otherDetails.customerReferenceNo} onChange={(value) => updateOtherDetails('customerReferenceNo', value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
-              <Field label="Seller Name" placeholder="Seller Name" />
+              <Field label="Seller Name" placeholder="Seller Name" value={otherDetails.sellerName} onChange={(value) => updateOtherDetails('sellerName', value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
               <Field label="AWB No" placeholder="AWB No" />
@@ -728,12 +800,8 @@ export default function InternationalOrderForm() {
           <Button
             variant="contained"
             startIcon={<FiTrash2 />}
-            onClick={() =>
-              toast.open({
-                message: 'International order form is ready. Backend booking is not connected yet.',
-                severity: 'info',
-              })
-            }
+            onClick={handleSubmit}
+            disabled={submitting}
             sx={{
               minWidth: 98,
               borderRadius: '4px',
@@ -741,7 +809,7 @@ export default function InternationalOrderForm() {
               textTransform: 'none',
             }}
           >
-            Submit
+            {submitting ? 'Submitting...' : 'Submit'}
           </Button>
         </Stack>
       </Stack>

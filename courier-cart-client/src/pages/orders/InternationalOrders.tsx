@@ -12,23 +12,46 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
+import { useEffect, useState } from 'react'
 import { FiGlobe, FiPlusCircle } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import { fetchMyInternationalShipments } from '../../api/international.api'
+import { toast } from '../../components/UI/Toast'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
 
-const sampleRows = [
-  {
-    id: 'INT-1001',
-    consignee: 'Awaiting first international order',
-    country: '-',
-    mode: '-',
-    status: 'Draft',
-    createdAt: '-',
-  },
-]
+const statusColor = (status?: string) => {
+  if (status === 'booked' || status === 'in_transit') return 'primary'
+  if (status === 'delivered') return 'success'
+  if (status === 'cancelled') return 'error'
+  return 'warning'
+}
+
+const formatDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-IN')
+}
 
 export default function InternationalOrders() {
   const navigate = useNavigate()
+  const [shipments, setShipments] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const loadShipments = async () => {
+    setLoading(true)
+    try {
+      const data = await fetchMyInternationalShipments({ page: 1, limit: 25 })
+      setShipments(data.shipments || [])
+    } catch (error: any) {
+      toast.open({ message: error?.response?.data?.message || 'Failed to load international shipments', severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadShipments()
+  }, [])
 
   return (
     <ListPageLayout
@@ -85,30 +108,37 @@ export default function InternationalOrders() {
                 <TableCell>Consignee</TableCell>
                 <TableCell>Country</TableCell>
                 <TableCell>Mode</TableCell>
+                <TableCell>AWB</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
+                <TableCell>Booked Date</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {sampleRows.map((row) => (
+              {shipments.length ? shipments.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.id}</TableCell>
-                  <TableCell>{row.consignee}</TableCell>
-                  <TableCell>{row.country}</TableCell>
-                  <TableCell>{row.mode}</TableCell>
+                  <TableCell>{row.shipmentNumber}</TableCell>
+                  <TableCell>{row.consigneeName}</TableCell>
+                  <TableCell>{row.destinationCountry}</TableCell>
+                  <TableCell>{row.shippingMode || '—'}</TableCell>
+                  <TableCell>{row.awbNumber || '—'}</TableCell>
                   <TableCell>
-                    <Chip size="small" label={row.status} color="warning" variant="outlined" />
+                    <Chip size="small" label={String(row.status || '').replace(/_/g, ' ')} color={statusColor(row.status)} variant="outlined" />
                   </TableCell>
-                  <TableCell>{row.createdAt}</TableCell>
+                  <TableCell>{formatDate(row.bookedDate)}</TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">{loading ? 'Loading...' : 'No international shipments yet'}</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
 
         <Box sx={{ px: 2, py: 2.5, borderTop: '1px solid #E2E8F0' }}>
           <Typography sx={{ color: '#6B7280', fontSize: '0.88rem' }}>
-            International shipment records will appear here once booking is connected.
+            Submit an international shipment request and the admin team will update AWB, booked
+            status and booking date here after manual booking.
           </Typography>
         </Box>
       </Paper>

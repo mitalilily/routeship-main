@@ -43,6 +43,7 @@ import AdminRto from 'views/Ops/AdminRto'
 import AdminNotificationsPage from 'views/Notifications/AdminNotificationsPage'
 import Orders from 'views/Orders/Orders'
 import FtlRequests from 'views/FTL/FtlRequests'
+import InternationalShipments from 'views/International/InternationalShipments'
 import PlanManagement from 'views/PlanManagement/PlanManagement'
 import ServiceabilityPage from 'views/Serviceability/ServiceabilityPage'
 import PaymentOptionsSettings from 'views/Settings/PaymentOptionsSettings'
@@ -100,6 +101,17 @@ const dashRoutes = [
     component: () => (
       <AdminRoute>
         <FtlRequests />
+      </AdminRoute>
+    ),
+    layout: '/admin',
+  },
+  {
+    path: '/international-shipments',
+    name: 'International Shipments',
+    icon: <IconTruck />,
+    component: () => (
+      <AdminRoute>
+        <InternationalShipments />
       </AdminRoute>
     ),
     layout: '/admin',

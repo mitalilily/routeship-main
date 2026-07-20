@@ -70,6 +70,7 @@ const RateCard = lazy(() => import('../pages/tools/RateCard'))
 const RateCalculator = lazy(() =>
   import('../pages/tools/RateCalculator').then((m) => ({ default: m.RateCalculator })),
 )
+const InternationalRateCalculator = lazy(() => import('../pages/tools/InternationalRateCalculator'))
 const OrderTrackingForm = lazy(() => import('../pages/tools/OrderTrackingForm'))
 
 // Support
@@ -200,6 +201,7 @@ export default function AppRoutes() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/tools/rate_card" element={<RateCard />} />
             <Route path="/tools/rate_calculator" element={<RateCalculator />} />
+            <Route path="/tools/international_rate_calculator" element={<InternationalRateCalculator />} />
             <Route path="/tools/order_tracking" element={<OrderTrackingForm />} />
             <Route path="/support/tickets" element={<SupportTicketsPage />} />
             <Route path="/support/tickets/:id" element={<TicketDetailsPage />} />

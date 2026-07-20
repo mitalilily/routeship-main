@@ -203,6 +203,11 @@ const navItems: NavItem[] = [
         icon: <TbReportAnalytics size={ICON_SIZE_TB} />,
       },
       {
+        text: 'International Rate',
+        path: '/tools/international_rate_calculator',
+        icon: <FiGlobe size={ICON_SIZE_MD} />,
+      },
+      {
         text: 'Track Shipment',
         path: '/tools/order_tracking',
         icon: <CgTrack size={ICON_SIZE_CG} />,
