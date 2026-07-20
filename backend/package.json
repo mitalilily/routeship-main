@@ -29,6 +29,7 @@
     "seed:basic-plan": "tsx src/scripts/seedBasicPlan.ts",
     "assign:basic-plan": "tsx src/scripts/assignBasicPlans.ts",
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
+    "approve:kyc": "tsx src/scripts/approveKycByEmail.ts",
     "repair:admin-auth": "tsx src/scripts/repairAdminAuth.ts",
     "check:admin-login": "tsx src/scripts/checkAdminLogin.ts",
     "sync:rate-card-features": "tsx src/scripts/syncRateCardFeatures.ts",
