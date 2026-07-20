@@ -1,6 +1,7 @@
 export const DELHIVERY_COURIER_IDS = {
   EXPRESS: 99,
   SURFACE: 100,
+  LTL: 101,
 } as const
 
 export type DelhiveryShippingMode = 'Express' | 'Surface'
