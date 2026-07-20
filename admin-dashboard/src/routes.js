@@ -15,6 +15,7 @@ import {
   IconTools,
   IconTrack,
   IconTruck,
+  IconUser,
 } from '@tabler/icons-react'
 import { FaMoneyBill } from 'react-icons/fa'
 import { MdAccountBalanceWallet } from 'react-icons/md'
@@ -49,6 +50,8 @@ import AboutUsEditor from 'views/Support/AboutUsEditor'
 import AdminTicketDashboard from 'views/Support/AdminTicketsDashboard'
 import OrderTrackingPage from 'views/Tools/OrderTrackingPage'
 import RateCalculatorPage from 'views/Tools/RateCalculatorPage'
+import UserDetails from 'views/UsersManagement/UserDetails'
+import UsersManagementPage from 'views/UsersManagement/UsersManagementPage'
 import AdminWallets from 'views/Wallets/AdminWallets'
 import AdminDisputeManagement from 'views/WeightReconciliation/AdminDisputeManagement'
 import AdminWeightReconciliationDashboard from 'views/WeightReconciliation/AdminWeightReconciliationDashboard'
@@ -125,6 +128,28 @@ const dashRoutes = [
   },
 
   // ========== USER & BUSINESS MANAGEMENT ==========
+  {
+    path: '/users-management/:id',
+    name: 'User Details',
+    component: () => (
+      <AdminRoute>
+        <UserDetails />
+      </AdminRoute>
+    ),
+    layout: '/admin',
+    show: false,
+  },
+  {
+    path: '/users-management',
+    name: 'Users Management',
+    icon: <IconUser size={20} />,
+    component: () => (
+      <AdminRoute>
+        <UsersManagementPage />
+      </AdminRoute>
+    ),
+    layout: '/admin',
+  },
   {
     path: '/notifications',
     name: 'Notifications',

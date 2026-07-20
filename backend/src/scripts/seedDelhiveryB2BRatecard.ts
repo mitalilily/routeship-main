@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { and, asc, eq, isNull, sql } from 'drizzle-orm'
-import * as XLSX from 'xlsx'
+import type { Row } from 'read-excel-file/node'
 
 import { db, pool } from '../models/client'
 import { upsertZoneToZoneRate } from '../models/services/b2bAdmin.service'
@@ -14,6 +14,7 @@ import { remapZonePincodes } from '../models/services/zone.service'
 import { couriers } from '../models/schema/couriers'
 import { plans } from '../models/schema/plans'
 import { b2bZoneStates, zones } from '../models/schema/zones'
+import { readXlsxRows } from '../utils/xlsx'
 
 type ZoneSeed = {
   code: string
@@ -133,16 +134,9 @@ const parseStates = (rawValue: string) => {
   return Array.from(unique)
 }
 
-const parseWorkbook = (filePath: string) => {
-  const workbook = XLSX.readFile(filePath)
-  const matrixRows = XLSX.utils.sheet_to_json(workbook.Sheets.Sheet1, {
-    header: 1,
-    defval: null,
-  }) as Array<Array<string | number | null>>
-  const zoneRows = XLSX.utils.sheet_to_json(workbook.Sheets.Zone, {
-    header: 1,
-    defval: null,
-  }) as Array<Array<string | number | null>>
+const parseWorkbook = async (filePath: string) => {
+  const matrixRows = (await readXlsxRows(filePath, 'Sheet1')) as Row[]
+  const zoneRows = (await readXlsxRows(filePath, 'Zone')) as Row[]
 
   if (!matrixRows.length || !zoneRows.length) {
     throw new Error('Workbook is missing the expected Sheet1/Zone content.')
@@ -202,9 +196,9 @@ const parseWorkbook = (filePath: string) => {
       key: normalizeText(row[0]),
       remark: normalizeText(row[1]),
       calculation: normalizeText(row[2]),
-      unitCharge: row[3] ?? null,
-      min: row[4] ?? null,
-      max: row[5] ?? null,
+      unitCharge: normalizeText(row[3]) || null,
+      min: normalizeText(row[4]) || null,
+      max: normalizeText(row[5]) || null,
     }))
 
   const odaRows = matrixRows
@@ -213,9 +207,9 @@ const parseWorkbook = (filePath: string) => {
     .map<OdaSlabRow>((row) => ({
       lowerLimitKg: toNumericValue(row[1]),
       upperLimitKg: toNumericValue(row[2]),
-      perKgCharge: row[3] ?? null,
-      minCharge: row[4] ?? null,
-      maxCharge: row[5] ?? null,
+      perKgCharge: normalizeText(row[3]) || null,
+      minCharge: normalizeText(row[4]) || null,
+      maxCharge: normalizeText(row[5]) || null,
     }))
 
   return {
@@ -629,7 +623,7 @@ async function main() {
     throw new Error(`Workbook not found at ${workbookPath}`)
   }
 
-  const workbook = parseWorkbook(workbookPath)
+  const workbook = await parseWorkbook(workbookPath)
   const courier = await resolveCourier(courierId)
   const plan = await resolvePlan(planId, planName)
 

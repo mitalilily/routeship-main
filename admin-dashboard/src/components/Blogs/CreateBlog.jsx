@@ -24,13 +24,9 @@ import {
 import Card from 'components/Card/Card'
 import CardBody from 'components/Card/CardBody'
 import FileUploader from 'components/upload/FileUploader'
-import { ContentState, convertFromHTML, convertToRaw, EditorState } from 'draft-js'
-import draftToHtml from 'draftjs-to-html'
 import { useCreateBlog, useSingleBlog, useUpdateBlog } from 'hooks/useBlog'
 import { usePresignedDownloadUrls } from 'hooks/usePresignedUrls'
 import { useEffect, useState } from 'react'
-import { Editor } from 'react-draft-wysiwyg'
-import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import { FiArrowLeft, FiCheck, FiImage, FiX } from 'react-icons/fi'
 import { useParams } from 'react-router-dom'
 import { useHistory } from 'react-router-dom/cjs/react-router-dom.min'
@@ -41,6 +37,15 @@ const CreateBlog = () => {
   const history = useHistory()
   const textColor = useColorModeValue('gray.700', 'white')
   const bgColor = useColorModeValue('gray.50', 'gray.800')
+  const stickyHeaderBg = useColorModeValue('white', 'gray.800')
+  const stickyHeaderBorder = useColorModeValue('gray.200', 'gray.700')
+  const editorBorder = useColorModeValue('gray.200', 'gray.600')
+  const imageBorder = useColorModeValue('gray.200', 'gray.600')
+  const uploadBorder = useColorModeValue('gray.300', 'gray.600')
+  const uploadBg = useColorModeValue('gray.50', 'gray.700')
+  const uploadHoverBorder = useColorModeValue('blue.400', 'blue.300')
+  const uploadHoverBg = useColorModeValue('blue.50', 'gray.600')
+  const uploadIconBg = useColorModeValue('blue.100', 'blue.900')
 
   const [form, setForm] = useState({
     title: '',
@@ -57,7 +62,6 @@ const CreateBlog = () => {
   })
 
   const [errors, setErrors] = useState({})
-  const [editorState, setEditorState] = useState(EditorState.createEmpty())
   const createBlogMutation = useCreateBlog()
   const updateBlogMutation = useUpdateBlog()
 
@@ -86,15 +90,6 @@ const CreateBlog = () => {
         og_image: blog.og_image || '',
         meta_description: blog.meta_description || blog.excerpt || '',
       })
-
-      if (blog.content) {
-        const blocksFromHTML = convertFromHTML(blog.content)
-        const contentState = ContentState.createFromBlockArray(
-          blocksFromHTML.contentBlocks,
-          blocksFromHTML.entityMap,
-        )
-        setEditorState(EditorState.createWithContent(contentState))
-      }
     }
   }, [blog])
 
@@ -112,11 +107,8 @@ const CreateBlog = () => {
     }
   }
 
-  const handleContentChange = (state) => {
-    setEditorState(state)
-    const html = draftToHtml(convertToRaw(state.getCurrentContent()))
-    setForm((f) => ({ ...f, content: html }))
-  }
+  const handleContentChange = (event) =>
+    setForm((current) => ({ ...current, content: event.target.value }))
 
   // Auto-generate slug and tags only for new blogs
   useEffect(() => {
@@ -218,9 +210,9 @@ const CreateBlog = () => {
     <Box pt={{ base: '120px', md: '75px' }} bg={bgColor} minH="100vh" pb={10}>
       {/* Sticky Header */}
       <Box
-        bg={useColorModeValue('white', 'gray.800')}
+        bg={stickyHeaderBg}
         borderBottom="1px"
-        borderColor={useColorModeValue('gray.200', 'gray.700')}
+        borderColor={stickyHeaderBorder}
         position="sticky"
         top="0"
         zIndex="10"
@@ -325,34 +317,20 @@ const CreateBlog = () => {
                       </FormLabel>
                       <Box
                         border="1px solid"
-                        borderColor={useColorModeValue('gray.200', 'gray.600')}
+                        borderColor={editorBorder}
                         borderRadius="md"
                         overflow="hidden"
                         bg="white"
                       >
-                        <Editor
-                          editorState={editorState}
-                          onEditorStateChange={handleContentChange}
-                          wrapperClassName="editor-wrapper"
-                          editorClassName="editor"
-                          toolbarClassName="editor-toolbar"
-                          toolbar={{
-                            options: [
-                              'inline',
-                              'blockType',
-                              'list',
-                              'textAlign',
-                              'link',
-                              'history',
-                            ],
-                            inline: { inDropdown: false },
-                            list: { inDropdown: true },
-                            textAlign: { inDropdown: true },
-                            link: { inDropdown: true },
-                            history: { inDropdown: false },
-                          }}
-                          editorStyle={{ minHeight: '400px', padding: '16px' }}
-                          placeholder="Start writing your blog content here..."
+                        <Textarea
+                          value={form.content}
+                          onChange={handleContentChange}
+                          minH="400px"
+                          p={4}
+                          fontFamily="monospace"
+                          resize="vertical"
+                          border="none"
+                          placeholder="Enter the blog HTML here..."
                         />
                       </Box>
                       {errors.content && <FormErrorMessage>{errors.content}</FormErrorMessage>}
@@ -444,7 +422,7 @@ const CreateBlog = () => {
                         borderRadius="lg"
                         overflow="hidden"
                         border="2px solid"
-                        borderColor={useColorModeValue('gray.200', 'gray.600')}
+                        borderColor={imageBorder}
                       >
                         <Image
                           src={imagePreviewUrl}
@@ -457,15 +435,15 @@ const CreateBlog = () => {
                     ) : (
                       <Box
                         border="2px dashed"
-                        borderColor={useColorModeValue('gray.300', 'gray.600')}
+                        borderColor={uploadBorder}
                         borderRadius="lg"
                         p={6}
                         textAlign="center"
-                        bg={useColorModeValue('gray.50', 'gray.700')}
+                        bg={uploadBg}
                         transition="all 0.2s"
                         _hover={{
-                          borderColor: useColorModeValue('blue.400', 'blue.300'),
-                          bg: useColorModeValue('blue.50', 'gray.600'),
+                          borderColor: uploadHoverBorder,
+                          bg: uploadHoverBg,
                         }}
                       >
                         <VStack spacing={2}>
@@ -473,7 +451,7 @@ const CreateBlog = () => {
                             w={12}
                             h={12}
                             borderRadius="full"
-                            bg={useColorModeValue('blue.100', 'blue.900')}
+                            bg={uploadIconBg}
                             display="flex"
                             alignItems="center"
                             justifyContent="center"

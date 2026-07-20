@@ -1593,7 +1593,7 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => navigate('/pickup-addresses')}
+                onClick={() => navigate('/settings/manage_pickups')}
                 sx={{
                   alignSelf: 'flex-start',
                   textTransform: 'none',

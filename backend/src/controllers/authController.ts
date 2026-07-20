@@ -9,6 +9,7 @@ import {
   clampPreviousRefreshTokenExpiry,
   createUser,
   createUserWithWallet,
+  ensureUserBootstrapResources,
   findUserByEmail,
   findUserById,
   handleEmailVerificationRequest,
@@ -314,6 +315,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'Incorrect OTP' })
     }
 
+    await ensureUserBootstrapResources(user.id)
     await clearUserOtpByEmail(normalizedEmail)
     await markEmailVerified(normalizedEmail) // update emailVerified = true
     const accessToken = signAccessToken(user.id, user.role ?? 'customer')

@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import express from 'express'
+import helmet from 'helmet'
 import http from 'http'
 import path from 'path'
 import { randomUUID } from 'crypto'
@@ -78,6 +79,12 @@ dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) })
 
 const app = express()
 const server = http.createServer(app) // ✅ HTTP server for socket.io
+
+if (env === 'production') {
+  app.set('trust proxy', 1)
+}
+
+app.use(helmet())
 
 // Init socket.io server
 initSocketServer(server)
@@ -169,6 +176,15 @@ app.use(
     ],
   }),
 )
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    environment: env,
+    timestamp: new Date().toISOString(),
+  })
+})
 
 // Shopify webhooks require raw body for HMAC verification
 app.post('/api/webhooks/shopify/order-created', express.raw({ type: 'application/json' }), shopifyOrderWebhookController)
@@ -265,6 +281,14 @@ app.post('/api/webhook/delhivery/scan', express.json(), delhiveryScanPushHandler
 app.post('/api/webhook/delhivery/document', express.json(), delhiveryDocumentPushHandler) // Document Push (POD, Sorter Image, QC Image)
 // Legacy unified endpoint (auto-detects type) - kept for backward compatibility
 app.post('/api/webhook/delhivery/order', express.json(), delhiveryWebhookHandler)
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl || req.url,
+  })
+})
 
 app.use((err: any, req: any, res: any, next: any) => {
   if (res.headersSent) {

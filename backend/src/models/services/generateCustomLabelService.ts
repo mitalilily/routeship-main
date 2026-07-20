@@ -1,10 +1,10 @@
 import axios from 'axios'
 import bwipjs from 'bwip-js'
 import { eq } from 'drizzle-orm'
-import fileType from 'file-type'
 import PdfPrinter from 'pdfmake'
 import sharp from 'sharp'
 import { resolveBuyerCollectableAmount } from '../../utils/codAmount'
+import { detectFileType } from '../../utils/detectFileType'
 import { db } from '../client'
 import { labelPreferences } from '../schema/labelPreferences'
 import { userProfiles } from '../schema/userProfile'
@@ -297,7 +297,7 @@ function formatDimensionsLabel(order: RecordLike) {
 async function bufferToDataUrl(buffer: Buffer): Promise<string | null> {
   try {
     if (!buffer?.length) return null
-    const type = await fileType.fromBuffer(buffer)
+    const type = await detectFileType(buffer)
     const mime = type?.mime?.startsWith('image/') ? type.mime : 'image/png'
     return `data:${mime};base64,${buffer.toString('base64')}`
   } catch {

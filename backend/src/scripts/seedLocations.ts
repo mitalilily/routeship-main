@@ -1,9 +1,9 @@
 // src/scripts/seedLocations.ts
 import fs from 'fs'
 import path from 'path'
-import XLSX from 'xlsx'
 import { db } from '../models/client'
 import { locations } from '../schema/schema'
+import { readXlsxRows, xlsxRowsToRecords } from '../utils/xlsx'
 
 const DATA_DIR = path.resolve('src/scripts/data')
 const CHUNK_SIZE = 10
@@ -84,9 +84,7 @@ async function importXlsx(filename: string) {
   }
   console.log('📂 Reading XLSX:', fullPath)
 
-  const wb = XLSX.readFile(fullPath)
-  const sheet = wb.Sheets[wb.SheetNames[0]]
-  const jsonRows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+  const jsonRows = xlsxRowsToRecords(await readXlsxRows(fullPath))
 
   console.log('Total rows parsed:', jsonRows.length)
 

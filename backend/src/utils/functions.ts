@@ -1,10 +1,10 @@
 import * as bcrypt from 'bcryptjs'
-import fileType from 'file-type'
 
 import dotenv from 'dotenv'
 import sharp from 'sharp'
 
 import path from 'path'
+import { detectFileType } from './detectFileType'
 
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
@@ -110,7 +110,7 @@ export const hash = (plain: string) => bcrypt.hash(plain, 10)
 export const compare = (plain: string, hashed: string) => bcrypt.compare(plain, hashed)
 
 export async function isImageBlurrySharp(buffer: Buffer): Promise<boolean> {
-  const type = await fileType.fromBuffer(buffer)
+  const type = await detectFileType(buffer)
 
   if (!type || !['image/jpeg', 'image/png', 'image/webp'].includes(type.mime)) {
     throw new Error(`Unsupported image format: ${type?.mime ?? 'unknown'}`)

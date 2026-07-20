@@ -9,16 +9,27 @@ import routes from 'routes.js'
 export default function AuthNavbar(props) {
   const { logoText, secondary, ...rest } = props
 
-  const navbarIcon = secondary ? 'white' : useColorModeValue('gray.700', 'gray.200')
-  const mainText = secondary ? 'white' : useColorModeValue('gray.800', 'gray.100')
+  const defaultNavbarIcon = useColorModeValue('gray.700', 'gray.200')
+  const defaultMainText = useColorModeValue('gray.800', 'gray.100')
+  const defaultNavbarBg = useColorModeValue(
+    'linear-gradient(110deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.88) 100%)',
+    'linear-gradient(110deg, rgba(16, 28, 52, 0.92) 0%, rgba(10, 18, 36, 0.9) 100%)',
+  )
+  const defaultNavbarBorder = useColorModeValue(
+    '1px solid rgba(148, 163, 184, 0.35)',
+    '1px solid rgba(148, 163, 184, 0.25)',
+  )
+  const defaultNavbarShadow = useColorModeValue(
+    '0 12px 30px rgba(15, 46, 102, 0.12)',
+    '0 14px 36px rgba(2, 8, 23, 0.5)',
+  )
+  const navbarIcon = secondary ? 'white' : defaultNavbarIcon
+  const mainText = secondary ? 'white' : defaultMainText
   const navbarBg = secondary
     ? 'none'
-    : useColorModeValue(
-        'linear-gradient(110deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.88) 100%)',
-        'linear-gradient(110deg, rgba(16, 28, 52, 0.92) 0%, rgba(10, 18, 36, 0.9) 100%)',
-      )
-  const navbarBorder = secondary ? 'none' : useColorModeValue('1px solid rgba(148, 163, 184, 0.35)', '1px solid rgba(148, 163, 184, 0.25)')
-  const navbarShadow = secondary ? 'none' : useColorModeValue('0 12px 30px rgba(15, 46, 102, 0.12)', '0 14px 36px rgba(2, 8, 23, 0.5)')
+    : defaultNavbarBg
+  const navbarBorder = secondary ? 'none' : defaultNavbarBorder
+  const navbarShadow = secondary ? 'none' : defaultNavbarShadow
 
   const brand = (
     <Link href={`${process.env.PUBLIC_URL}/#/`} display="flex" lineHeight="100%" fontWeight="700" justifyContent="center" alignItems="center" color={mainText}>

@@ -1,6 +1,12 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '../client'
 import { blogs } from '../schema/blogs'
+import { sanitizeRichText } from '../../utils/sanitizeRichText'
+
+const sanitizeBlog = <T extends { content?: unknown }>(blog: T) => ({
+  ...blog,
+  ...(typeof blog.content === 'string' ? { content: sanitizeRichText(blog.content) } : {}),
+})
 
 export const BlogService = {
   async create(data: any) {
@@ -20,20 +26,22 @@ export const BlogService = {
 
     const payload: any = {
       ...rest,
+      content: sanitizeRichText(rest.content),
       published_at: data.published_at ? new Date(data.published_at) : null,
     }
 
     const [row] = await db.insert(blogs).values(payload).returning()
-    return row
+    return sanitizeBlog(row)
   },
   async update(id: number, data: any = {}) {
     data = data || {} // ensure data is an object
     data.updated_at = new Date() // always set updated_at
+    if (typeof data.content === 'string') data.content = sanitizeRichText(data.content)
 
     const [row] = await db.update(blogs).set(data).where(eq(blogs.id, id)).returning()
 
     // return the updated row or null if nothing was updated
-    return row || {}
+    return row ? sanitizeBlog(row) : {}
   },
   async list(filters: any, pagination: { page?: number; limit?: number }) {
     const { page = 1, limit = 10 } = pagination
@@ -61,16 +69,16 @@ export const BlogService = {
       .from(blogs)
       .where(conditions.length ? and(...conditions) : undefined)
 
-    return { rows, total: Number(count) }
+    return { rows: rows.map(sanitizeBlog), total: Number(count) }
   },
 
   async getById(id: number) {
     const [row] = await db.select().from(blogs).where(eq(blogs.id, id))
-    return row
+    return row ? sanitizeBlog(row) : row
   },
   async getBySlug(slug: string) {
     const [row] = await db.select().from(blogs).where(eq(blogs.slug, slug))
-    return row
+    return row ? sanitizeBlog(row) : row
   },
   async getStats() {
     const total = await db.select({ count: sql<number>`count(*)` }).from(blogs)

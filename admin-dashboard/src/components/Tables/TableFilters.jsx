@@ -47,6 +47,10 @@ const TableFilters = ({
   const cardBg = useColorModeValue('rgba(255,255,255,0.92)', 'rgba(14, 23, 43, 0.9)')
   const borderColor = useColorModeValue('rgba(148, 163, 184, 0.24)', 'rgba(148, 163, 184, 0.18)')
   const labelColor = useColorModeValue('gray.700', 'gray.100')
+  const cardShadow = useColorModeValue(
+    '0 16px 40px rgba(15, 23, 42, 0.06)',
+    '0 20px 48px rgba(2, 8, 23, 0.34)',
+  )
 
   useEffect(() => {
     const currentValues = values || {}
@@ -237,7 +241,7 @@ const TableFilters = ({
       borderRadius={cardStyle ? '24px' : '0'}
       px={cardStyle ? { base: 4, md: 5 } : 0}
       py={cardStyle ? { base: 4, md: 5 } : 0}
-      boxShadow={cardStyle ? useColorModeValue('0 16px 40px rgba(15, 23, 42, 0.06)', '0 20px 48px rgba(2, 8, 23, 0.34)') : 'none'}
+      boxShadow={cardStyle ? cardShadow : 'none'}
     >
       <Grid
         templateColumns={{

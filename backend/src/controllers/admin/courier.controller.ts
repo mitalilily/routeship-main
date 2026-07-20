@@ -1,6 +1,5 @@
 import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { Request, Response } from 'express'
-import * as XLSX from 'xlsx'
 import { db } from '../../models/client'
 import {
   deleteCourierService,
@@ -39,6 +38,7 @@ import {
   parseAmazonSandboxFlag,
 } from '../../models/services/amazonShippingCredentials.service'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
+import { readXlsxRows, xlsxRowsToRecords } from '../../utils/xlsx'
 
 export interface ShippingRateFilters {
   courier_name?: string[]
@@ -2198,28 +2198,19 @@ export const updateShippingRateController = async (req: Request, res: Response) 
 const isExcelRateCard = (file: any) => {
   const name = String(file?.originalname || '').toLowerCase()
   const mime = String(file?.mimetype || '').toLowerCase()
+  if (name.endsWith('.xls') && !name.endsWith('.xlsx')) {
+    throw new Error('Legacy .xls files are not supported. Save the workbook as .xlsx or CSV.')
+  }
   return (
     name.endsWith('.xlsx') ||
-    name.endsWith('.xls') ||
-    mime.includes('spreadsheet') ||
-    mime.includes('excel')
+    mime.includes('spreadsheetml') ||
+    mime.includes('openxmlformats')
   )
 }
 
-const parseRateCardFile = (file: any) => {
+const parseRateCardFile = async (file: any) => {
   if (isExcelRateCard(file)) {
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' })
-    const firstSheetName = workbook.SheetNames[0]
-    if (!firstSheetName) {
-      return { data: [] as CSVRow[], errors: [{ message: 'Excel file has no sheets' }] }
-    }
-
-    const worksheet = workbook.Sheets[firstSheetName]
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
-      defval: '',
-      raw: false,
-      blankrows: false,
-    })
+    const rows = xlsxRowsToRecords(await readXlsxRows(file.buffer))
 
     return { data: rows.map(normalizeRateCardRow), errors: [] as any[] }
   }
@@ -2243,7 +2234,7 @@ export const importShippingRatesController = async (req: any, res: Response) => 
       return res.status(400).json({ success: false, message: 'Invalid business_type' })
     }
 
-    const { data, errors } = parseRateCardFile(req.file)
+    const { data, errors } = await parseRateCardFile(req.file)
 
     if (errors.length) {
       console.error('Rate card parse errors:', errors)

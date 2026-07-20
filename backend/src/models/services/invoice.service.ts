@@ -2,9 +2,9 @@ import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 import { and, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm'
-import fileType from 'file-type'
 import PdfPrinter from 'pdfmake'
 import type { TableCell } from 'pdfmake/interfaces'
+import { detectFileType } from '../../utils/detectFileType'
 import { db } from '../client'
 import { invoices } from '../schema/invoices'
 import { presignDownload } from './upload.service'
@@ -172,7 +172,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData): Promise<Buffer> 
       }
 
       // First, try to detect file type using file-type library
-      const type = await fileType.fromBuffer(buffer)
+      const type = await detectFileType(buffer)
 
       if (type) {
         // Only allow image types

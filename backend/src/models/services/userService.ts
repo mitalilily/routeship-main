@@ -711,6 +711,127 @@ export async function createUserWithWallet(data: Partial<IUser>, txn: any = db) 
   })
 }
 
+/**
+ * Idempotently create the records every merchant account needs after authentication.
+ * Older OTP-created accounts may contain only a users row, so this also acts as a
+ * safe lazy repair when those merchants sign in again.
+ */
+export async function ensureUserBootstrapResources(userId: string) {
+  await ensurePlanSplitSetup()
+
+  return db.transaction(async (tx: any) => {
+    const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1)
+    if (!user) throw new Error('User not found while provisioning account resources')
+
+    const [wallet] = await tx
+      .select({ id: schema.wallets.id })
+      .from(schema.wallets)
+      .where(eq(schema.wallets.userId, userId))
+      .limit(1)
+    if (!wallet) {
+      await tx.insert(schema.wallets).values({ userId, balance: sql`0` })
+    }
+
+    const basicPlans = await tx.select().from(schema.plans).where(eq(schema.plans.name, 'Basic'))
+    for (const businessType of ['b2c', 'b2b'] as const) {
+      const plan = basicPlans.find((candidate: any) => candidate.business_type === businessType)
+      if (plan) {
+        await tx
+          .insert(schema.userPlans)
+          .values({
+            userId,
+            plan_id: plan.id,
+            business_type: businessType,
+            is_active: true,
+          })
+          .onConflictDoNothing()
+      }
+    }
+
+    const [billingPreference] = await tx
+      .select({ id: schema.billingPreferences.id })
+      .from(schema.billingPreferences)
+      .where(eq(schema.billingPreferences.userId, userId))
+      .limit(1)
+    if (!billingPreference) {
+      await tx.insert(schema.billingPreferences).values({
+        userId,
+        frequency: 'monthly',
+        autoGenerate: true,
+        customFrequencyDays: null,
+      })
+    }
+
+    const [labelPreference] = await tx
+      .select({ id: schema.labelPreferences.id })
+      .from(schema.labelPreferences)
+      .where(eq(schema.labelPreferences.user_id, userId))
+      .limit(1)
+    if (!labelPreference) {
+      await tx.insert(schema.labelPreferences).values({
+        user_id: userId,
+        printer_type: 'thermal',
+        char_limit: 30,
+        max_items: 4,
+        powered_by: 'Shiplifi',
+        order_info: {
+          alternatePhone: false,
+          billingGstin: false,
+          ewayBillNumber: false,
+        },
+        shipper_info: {
+          brandLogo: true,
+          shipperName: true,
+          shipperAddress: true,
+          shipperPhone: true,
+          gstin: true,
+          returnPhone: true,
+        },
+        product_info: { productCost: true },
+        brand_logo: null,
+      })
+    }
+
+    const [invoicePreference] = await tx
+      .select({ id: schema.invoicePreferences.id })
+      .from(schema.invoicePreferences)
+      .where(eq(schema.invoicePreferences.userId, userId))
+      .limit(1)
+    if (!invoicePreference) {
+      await tx.insert(schema.invoicePreferences).values({
+        userId,
+        prefix: 'INV',
+        suffix: '',
+        template: 'classic',
+        includeLogo: true,
+        includeSignature: true,
+        logoFile: null,
+        signatureFile: null,
+      })
+    }
+
+    const [profile] = await tx
+      .select({ id: schema.userProfiles.id })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.userId, userId))
+      .limit(1)
+    if (!profile) {
+      await tx.insert(schema.userProfiles).values({
+        ...DEFAULT_PROFILE,
+        userId,
+        companyInfo: {
+          ...DEFAULT_PROFILE.companyInfo,
+          contactEmail: user.email ?? '',
+          contactNumber: user.phone ?? '',
+          profilePicture: user.profilePicture,
+        },
+      })
+    }
+
+    return user
+  })
+}
+
 type GetUsersParams = {
   page: number
   perPage: number

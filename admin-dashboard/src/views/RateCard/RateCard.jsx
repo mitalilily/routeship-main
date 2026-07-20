@@ -176,9 +176,6 @@ const RateCard = () => {
           return value
         },
       },
-      ...(selectedBusinessType !== 'b2c'
-        ? [{ key: 'min_weight', label: 'Min Weight', width: '120px' }]
-        : []),
     ],
     [],
   )
@@ -223,9 +220,6 @@ const RateCard = () => {
           { label: 'Surface', value: 'surface' },
         ],
       },
-      ...(selectedBusinessType !== 'b2c'
-        ? [{ key: 'min_weight', label: 'Min Weight', type: 'text' }]
-        : []),
       {
         key: 'zone',
         label: 'Zone',
@@ -233,7 +227,7 @@ const RateCard = () => {
         options: zones?.map((zone) => ({ label: zone.name, value: zone.code })) || [],
       },
     ],
-    [courierList, selectedBusinessType, zones],
+    [courierList, zones],
   )
 
   return (

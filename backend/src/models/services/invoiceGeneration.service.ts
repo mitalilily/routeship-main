@@ -2,11 +2,11 @@ import axios from 'axios'
 import { randomUUID } from 'crypto'
 import dayjs from 'dayjs'
 import { and, between, eq, inArray, sql } from 'drizzle-orm'
-import fileType from 'file-type'
 import fs from 'fs'
 import path from 'path'
 import PdfPrinter from 'pdfmake'
 import { sendInvoiceReadyEmail } from '../../utils/emailSender'
+import { detectFileType } from '../../utils/detectFileType'
 import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
@@ -264,7 +264,7 @@ export const generateInvoiceForUser = async (
         return null
       }
 
-      const type = await fileType.fromBuffer(buffer)
+      const type = await detectFileType(buffer)
       if (!type) {
         // Try to validate buffer manually by checking for image signatures
         const isValidImage =

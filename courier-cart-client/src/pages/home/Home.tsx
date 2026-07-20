@@ -108,7 +108,7 @@ const Home = () => {
     {
       label: 'COD Remittance',
       icon: MdLocalShipping,
-      path: '/cod-settlement',
+      path: '/cod-remittance',
       color: '#F97316',
       desc: 'Check COD flow',
     },

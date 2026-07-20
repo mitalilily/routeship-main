@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { StaticPagesService } from '../models/services/staticPages.service'
+import { sanitizeRichText } from '../utils/sanitizeRichText'
 
 export const StaticPagesController = {
   async getBySlug(req: Request, res: Response, next: NextFunction) {
@@ -11,7 +12,7 @@ export const StaticPagesController = {
         return res.status(404).json({ message: 'Page not found' })
       }
 
-      return res.json({ data: page })
+      return res.json({ data: { ...page, content: sanitizeRichText(page.content) } })
     } catch (err) {
       next(err)
     }
@@ -26,8 +27,16 @@ export const StaticPagesController = {
         return res.status(400).json({ message: 'Content is required' })
       }
 
-      const page = await StaticPagesService.upsertBySlug(slug, { title, content })
-      return res.json({ data: page })
+      const sanitizedContent = sanitizeRichText(content)
+      if (!sanitizedContent) {
+        return res.status(400).json({ message: 'Content is required' })
+      }
+
+      const page = await StaticPagesService.upsertBySlug(slug, {
+        title,
+        content: sanitizedContent,
+      })
+      return res.json({ data: { ...page, content: sanitizeRichText(page.content) } })
     } catch (err) {
       next(err)
     }

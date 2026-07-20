@@ -9,18 +9,15 @@ import {
   Heading,
   HStack,
   Text,
+  Textarea,
   useColorModeValue,
   useToast,
   VStack,
 } from '@chakra-ui/react'
-import { ContentState, convertFromHTML, convertToRaw, EditorState } from 'draft-js'
-import draftToHtml from 'draftjs-to-html'
+import DOMPurify from 'dompurify'
 import { useStaticPage, useUpdateStaticPage } from 'hooks/useStaticPage'
 import { useEffect, useState } from 'react'
-import { Editor } from 'react-draft-wysiwyg'
-import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import { FiCheck, FiRefreshCcw } from 'react-icons/fi'
-import api from 'services/axios'
 
 const ABOUT_US_SLUG = 'about_us'
 
@@ -32,20 +29,11 @@ const AboutUsEditor = () => {
   const { data: page, isLoading } = useStaticPage(ABOUT_US_SLUG)
   const updatePageMutation = useUpdateStaticPage(ABOUT_US_SLUG)
 
-  const [editorState, setEditorState] = useState(() => EditorState.createEmpty())
   const [content, setContent] = useState('')
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    if (page?.content) {
-      const blocksFromHTML = convertFromHTML(page.content)
-      const contentState = ContentState.createFromBlockArray(
-        blocksFromHTML.contentBlocks,
-        blocksFromHTML.entityMap,
-      )
-      setEditorState(EditorState.createWithContent(contentState))
-      setContent(page.content)
-    }
+    setContent(page?.content || '')
   }, [page])
 
   const handleLoadTemplate = () => {
@@ -73,54 +61,16 @@ const AboutUsEditor = () => {
       <p><strong>Website:</strong> www.shiplifi.com</p>
     `
 
-    const blocksFromHTML = convertFromHTML(templateHtml)
-    const contentState = ContentState.createFromBlockArray(
-      blocksFromHTML.contentBlocks,
-      blocksFromHTML.entityMap,
-    )
-    setEditorState(EditorState.createWithContent(contentState))
     setContent(templateHtml)
   }
 
-  const handleContentChange = (state) => {
-    setEditorState(state)
-    const html = draftToHtml(convertToRaw(state.getCurrentContent()))
-    setContent(html)
-  }
+  const handleContentChange = (event) => setContent(event.target.value)
 
   const validateForm = () => {
     const newErrors = {}
     if (!content.trim()) newErrors.content = 'Content is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }
-
-  const uploadImageCallback = async (file) => {
-    try {
-      const { data } = await api.post('/uploads/presign', {
-        contentType: file.type || 'image/*',
-        filename: file.name,
-        folder: 'about-us',
-      })
-
-      await api.put(data.uploadUrl, file, {
-        headers: { 'Content-Type': file.type || 'image/*' },
-      })
-
-      // react-draft-wysiwyg expects this shape
-      return { data: { link: data.publicUrl } }
-    } catch (err) {
-      console.error('Image upload failed', err)
-      toast({
-        title: 'Image upload failed',
-        description: 'Please try again or use a smaller image.',
-        status: 'error',
-        duration: 4000,
-        isClosable: true,
-      })
-      // Fallback: no image inserted
-      return Promise.reject(err)
-    }
   }
 
   const handleSubmit = async (e) => {
@@ -219,44 +169,16 @@ const AboutUsEditor = () => {
                   <FormLabel fontSize="sm" fontWeight="600" mb={3}>
                     About Us Content
                   </FormLabel>
-                  <Box
-                    border="1px solid"
+                  <Textarea
+                    value={content}
+                    onChange={handleContentChange}
+                    minH="400px"
+                    p={4}
+                    fontFamily="monospace"
                     borderColor={useColorModeValue('gray.200', 'gray.600')}
-                    borderRadius="md"
-                    overflow="visible"
-                    bg="white"
-                  >
-                    <Editor
-                      editorState={editorState}
-                      onEditorStateChange={handleContentChange}
-                      wrapperClassName="editor-wrapper"
-                      editorClassName="editor"
-                      toolbarClassName="editor-toolbar"
-                      toolbar={{
-                        options: [
-                          'inline',
-                          'blockType',
-                          'list',
-                          'textAlign',
-                          'link',
-                          'image',
-                          'history',
-                        ],
-                        inline: { inDropdown: false },
-                        list: { inDropdown: true },
-                        textAlign: { inDropdown: true },
-                        link: { inDropdown: true },
-                        image: {
-                          uploadCallback: uploadImageCallback,
-                          previewImage: true,
-                          alt: { present: true, mandatory: false },
-                        },
-                        history: { inDropdown: false },
-                      }}
-                      editorStyle={{ minHeight: '400px', padding: '16px' }}
-                      placeholder="Write the About Us content shown to customers..."
-                    />
-                  </Box>
+                    resize="vertical"
+                    placeholder="Enter the HTML shown to customers..."
+                  />
                   {errors.content && <FormErrorMessage>{errors.content}</FormErrorMessage>}
                   <Text fontSize="xs" color="gray.500" mt={2}>
                     {
@@ -267,6 +189,9 @@ const AboutUsEditor = () => {
                         .filter(Boolean).length
                     }{' '}
                     words
+                  </Text>
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    Unsafe scripts, event handlers, and links are removed when saved.
                   </Text>
                 </FormControl>
               </VStack>
@@ -295,7 +220,9 @@ const AboutUsEditor = () => {
                 '& li': { mb: 0.5 },
               }}
               dangerouslySetInnerHTML={{
-                __html: content || '<p>Start writing to see preview here.</p>',
+                __html: DOMPurify.sanitize(
+                  content || '<p>Start writing to see preview here.</p>',
+                ),
               }}
             />
           </Box>

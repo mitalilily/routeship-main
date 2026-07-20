@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:routes": "node scripts/check-route-integrity.mjs",
     "lint": "eslint .",
+    "test": "npm run check:routes",
     "preview": "vite preview"
   },
   "dependencies": {
