@@ -1,10 +1,11 @@
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 
 type TokenSecretConfig = {
   accessTokenSecret?: string
   refreshTokenSecret?: string
   jwtSecret?: string
   sessionSecret?: string
+  allowEphemeralFallback?: boolean
 }
 
 const normalizeSecret = (value?: string) => {
@@ -24,11 +25,20 @@ export const resolveTokenSecrets = (config: TokenSecretConfig) => {
     normalizeSecret(config.refreshTokenSecret) ||
     (legacySecret ? deriveSecret('refresh', legacySecret) : undefined)
 
-  if (!accessSecret || !refreshSecret) {
+  if ((!accessSecret || !refreshSecret) && !config.allowEphemeralFallback) {
     throw new Error(
       'ACCESS_TOKEN_SECRET and REFRESH_TOKEN_SECRET are required (or configure JWT_SECRET as a legacy seed)',
     )
   }
 
-  return { accessSecret, refreshSecret }
+  if (!accessSecret || !refreshSecret) {
+    const runtimeSeed = randomBytes(48).toString('hex')
+    return {
+      accessSecret: accessSecret || deriveSecret('access', runtimeSeed),
+      refreshSecret: refreshSecret || deriveSecret('refresh', runtimeSeed),
+      ephemeral: true,
+    }
+  }
+
+  return { accessSecret, refreshSecret, ephemeral: false }
 }

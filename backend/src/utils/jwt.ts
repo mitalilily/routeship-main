@@ -9,12 +9,23 @@ import { resolveTokenSecrets } from './tokenSecrets'
 const env = process.env.NODE_ENV || 'development'
 dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
 
-const { accessSecret: ACCESS_SECRET, refreshSecret: REFRESH_SECRET } = resolveTokenSecrets({
+const {
+  accessSecret: ACCESS_SECRET,
+  refreshSecret: REFRESH_SECRET,
+  ephemeral: USING_EPHEMERAL_TOKEN_SECRETS,
+} = resolveTokenSecrets({
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   jwtSecret: process.env.JWT_SECRET,
   sessionSecret: process.env.SESSION_SECRET,
+  allowEphemeralFallback: true,
 })
+
+if (USING_EPHEMERAL_TOKEN_SECRETS) {
+  console.warn(
+    '[auth] JWT secrets are not configured; using secure runtime-only keys. Set ACCESS_TOKEN_SECRET and REFRESH_TOKEN_SECRET to keep sessions valid across restarts and replicas.',
+  )
+}
 
 export interface RefreshPayload {
   sub: string // userId

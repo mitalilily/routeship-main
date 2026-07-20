@@ -27,6 +27,16 @@ assert.notEqual(legacySecrets.accessSecret, legacySecrets.refreshSecret)
 assert.equal(legacySecrets.accessSecret.length, 64)
 assert.equal(legacySecrets.refreshSecret.length, 64)
 
+const ephemeralSecrets = resolveTokenSecrets({ allowEphemeralFallback: true })
+assert.equal(ephemeralSecrets.ephemeral, true)
+assert.notEqual(ephemeralSecrets.accessSecret, ephemeralSecrets.refreshSecret)
+assert.equal(ephemeralSecrets.accessSecret.length, 64)
+assert.equal(ephemeralSecrets.refreshSecret.length, 64)
+
+const anotherEphemeralSet = resolveTokenSecrets({ allowEphemeralFallback: true })
+assert.notEqual(ephemeralSecrets.accessSecret, anotherEphemeralSet.accessSecret)
+assert.notEqual(ephemeralSecrets.refreshSecret, anotherEphemeralSet.refreshSecret)
+
 const repositoryRoot = path.resolve(__dirname, '../../..')
 const authControllerSource = fs.readFileSync(
   path.join(repositoryRoot, 'backend/src/controllers/authController.ts'),
