@@ -613,7 +613,7 @@ const mergeXpressbeesManifestMeta = ({
   skippedProviderCall,
 }: {
   existingMeta: unknown
-  localManifestKey: string
+  localManifestKey: string | null
   providerResponse?: any
   skippedProviderCall: boolean
 }) => {
@@ -642,10 +642,14 @@ const mergeXpressbeesManifestMeta = ({
         skipped_duplicate_provider_call: skippedProviderCall,
         last_provider_manifest_response: providerResponse || existingManifestation.last_provider_manifest_response,
       },
-      local_manifest: {
-        key: localManifestKey,
-        generated_at: new Date().toISOString(),
-      },
+      ...(localManifestKey
+        ? {
+            local_manifest: {
+              key: localManifestKey,
+              generated_at: new Date().toISOString(),
+            },
+          }
+        : {}),
     },
   }
 }
@@ -11771,18 +11775,29 @@ export const generateManifestService = async (params: {
         pdfDoc.end()
       })
 
-      const { uploadUrl, key } = await presignUpload({
-        filename: `manifest-delhivery-${Date.now()}.pdf`,
-        contentType: 'application/pdf',
-        userId: fetchedOrders[0].user_id,
-        folderKey: 'manifests',
-      })
-      const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
-      await axios.put(putUrl, pdfBuffer, {
-        headers: { 'Content-Type': 'application/pdf' },
-        timeout: 60000,
-      })
-      const manifestKey = Array.isArray(key) ? key[0] : key
+      let manifestKey: string | null = null
+      let manifestDocumentWarning: string | null = null
+      try {
+        const { uploadUrl, key } = await presignUpload({
+          filename: `manifest-delhivery-${Date.now()}.pdf`,
+          contentType: 'application/pdf',
+          userId: fetchedOrders[0].user_id,
+          folderKey: 'manifests',
+        })
+        const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+        await axios.put(putUrl, pdfBuffer, {
+          headers: { 'Content-Type': 'application/pdf' },
+          timeout: 60000,
+        })
+        manifestKey = Array.isArray(key) ? key[0] : key
+      } catch (uploadError: any) {
+        manifestDocumentWarning =
+          'Courier manifest and pickup were accepted, but the local manifest PDF could not be saved.'
+        console.warn('Delhivery manifest PDF upload skipped after provider success', {
+          orders: fetchedOrders.map((order) => order.order_number || order.id),
+          message: uploadError?.message || uploadError,
+        })
+      }
 
       const invoicePromisesDel = fetchedOrders.map((order) =>
         generateInvoiceForManifestOrderOutsideTransaction(order).catch((err) => {
@@ -11906,7 +11921,6 @@ export const generateManifestService = async (params: {
               (currentAwb ? 'pickup_initiated' : 'shipment_created')
         const existingPickupDetails = normalizeDetails(freshOrder.pickup_details)
         const updateDataDel: any = {
-          manifest: manifestKey,
           manifest_error: null,
           pickup_error: pickupRequestWarning ? truncateColumnValue(pickupRequestWarning) : null,
           pickup_status: pickupRequestWarning ? 'failed' : 'pickup_requested',
@@ -11919,6 +11933,9 @@ export const generateManifestService = async (params: {
             pickup_time: pickupTime,
           },
           updated_at: new Date(),
+        }
+        if (manifestKey) {
+          updateDataDel.manifest = manifestKey
         }
 
         if (labelKey && typeof labelKey === 'string' && labelKey.trim().length > 0) {
@@ -12004,7 +12021,9 @@ export const generateManifestService = async (params: {
         }
       })
 
-      const manifestDownloadUrl = await resolveManifestUrlOutsideTransaction(manifestKey)
+      const manifestDownloadUrl = manifestKey
+        ? await resolveManifestUrlOutsideTransaction(manifestKey)
+        : null
       console.log('✅ Delhivery manifest generation completed', {
         orders: fetchedOrders.length,
         manifest_key: manifestKey,
@@ -12015,7 +12034,10 @@ export const generateManifestService = async (params: {
         manifest_id: manifestKey,
         manifest_url: manifestDownloadUrl,
         manifest_key: manifestKey,
-        warnings: pickupRequestWarning ? [pickupRequestWarning] : undefined,
+        warnings:
+          pickupRequestWarning || manifestDocumentWarning
+            ? ([pickupRequestWarning, manifestDocumentWarning].filter(Boolean) as string[])
+            : undefined,
       }
     } catch (error: any) {
       const isPickupRequestFailure = error?.isPickupRequestError === true
@@ -12480,23 +12502,37 @@ export const generateManifestService = async (params: {
             pdfDoc.end()
           })
 
-          const { uploadUrl, key } = await presignUpload({
-            filename: `manifest-${integrationType}-${Date.now()}.pdf`,
-            contentType: 'application/pdf',
-            userId: fetchedOrders[0].user_id,
-            folderKey: 'manifests',
-          })
-          const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
-          await axios.put(putUrl, pdfBuffer, {
-            headers: { 'Content-Type': 'application/pdf' },
-            timeout: 60000,
-          })
-          const manifestKey = Array.isArray(key) ? key[0] : key
-          const signedManifestUrl = await presignDownload(manifestKey)
-          const manifestDownloadUrl = Array.isArray(signedManifestUrl)
-            ? (signedManifestUrl[0] ?? null)
-            : signedManifestUrl
           const manifestWarnings: string[] = []
+          let manifestKey: string | null = null
+          let manifestDownloadUrl: string | null = null
+          try {
+            const { uploadUrl, key } = await presignUpload({
+              filename: `manifest-${integrationType}-${Date.now()}.pdf`,
+              contentType: 'application/pdf',
+              userId: fetchedOrders[0].user_id,
+              folderKey: 'manifests',
+            })
+            const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+            await axios.put(putUrl, pdfBuffer, {
+              headers: { 'Content-Type': 'application/pdf' },
+              timeout: 60000,
+            })
+            manifestKey = Array.isArray(key) ? key[0] : key
+            if (manifestKey) {
+              const signedManifestUrl = await presignDownload(manifestKey)
+              manifestDownloadUrl = Array.isArray(signedManifestUrl)
+                ? (signedManifestUrl[0] ?? null)
+                : signedManifestUrl
+            }
+          } catch (uploadError: any) {
+            manifestWarnings.push(
+              'Courier manifest was accepted, but the local manifest PDF could not be saved.',
+            )
+            console.warn(`${providerName} manifest PDF upload skipped after provider success`, {
+              orders: fetchedOrders.map((order) => order.order_number || order.id),
+              message: uploadError?.message || uploadError,
+            })
+          }
 
           const orderUpdatePromises = fetchedOrders.map(async (order) => {
             const [freshOrder] = await tx
@@ -12543,7 +12579,6 @@ export const generateManifestService = async (params: {
               ? freshOrder.order_status
               : 'pickup_initiated'
             const updateDataXpress: any = {
-              manifest: manifestKey,
               order_status: nextOrderStatus,
               pickup_status:
                 integrationType === 'xpressbees' && nextOrderStatus === 'pickup_initiated'
@@ -12553,6 +12588,9 @@ export const generateManifestService = async (params: {
                   : freshOrder.pickup_status ?? null,
               provider_last_status: nextOrderStatus,
               updated_at: new Date(),
+            }
+            if (manifestKey) {
+              updateDataXpress.manifest = manifestKey
             }
 
             if (integrationType === 'xpressbees') {
@@ -12660,21 +12698,15 @@ export const generateManifestService = async (params: {
           const uniqueWarnings = Array.from(new Set(manifestWarnings))
 
           await Promise.all(
-            fetchedOrders.map(async (order) => {
-              const orderWarnings = uniqueWarnings.filter((warning) =>
-                String(warning || '').startsWith(`${order.order_number}:`),
-              )
-
-              await tx
+            fetchedOrders.map((order) =>
+              tx
                 .update(b2c_orders)
                 .set({
-                  manifest_error: orderWarnings.length
-                    ? truncateColumnValue(orderWarnings.join(' '))
-                    : null,
+                  manifest_error: null,
                   updated_at: new Date(),
                 })
-                .where(eq(b2c_orders.id, order.id))
-            }),
+                .where(eq(b2c_orders.id, order.id)),
+            ),
           )
 
           return {
@@ -12879,25 +12911,39 @@ export const generateManifestService = async (params: {
             pdfDoc.end()
           })
 
-          const { uploadUrl: manifestUploadUrl, key: manifestKeyRaw } = await presignUpload({
-            filename: `manifest-amazon-${Date.now()}.pdf`,
-            contentType: 'application/pdf',
-            userId: fetchedOrders[0].user_id,
-            folderKey: 'manifests',
-          })
-          const manifestPutUrl = Array.isArray(manifestUploadUrl)
-            ? manifestUploadUrl[0]
-            : manifestUploadUrl
-          await axios.put(manifestPutUrl, pdfBuffer, {
-            headers: { 'Content-Type': 'application/pdf' },
-            timeout: 60000,
-          })
-          const manifestKey = Array.isArray(manifestKeyRaw) ? manifestKeyRaw[0] : manifestKeyRaw
-          const signedManifestUrl = await presignDownload(manifestKey)
-          const manifestDownloadUrl = Array.isArray(signedManifestUrl)
-            ? (signedManifestUrl[0] ?? null)
-            : signedManifestUrl
           const manifestWarnings: string[] = []
+          let manifestKey: string | null = null
+          let manifestDownloadUrl: string | null = null
+          try {
+            const { uploadUrl: manifestUploadUrl, key: manifestKeyRaw } = await presignUpload({
+              filename: `manifest-amazon-${Date.now()}.pdf`,
+              contentType: 'application/pdf',
+              userId: fetchedOrders[0].user_id,
+              folderKey: 'manifests',
+            })
+            const manifestPutUrl = Array.isArray(manifestUploadUrl)
+              ? manifestUploadUrl[0]
+              : manifestUploadUrl
+            await axios.put(manifestPutUrl, pdfBuffer, {
+              headers: { 'Content-Type': 'application/pdf' },
+              timeout: 60000,
+            })
+            manifestKey = Array.isArray(manifestKeyRaw) ? manifestKeyRaw[0] : manifestKeyRaw
+            if (manifestKey) {
+              const signedManifestUrl = await presignDownload(manifestKey)
+              manifestDownloadUrl = Array.isArray(signedManifestUrl)
+                ? (signedManifestUrl[0] ?? null)
+                : signedManifestUrl
+            }
+          } catch (uploadError: any) {
+            manifestWarnings.push(
+              'Courier manifest was accepted, but the local manifest PDF could not be saved.',
+            )
+            console.warn('Amazon manifest PDF upload skipped after provider success', {
+              orders: fetchedOrders.map((order) => order.order_number || order.id),
+              message: uploadError?.message || uploadError,
+            })
+          }
           const amazonCredentials =
             integrationType === 'amazon' ? await getStoredAmazonShippingCredentials() : null
           if (amazonCredentials) {
@@ -12940,7 +12986,6 @@ export const generateManifestService = async (params: {
               : 'pickup_initiated'
 
             const updateData: any = {
-              manifest: manifestKey,
               order_status: nextOrderStatus,
               pickup_status:
                 nextOrderStatus === 'pickup_initiated'
@@ -12948,6 +12993,9 @@ export const generateManifestService = async (params: {
                   : freshOrder.pickup_status ?? null,
               provider_last_status: nextOrderStatus,
               updated_at: new Date(),
+            }
+            if (manifestKey) {
+              updateData.manifest = manifestKey
             }
 
             if (labelKey && typeof labelKey === 'string' && labelKey.trim().length > 0) {
@@ -13036,21 +13084,15 @@ export const generateManifestService = async (params: {
           const uniqueWarnings = Array.from(new Set(manifestWarnings))
 
           await Promise.all(
-            fetchedOrders.map(async (order) => {
-              const orderWarnings = uniqueWarnings.filter((warning) =>
-                String(warning || '').startsWith(`${order.order_number}:`),
-              )
-
-              await tx
+            fetchedOrders.map((order) =>
+              tx
                 .update(b2c_orders)
                 .set({
-                  manifest_error: orderWarnings.length
-                    ? truncateColumnValue(orderWarnings.join(' '))
-                    : null,
+                  manifest_error: null,
                   updated_at: new Date(),
                 })
-                .where(eq(b2c_orders.id, order.id))
-            }),
+                .where(eq(b2c_orders.id, order.id)),
+            ),
           )
 
           return {
@@ -13900,18 +13942,29 @@ export const generateManifestService = async (params: {
             pdfDoc.end()
           })
 
-          const { uploadUrl, key } = await presignUpload({
-            filename: `manifest-delhivery-${Date.now()}.pdf`,
-            contentType: 'application/pdf',
-            userId: fetchedOrders[0].user_id,
-            folderKey: 'manifests',
-          })
-          const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
-          await axios.put(putUrl, pdfBuffer, {
-            headers: { 'Content-Type': 'application/pdf' },
-            timeout: 60000, // 60 seconds for manifest upload
-          })
-          const manifestKey = Array.isArray(key) ? key[0] : key
+          let manifestKey: string | null = null
+          let manifestDocumentWarning: string | null = null
+          try {
+            const { uploadUrl, key } = await presignUpload({
+              filename: `manifest-delhivery-${Date.now()}.pdf`,
+              contentType: 'application/pdf',
+              userId: fetchedOrders[0].user_id,
+              folderKey: 'manifests',
+            })
+            const putUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+            await axios.put(putUrl, pdfBuffer, {
+              headers: { 'Content-Type': 'application/pdf' },
+              timeout: 60000, // 60 seconds for manifest upload
+            })
+            manifestKey = Array.isArray(key) ? key[0] : key
+          } catch (uploadError: any) {
+            manifestDocumentWarning =
+              'Courier manifest and pickup were accepted, but the local manifest PDF could not be saved.'
+            console.warn('Delhivery manifest PDF upload skipped after provider success', {
+              orders: fetchedOrders.map((order) => order.order_number || order.id),
+              message: uploadError?.message || uploadError,
+            })
+          }
 
           // Generate invoices in parallel (non-blocking) to avoid timeouts
           const invoicePromisesDel = fetchedOrders.map((order) =>
@@ -14051,13 +14104,15 @@ export const generateManifestService = async (params: {
                 : String(freshOrder.order_status || '').trim() ||
                   (currentAwb ? 'pickup_initiated' : 'shipment_created')
             const updateDataDel: any = {
-              manifest: manifestKey,
               manifest_error: null,
               pickup_error: pickupRequestWarning ? truncateColumnValue(pickupRequestWarning) : null,
               pickup_status: pickupRequestWarning ? 'failed' : 'pickup_requested',
               order_status: stableManifestStatus,
               provider_last_status: stableManifestStatus,
               updated_at: new Date(),
+            }
+            if (manifestKey) {
+              updateDataDel.manifest = manifestKey
             }
 
             // Only set label if it was generated and is valid
@@ -14155,7 +14210,7 @@ export const generateManifestService = async (params: {
             })
           })
 
-          const manifestDownloadUrl = await resolveManifestUrl(manifestKey)
+          const manifestDownloadUrl = manifestKey ? await resolveManifestUrl(manifestKey) : null
           console.log('✅ Delhivery manifest generation completed', {
             orders: fetchedOrders.length,
             manifest_key: manifestKey,
@@ -14166,7 +14221,10 @@ export const generateManifestService = async (params: {
             manifest_id: manifestKey,
             manifest_url: manifestDownloadUrl,
             manifest_key: manifestKey,
-            warnings: pickupRequestWarning ? [pickupRequestWarning] : undefined,
+            warnings:
+              pickupRequestWarning || manifestDocumentWarning
+                ? ([pickupRequestWarning, manifestDocumentWarning].filter(Boolean) as string[])
+                : undefined,
           }
         }
 
