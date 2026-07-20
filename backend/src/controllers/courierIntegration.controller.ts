@@ -20,6 +20,7 @@ import {
   getCourierSummary,
 } from '../models/services/courierIntegration.service'
 import { getDefaultPlanByBusinessType, getUserPlanId } from '../models/services/plan.service'
+import { getConfiguredCourierProviderSet } from '../models/services/courierCredentials.service'
 import {
   fetchAvailableCouriersForGuest,
   fetchAvailableCouriersWithRates,
@@ -283,6 +284,8 @@ const getB2CFallbackRateMeta = (rate: typeof shippingRates.$inferSelect) => {
 }
 
 const fetchEnabledB2CFallbackCourierMap = async () => {
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+  if (!configuredProviders.length) return new Map<string, any>()
   const rows = await db
     .select({
       id: couriers.id,
@@ -290,7 +293,13 @@ const fetchEnabledB2CFallbackCourierMap = async () => {
       serviceProvider: couriers.serviceProvider,
     })
     .from(couriers)
-    .where(and(eq(couriers.isEnabled, true), sql`${couriers.businessType} @> '["b2c"]'::jsonb`))
+    .where(
+      and(
+        eq(couriers.isEnabled, true),
+        sql`${couriers.businessType} @> '["b2c"]'::jsonb`,
+        inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders),
+      ),
+    )
 
   return new Map(
     rows.map((row) => [

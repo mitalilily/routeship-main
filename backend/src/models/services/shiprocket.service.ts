@@ -82,6 +82,7 @@ import { shippingRates } from '../schema/shippingRates'
 import { userProfiles } from '../schema/userProfile'
 import { b2bZoneToZoneRates, zones } from '../schema/zones'
 import { getDefaultPlanByBusinessType, getUserPlanId } from './plan.service'
+import { getConfiguredCourierProviderSet } from './courierCredentials.service'
 import { calculateB2BRate, findZoneForPincode } from './b2bAdmin.service'
 import {
   computeEffectiveB2CCodCharge,
@@ -3316,6 +3317,8 @@ export const fetchAvailableCouriersWithRates = async (
 
     const { userId, planIdOverride, planFallbackName } = options
     const effectiveShipmentType = params.shipment_type ?? 'b2c'
+    const configuredProviders = await getConfiguredCourierProviderSet()
+    if (!configuredProviders.size) return []
 
     const isCalculator = params.isCalculator === true
     const shouldRunLiveServiceability = !isCalculator
@@ -3359,7 +3362,7 @@ export const fetchAvailableCouriersWithRates = async (
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
     const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon']
-    const allSystemCourierRows = await db
+    const allCourierRows = await db
       .select({
         id: couriers.id,
         serviceProvider: couriers.serviceProvider,
@@ -3369,6 +3372,9 @@ export const fetchAvailableCouriersWithRates = async (
         createdAt: couriers.createdAt,
       })
       .from(couriers)
+    const allSystemCourierRows = allCourierRows.filter((row) =>
+      configuredProviders.has(String(row.serviceProvider || '').trim().toLowerCase()),
+    )
 
     const rowSupportsBusinessType = (
       row: (typeof allSystemCourierRows)[number],
@@ -5141,6 +5147,8 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         : (userOrOptions ?? {})
 
     const { userId, planIdOverride, planFallbackName } = options
+    const configuredProviders = await getConfiguredCourierProviderSet()
+    if (!configuredProviders.size) return []
     const normalizeProviderKey = (value?: string | null) =>
       String(value || '')
         .trim()
@@ -5296,7 +5304,13 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     const systemCourierRows = await db
       .select({ id: couriers.id, serviceProvider: couriers.serviceProvider, name: couriers.name })
       .from(couriers)
-      .where(and(eq(couriers.isEnabled, true), sql`${couriers.businessType} @> '["b2b"]'::jsonb`))
+      .where(
+        and(
+          eq(couriers.isEnabled, true),
+          sql`${couriers.businessType} @> '["b2b"]'::jsonb`,
+          inArray(sql`lower(${couriers.serviceProvider})`, [...configuredProviders]),
+        ),
+      )
 
     const shadowfaxRows = systemCourierRows.filter(
       (row) => normalizeProviderKey(row.serviceProvider) === 'shadowfax',

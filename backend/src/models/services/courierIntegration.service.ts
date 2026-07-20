@@ -16,6 +16,7 @@ import {
   validateRateCardSlabs,
   type RateCardSlabInput,
 } from './b2cRateCard.service'
+import { getConfiguredCourierProviderSet } from './courierCredentials.service'
 
 // =========================
 // 🔷 Types
@@ -75,7 +76,12 @@ export const getAllCouriersPaginated = async ({
   filters,
   sortBy,
 }: GetAllCouriersPaginatedParams) => {
-  const whereClause = buildCourierWhereClause(filters)
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+  if (!configuredProviders.length) return []
+  const whereClause = and(
+    inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders),
+    buildCourierWhereClause(filters),
+  )
 
   return await db
     .select()
@@ -90,7 +96,12 @@ export const getAllCouriersPaginated = async ({
 // 📊 Get Courier Count (with Filters)
 // =========================
 export const getCourierCount = async (filters: CourierFilters = {}) => {
-  const whereClause = buildCourierWhereClause(filters)
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+  if (!configuredProviders.length) return 0
+  const whereClause = and(
+    inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders),
+    buildCourierWhereClause(filters),
+  )
 
   const [result] = await db
     .select({ count: sql<number>`count(*)` })
@@ -104,7 +115,17 @@ export const getCourierCount = async (filters: CourierFilters = {}) => {
 // 🔍 Get Courier by ID
 // =========================
 export const getCourierById = async (id: number) => {
-  const [courier] = await db.select().from(couriers).where(eq(couriers.id, id))
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+  if (!configuredProviders.length) return undefined
+  const [courier] = await db
+    .select()
+    .from(couriers)
+    .where(
+      and(
+        eq(couriers.id, id),
+        inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders),
+      ),
+    )
 
   return courier
 }
@@ -114,12 +135,17 @@ export const getCourierById = async (id: number) => {
 // =========================
 export const getCourierSummary = async () => {
   const [summary] = await db.select().from(courierSummary).where(eq(courierSummary.id, 1))
-
-  return summary
+  const totalCourierCount = await getCourierCount()
+  return summary ? { ...summary, totalCourierCount } : { totalCourierCount }
 }
 
 export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
   const conditions: any[] = []
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+  if (!configuredProviders.length) return []
+  conditions.push(
+    inArray(sql`lower(coalesce(${shippingRates.service_provider}, ''))`, configuredProviders),
+  )
   const normalizedModeFilter = normalizeB2CShippingMode(filters.mode)
 
   if (filters.courier_name?.length) {
@@ -760,6 +786,11 @@ export const createCourier = async (data: {
     throw new Error(
       `Service provider must be one of: ${allowedProviders.join(', ')}. Received: ${data.serviceProvider}`
     )
+  }
+
+  const configuredProviders = await getConfiguredCourierProviderSet()
+  if (!configuredProviders.has(normalizedProvider)) {
+    throw new Error(`Configure valid ${normalizedProvider} credentials before adding its couriers`)
   }
 
   console.log('data', data)

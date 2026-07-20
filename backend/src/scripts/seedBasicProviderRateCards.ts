@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
 import { Pool, PoolClient } from 'pg'
-import forwardRateCardData from './forwardRateCardData.json'
 
 const TARGET_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'amazon', 'shadowfax'] as const
 const BASIC_PLAN_NAME = 'Basic'
@@ -36,30 +35,6 @@ type CourierRow = {
   mode: string
 }
 
-const REQUIRED_COURIER_SEEDS: CourierSeed[] = [
-  {
-    id: 99,
-    name: 'Delhivery Air',
-    serviceProvider: 'delhivery',
-    mode: 'air',
-  },
-  {
-    id: 100,
-    name: 'Delhivery Surface',
-    serviceProvider: 'delhivery',
-    mode: 'surface',
-  },
-  {
-    id: 45,
-    name: 'Xpressbees 2kg',
-    serviceProvider: 'xpressbees',
-    mode: 'surface',
-  },
-]
-const REQUIRED_COURIER_SEED_KEYS = new Set(
-  REQUIRED_COURIER_SEEDS.map((seed) => `${seed.serviceProvider}:${seed.id}`),
-)
-
 const loadEnv = () => {
   const env = process.env.NODE_ENV || 'development'
   dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
@@ -72,16 +47,6 @@ const normalizeProvider = (value: unknown): Provider | null => {
   if (raw === 'xpressbees') return 'xpressbees'
   if (raw === 'amazon') return 'amazon'
   if (raw === 'shadowfax') return 'shadowfax'
-  return null
-}
-
-const providerFromCourierName = (name: string): Provider | null => {
-  const lower = name.toLowerCase()
-  if (lower.includes('delhivery')) return 'delhivery'
-  if (lower.includes('ekart')) return 'ekart'
-  if (lower.includes('xpressbees')) return 'xpressbees'
-  if (lower.includes('amazon')) return 'amazon'
-  if (lower.includes('shadowfax')) return 'shadowfax'
   return null
 }
 
@@ -100,23 +65,6 @@ const isXpressbees2Kg = (name: string, mode?: unknown) =>
   !name.toLowerCase().includes('reverse') &&
   /\b2\s*(?:k\.?\s*g\.?|kg|kgs)\b/i.test(name)
 
-const canonicalDelhiverySeed = (name: string, mode?: unknown): CourierSeed => {
-  const resolvedMode = inferMode(name, mode)
-  return resolvedMode === 'air'
-    ? {
-        id: 99,
-        name: 'Delhivery Air',
-        serviceProvider: 'delhivery',
-        mode: 'air',
-      }
-    : {
-        id: 100,
-        name: 'Delhivery Surface',
-        serviceProvider: 'delhivery',
-        mode: 'surface',
-      }
-}
-
 const isSupportedProviderCourierSeed = (seed: CourierSeed) => {
   if (seed.serviceProvider === 'delhivery') {
     return seed.id === 99 || seed.id === 100
@@ -127,43 +75,6 @@ const isSupportedProviderCourierSeed = (seed: CourierSeed) => {
   }
 
   return !seed.name.toLowerCase().includes('reverse')
-}
-
-const fallbackCourierSeeds = (): CourierSeed[] => {
-  const seen = new Set<string>()
-  const seeds: CourierSeed[] = []
-
-  for (const seed of REQUIRED_COURIER_SEEDS) {
-    const key = `${seed.serviceProvider}:${seed.id}`
-    seen.add(key)
-    seeds.push(seed)
-  }
-
-  for (const row of forwardRateCardData as any[]) {
-    const name = String(row?.courier_name || '').trim()
-    const provider = providerFromCourierName(name)
-    const id = Number(row?.id)
-    const type = String(row?.type || '').trim().toLowerCase()
-    if (!provider || !Number.isFinite(id) || !name || type === 'reverse') continue
-
-    const seed: CourierSeed =
-      provider === 'delhivery'
-        ? canonicalDelhiverySeed(name, row?.mode)
-        : {
-            id,
-            name,
-            serviceProvider: provider,
-            mode: inferMode(name, row?.mode),
-          }
-    if (!isSupportedProviderCourierSeed(seed)) continue
-
-    const key = `${seed.serviceProvider}:${seed.id}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    seeds.push(seed)
-  }
-
-  return seeds
 }
 
 const tableExists = async (client: PoolClient, tableName: string) => {
@@ -278,98 +189,39 @@ const ensureB2CZones = async (client: PoolClient, zonesTable: string): Promise<Z
   return created.rows
 }
 
-const ensureFallbackCouriers = async (client: PoolClient) => {
-  const seeds = fallbackCourierSeeds()
-  for (const seed of seeds) {
-    const isRequiredSeed = REQUIRED_COURIER_SEED_KEYS.has(`${seed.serviceProvider}:${seed.id}`)
-    if (isRequiredSeed) {
-      await client.query(
-        `insert into couriers
-          (id, name, "serviceProvider", "isEnabled", business_type, created_at, updated_at)
-         values ($1, $2, $3, true, '["b2c"]'::jsonb, now(), now())
-         on conflict (id, "serviceProvider") do update set
-          name = excluded.name,
-          updated_at = now()`,
-        [seed.id, seed.name, seed.serviceProvider],
-      )
-      continue
-    }
-
-    await client.query(
-      `update couriers
-       set name = $2,
-           updated_at = now()
-       where id = $1
-         and "serviceProvider" = $3`,
-      [seed.id, seed.name, seed.serviceProvider],
-    )
-  }
-}
-
-const disableUnsupportedCouriers = async (client: PoolClient) => {
-  await client.query(
-    `update couriers
-     set business_type = coalesce(business_type, '[]'::jsonb) - 'b2c',
-         "isEnabled" = case
-           when coalesce(business_type, '[]'::jsonb) @> '["b2b"]'::jsonb then "isEnabled"
-           else false
-         end,
-         updated_at = now()
-     where lower("serviceProvider") = 'delhivery'
-       and "isEnabled" = true
-       and coalesce(business_type, '[]'::jsonb) @> '["b2c"]'::jsonb
-       and id not in (99, 100)`,
-  )
-
-  await client.query(
-    `update couriers
-     set business_type = coalesce(business_type, '[]'::jsonb) - 'b2c',
-         "isEnabled" = case
-           when coalesce(business_type, '[]'::jsonb) @> '["b2b"]'::jsonb then "isEnabled"
-           else false
-         end,
-         updated_at = now()
-     where lower("serviceProvider") = 'xpressbees'
-       and "isEnabled" = true
-       and coalesce(business_type, '[]'::jsonb) @> '["b2c"]'::jsonb
-       and (
-         lower(name) like '%air%'
-         or name !~* $1
-       )`,
-    ['2\\s*(k\\.?\\s*g\\.?|kg|kgs)'],
-  )
-}
-
 const loadTargetCouriers = async (client: PoolClient): Promise<CourierRow[]> => {
-  await ensureFallbackCouriers(client)
-  await disableUnsupportedCouriers(client)
-
-  let result = await client.query(
-    `select id, name, "serviceProvider"
-     from couriers
-     where lower("serviceProvider") = any($1)
-       and "isEnabled" = true
-       and business_type @> '["b2c"]'::jsonb
-       and lower(name) not like '%reverse%'
-     order by "serviceProvider", id, name`,
+  const result = await client.query(
+    `select c.id, c.name, c."serviceProvider"
+     from couriers c
+     inner join courier_credentials cc
+       on lower(cc.provider) = lower(c."serviceProvider")
+     where lower(c."serviceProvider") = any($1)
+       and c."isEnabled" = true
+       and c.business_type @> '["b2c"]'::jsonb
+       and lower(c.name) not like '%reverse%'
+       and (
+         (lower(cc.provider) = 'delhivery'
+           and length(trim(coalesce(cc.api_key, ''))) > 0
+           and length(trim(coalesce(cc.client_name, ''))) > 0)
+         or (lower(cc.provider) = 'ekart'
+           and length(trim(coalesce(cc.client_id, ''))) > 0
+           and length(trim(coalesce(cc.username, ''))) > 0
+           and length(trim(coalesce(cc.password, ''))) > 0)
+         or (lower(cc.provider) = 'xpressbees'
+           and (length(trim(coalesce(cc.api_key, ''))) > 0
+             or (length(trim(coalesce(cc.username, ''))) > 0
+               and length(trim(coalesce(cc.password, ''))) > 0)))
+         or (lower(cc.provider) = 'shadowfax'
+           and length(trim(coalesce(cc.api_key, ''))) > 0)
+         or (lower(cc.provider) = 'amazon'
+           and (length(trim(coalesce(cc.metadata->>'accessToken', ''))) > 0
+             or (length(trim(coalesce(cc.api_key, ''))) > 0
+               and length(trim(coalesce(cc.client_id, ''))) > 0
+               and length(trim(coalesce(cc.password, ''))) > 0)))
+       )
+     order by c."serviceProvider", c.id, c.name`,
     [TARGET_PROVIDERS],
   )
-
-  const foundProviders = new Set(result.rows.map((row) => normalizeProvider(row.serviceProvider)).filter(Boolean))
-  const missingProvider = TARGET_PROVIDERS.some((provider) => !foundProviders.has(provider))
-  if (missingProvider) {
-    await ensureFallbackCouriers(client)
-    result = await client.query(
-      `select id, name, "serviceProvider"
-       from couriers
-       where lower("serviceProvider") = any($1)
-         and "isEnabled" = true
-         and business_type @> '["b2c"]'::jsonb
-         and lower(name) not like '%reverse%'
-       order by "serviceProvider", id, name`,
-      [TARGET_PROVIDERS],
-    )
-  }
 
   return result.rows
     .map((row) => {
@@ -519,7 +371,7 @@ async function main() {
     const couriers = await loadTargetCouriers(client)
 
     if (!couriers.length) {
-      throw new Error('No target couriers found or seeded for the five B2C providers')
+      throw new Error('No enabled B2C couriers with configured provider credentials were found')
     }
 
     let savedRates = 0

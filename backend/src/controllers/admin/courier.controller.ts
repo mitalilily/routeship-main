@@ -39,6 +39,7 @@ import {
 } from '../../models/services/amazonShippingCredentials.service'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
 import { readXlsxRows, xlsxRowsToRecords } from '../../utils/xlsx'
+import { getConfiguredCourierProviderSet } from '../../models/services/courierCredentials.service'
 
 export interface ShippingRateFilters {
   courier_name?: string[]
@@ -135,6 +136,8 @@ export const getShippingRatesController = async (req: Request, res: Response) =>
 
 export const getAllCouriersController = async (req: Request, res: Response) => {
   try {
+    const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+    if (!configuredProviders.length) return res.json({ success: true, data: [] })
     const courierList = await db
       .select({
         id: couriers.id,
@@ -144,6 +147,7 @@ export const getAllCouriersController = async (req: Request, res: Response) => {
         createdAt: couriers.createdAt,
       })
       .from(couriers)
+      .where(inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders))
       .orderBy(desc(couriers.createdAt))
 
     res.json({ success: true, data: courierList })
@@ -158,6 +162,9 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
     const { search, serviceProvider, businessType } = req.query
 
     const whereClauses = []
+    const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+    if (!configuredProviders.length) return res.json({ success: true, data: [] })
+    whereClauses.push(inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders))
 
     // Filter by search (name or id)
     if (search && typeof search === 'string' && search.trim()) {
@@ -216,6 +223,15 @@ export const updateCourierStatusController = async (req: Request, res: Response)
         message: 'serviceProvider is required',
       })
     }
+    if (isEnabled === true) {
+      const configuredProviders = await getConfiguredCourierProviderSet()
+      if (!configuredProviders.has(String(serviceProvider).trim().toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: `Configure valid ${serviceProvider} credentials before enabling this courier`,
+        })
+      }
+    }
 
     // Build update object
     const updateData: any = {
@@ -269,7 +285,11 @@ export const updateCourierStatusController = async (req: Request, res: Response)
 export const getServiceProvidersController = async (req: Request, res: Response) => {
   try {
     // Only expose the main integrated service providers in the enable/disable UI
-    const allowedProviders = ['delhivery', 'ekart', 'xpressbees']
+    const configuredProviders = await getConfiguredCourierProviderSet()
+    const allowedProviders = ['delhivery', 'ekart', 'xpressbees'].filter((provider) =>
+      configuredProviders.has(provider),
+    )
+    if (!allowedProviders.length) return res.json({ success: true, data: [] })
 
     const rows = await db
       .select({
@@ -328,6 +348,15 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
         success: false,
         message: `Only these providers are supported: ${allowedProviders.join(', ')}`,
       })
+    }
+    if (isEnabled) {
+      const configuredProviders = await getConfiguredCourierProviderSet()
+      if (!configuredProviders.has(String(serviceProvider).toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: `Configure valid ${serviceProvider} credentials before enabling this provider`,
+        })
+      }
     }
 
     const updated = await db

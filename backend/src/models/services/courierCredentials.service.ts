@@ -116,40 +116,113 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = [
   'shadowfax',
 ]
 
-const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessType): boolean => {
-  if (provider === 'delhivery') {
-    return !!(process.env.DELHIVERY_API_KEY || process.env.DELHIVERY_CLIENT_NAME)
+const normalize = (val?: string | null) => String(val || '').trim()
+
+type CredentialRowLike = Partial<typeof courierCredentials.$inferSelect>
+
+const metadataValue = (row: CredentialRowLike, ...keys: string[]) => {
+  const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
+  for (const key of keys) {
+    const value = normalize((metadata as Record<string, unknown>)[key] as string)
+    if (value) return value
   }
-  if (provider === 'shipway') {
-    return !!(process.env.SHIPWAY_USERNAME || process.env.SHIPWAY_PASSWORD)
+  return ''
+}
+
+export const normalizeCredentialProvider = (provider: unknown) =>
+  String(provider || '')
+    .trim()
+    .toLowerCase()
+
+export const isCourierCredentialRowConfigured = (
+  provider: unknown,
+  row?: CredentialRowLike | null,
+): boolean => {
+  if (!row) return false
+
+  const normalizedProvider = normalizeCredentialProvider(provider)
+  const apiKey = normalize(row.apiKey)
+  const clientName = normalize(row.clientName)
+  const clientId = normalize(row.clientId)
+  const username = normalize(row.username)
+  const password = normalize(row.password)
+
+  if (normalizedProvider === 'delhivery') {
+    const ltlUsername = metadataValue(row, 'ltlUsername', 'ltl_username')
+    const ltlPassword = metadataValue(row, 'ltlPassword', 'ltl_password')
+    const ltlToken = metadataValue(row, 'ltlToken', 'ltl_token')
+    return Boolean((apiKey && clientName) || (ltlUsername && (ltlPassword || ltlToken)))
   }
-  if (provider === 'xpressbees') {
-    return !!(
-      process.env.XPRESSBEES_API_TOKEN ||
-      process.env.XPRESSBEES_XB_KEY ||
-      (process.env.XPRESSBEES_USERNAME && process.env.XPRESSBEES_PASSWORD)
-    )
+  if (normalizedProvider === 'ekart') return Boolean(clientId && username && password)
+  if (normalizedProvider === 'xpressbees') {
+    const bearer = metadataValue(row, 'authBearer', 'auth_bearer', 'authorizationBearer')
+    return Boolean(apiKey || bearer || (username && password))
   }
-  if (provider === 'ekart') {
-    return !!(
-      process.env.EKART_CLIENT_ID ||
-      process.env.EKART_USERNAME ||
-      process.env.EKART_PASSWORD ||
-      process.env.EKART_BASE_API ||
-      process.env.EKART_BASE_AUTH
-    )
+  if (normalizedProvider === 'shadowfax') return Boolean(apiKey)
+  if (normalizedProvider === 'amazon') {
+    const accessToken = metadataValue(row, 'accessToken')
+    const refreshToken = metadataValue(row, 'refreshToken') || apiKey
+    const lwaClientId = metadataValue(row, 'lwaClientId') || clientId
+    const lwaClientSecret = metadataValue(row, 'lwaClientSecret') || password
+    return Boolean(accessToken || (refreshToken && lwaClientId && lwaClientSecret))
   }
-  if (provider === 'shadowfax') {
-    return !!(
-      process.env.SHADOWFAX_API_TOKEN ||
-      process.env.SHADOWFAX_API_KEY ||
-      process.env.SHADOWFAX_API_BASE
-    )
-  }
+  if (normalizedProvider === 'shipway') return Boolean(username && password)
   return false
 }
 
-const normalize = (val?: string | null) => String(val || '').trim()
+const configuredProvidersFromEnvironment = () => {
+  const providers = new Set<string>()
+  if (
+    (normalize(process.env.DELHIVERY_API_KEY) && normalize(process.env.DELHIVERY_CLIENT_NAME)) ||
+    (normalize(process.env.DELHIVERY_LTL_USERNAME) &&
+      (normalize(process.env.DELHIVERY_LTL_PASSWORD) || normalize(process.env.DELHIVERY_LTL_TOKEN)))
+  ) providers.add('delhivery')
+  if (
+    normalize(process.env.XPRESSBEES_API_TOKEN) ||
+    normalize(process.env.XPRESSBEES_XB_KEY) ||
+    (normalize(process.env.XPRESSBEES_USERNAME) && normalize(process.env.XPRESSBEES_PASSWORD))
+  ) providers.add('xpressbees')
+  if (
+    normalize(process.env.EKART_CLIENT_ID) &&
+    normalize(process.env.EKART_USERNAME) &&
+    normalize(process.env.EKART_PASSWORD)
+  ) providers.add('ekart')
+  if (normalize(process.env.SHADOWFAX_API_TOKEN) || normalize(process.env.SHADOWFAX_API_KEY)) {
+    providers.add('shadowfax')
+  }
+  if (
+    normalize(process.env.AMAZON_SHIPPING_ACCESS_TOKEN) ||
+    (normalize(process.env.AMAZON_SHIPPING_REFRESH_TOKEN) &&
+      normalize(process.env.AMAZON_SHIPPING_LWA_CLIENT_ID) &&
+      normalize(process.env.AMAZON_SHIPPING_LWA_CLIENT_SECRET))
+  ) providers.add('amazon')
+  if (normalize(process.env.SHIPWAY_USERNAME) && normalize(process.env.SHIPWAY_PASSWORD)) {
+    providers.add('shipway')
+  }
+  return providers
+}
+
+const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessType): boolean =>
+  configuredProvidersFromEnvironment().has(provider)
+
+export const getConfiguredCourierProviderSet = async (): Promise<Set<string>> => {
+  const providers = configuredProvidersFromEnvironment()
+  let rows: (typeof courierCredentials.$inferSelect)[] = []
+  try {
+    rows = await db.select().from(courierCredentials)
+  } catch (err: any) {
+    if (err?.message?.includes('does not exist') || err?.message?.includes('relation') || err?.code === '42P01') {
+      return providers
+    }
+    throw err
+  }
+
+  for (const row of rows) {
+    const provider = normalizeCredentialProvider(row.provider)
+    if (isCourierCredentialRowConfigured(provider, row)) providers.add(provider)
+  }
+  return providers
+}
 
 const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCredentials.$inferSelect) => {
   const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
@@ -325,7 +398,7 @@ export const listCourierCredentialsMeta = async (): Promise<CourierCredentialsMe
 
   return KNOWN_PROVIDERS.map((provider) => {
     const row = byProvider.get(provider)
-    const configured = !!row && [row.apiBase, row.clientName, row.apiKey, row.clientId, row.username, row.password].some((v) => normalize(v).length > 0)
+    const configured = isCourierCredentialRowConfigured(provider, row)
 
     return {
       serviceProvider: provider,
