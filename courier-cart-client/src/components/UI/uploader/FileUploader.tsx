@@ -58,15 +58,15 @@ const cleanBox = (error?: boolean) => ({
 })
 
 const pulse = keyframes`
-  0% { box-shadow: 0 0 0 0 rgba(75, 17, 150, .35); }
-  70% { box-shadow: 0 0 0 12px rgba(75, 17, 150, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(75, 17, 150, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(11, 61, 187, .35); }
+  70% { box-shadow: 0 0 0 12px rgba(11, 61, 187, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(11, 61, 187, 0); }
 `
 
 const GlassDropZone = styled(Paper, {
   shouldForwardProp: (prop) => prop !== 'active' && prop !== 'dragging',
 })<{ active: boolean; dragging: boolean }>(({ active, dragging }) => ({
-  background: active || dragging ? 'rgba(75, 17, 150, 0.04)' : '#FFFFFF',
+  background: active || dragging ? 'rgba(11, 61, 187, 0.04)' : '#FFFFFF',
   border: `1px dashed ${active || dragging ? '#E85500' : 'rgba(17, 24, 39, 0.18)'}`,
   borderRadius: 0,
   padding: '24px',
@@ -76,10 +76,10 @@ const GlassDropZone = styled(Paper, {
   transition: 'all .3s ease',
   '&:hover': {
     borderColor: '#E85500',
-    background: 'rgba(75, 17, 150, 0.03)',
+    background: 'rgba(11, 61, 187, 0.03)',
   },
   ...(dragging && {
-    background: 'rgba(75, 17, 150, 0.05)',
+    background: 'rgba(11, 61, 187, 0.05)',
     borderColor: '#E85500',
   }),
 }))
@@ -102,7 +102,7 @@ const GlassButton = styled(Button, {
   color: error ? '#E74C3C' : '#E85500',
   [theme.breakpoints.down('sm')]: { width: '100%' },
   '&:hover': {
-    background: error ? 'rgba(231, 76, 60, 0.06)' : 'rgba(75, 17, 150, 0.04)',
+    background: error ? 'rgba(231, 76, 60, 0.06)' : 'rgba(11, 61, 187, 0.04)',
     borderColor: error ? '#E74C3C' : '#E85500',
   },
   transition: 'all 0.3s ease',

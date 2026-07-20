@@ -133,7 +133,7 @@ export const BankAccountsSection: React.FC = () => {
                   borderRadius: 0,
                   bgcolor: '#F8FAFC',
                   '&::after': {
-                    background: 'linear-gradient(90deg, transparent, rgba(75, 17, 150, 0.08), transparent)',
+                    background: 'linear-gradient(90deg, transparent, rgba(11, 61, 187, 0.08), transparent)',
                   },
                 }}
               />
@@ -160,7 +160,7 @@ export const BankAccountsSection: React.FC = () => {
             gap: 3,
             bgcolor: '#FAF6F3',
             borderRadius: 0,
-            border: '1px solid rgba(75, 17, 150, 0.12)',
+            border: '1px solid rgba(11, 61, 187, 0.12)',
           }}
         >
           <Box

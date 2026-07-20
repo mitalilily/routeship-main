@@ -28,7 +28,7 @@ const Kbd = styled(Box)(({ theme }) => ({
   fontFamily: '"SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", monospace',
   padding: '8px 14px',
   borderRadius: '10px',
-  border: '1px solid rgba(75, 17, 150, 0.14)',
+  border: '1px solid rgba(11, 61, 187, 0.14)',
   background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF5F2 100%)',
   display: 'inline-flex',
   alignItems: 'center',

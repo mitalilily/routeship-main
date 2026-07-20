@@ -213,7 +213,7 @@ export default function UserProfileForm() {
                   borderRadius: 0,
                   border: `1px solid ${alpha(BRAND_GREEN, 0.12)}`,
                   background:
-                    'linear-gradient(180deg, rgba(75,17,150,0.04) 0%, rgba(255,255,255,0.92) 100%)',
+                    'linear-gradient(180deg, rgba(11, 61, 187,0.04) 0%, rgba(255,255,255,0.92) 100%)',
                   height: '100%',
                 }}
               >

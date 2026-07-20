@@ -71,7 +71,8 @@ const BRAND_BLUE = '#0B3DBB'
 const BRAND_SURFACE = '#FFFFFF'
 const BRAND_INK = '#07132D'
 const BRAND_BORDER = '#EEE8E4'
-const LOGO_SRC = '/brand/routeship-mark.png'
+const LOGO_WORDMARK_SRC = '/brand/admin-logo-colored.svg'
+const LOGO_MARK_SRC = '/brand/admin-logo-mark.svg'
 
 const navItems: NavItem[] = [
   {
@@ -340,7 +341,7 @@ export default function Sidebar({
       >
         <Box
           sx={{
-            width: 48,
+            width: shouldShowExpanded ? 152 : 52,
             height: 48,
             borderRadius: 1.5,
             display: 'flex',
@@ -351,18 +352,11 @@ export default function Sidebar({
         >
           <Box
             component="img"
-            src={LOGO_SRC}
+            src={shouldShowExpanded ? LOGO_WORDMARK_SRC : LOGO_MARK_SRC}
             alt="RouteShip"
-            sx={{ width: '90%', height: '90%', objectFit: 'contain' }}
+            sx={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'left center' }}
           />
         </Box>
-        {shouldShowExpanded && (
-          <Box sx={{ flex: 1, minWidth: 0, ml: 1 }}>
-            <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: BRAND_INK }}>
-              RouteShip
-            </Typography>
-          </Box>
-        )}
       </Stack>
 
       <List

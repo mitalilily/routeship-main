@@ -197,7 +197,7 @@ export default function CustomSelect({
               },
               '&:focus-within': {
                 borderColor: '#E85500',
-                boxShadow: '0 0 0 3px rgba(75, 17, 150, 0.1)',
+                boxShadow: '0 0 0 3px rgba(11, 61, 187, 0.1)',
               },
             }}
           >

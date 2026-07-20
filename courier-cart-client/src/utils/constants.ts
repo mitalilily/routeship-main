@@ -79,7 +79,7 @@ Refund & Cancellation Policy
 export const DRAWER_WIDTH = 280
 export const NAVBAR_HEIGHT = 80
 export const RADIUS = 0 // master corner radius
-export const ACTIVE_BG = 'rgba(75, 17, 150, 0.08)' // background behind selected item
+export const ACTIVE_BG = 'rgba(11, 61, 187, 0.08)' // background behind selected item
 export const ACTIVE_BAR = '#E85500' // primary brand color bar at far left
 export const ACCENT = '#E85500' // primary brand color accent
 export const B2C_MIN_CHARGEABLE_WEIGHT_GRAMS = 250

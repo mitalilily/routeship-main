@@ -40,10 +40,10 @@ const QuickActions = ({ compact = false, iconOverride }: QuickActionsProps) => {
             color: BRAND_INK,
             transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              bgcolor: `rgba(75, 17, 150, 0.08)`,
-              borderColor: `rgba(75, 17, 150, 0.2)`,
+              bgcolor: `rgba(11, 61, 187, 0.08)`,
+              borderColor: `rgba(11, 61, 187, 0.2)`,
               color: BRAND_PRIMARY,
-              boxShadow: `0 4px 12px rgba(75, 17, 150, 0.12)`,
+              boxShadow: `0 4px 12px rgba(11, 61, 187, 0.12)`,
               transform: 'translateY(-2px)',
             },
           }}
@@ -107,8 +107,8 @@ const QuickActions = ({ compact = false, iconOverride }: QuickActionsProps) => {
                             to: { opacity: 1, transform: 'translateY(0)' },
                           },
                           '&:hover': {
-                            bgcolor: `rgba(75, 17, 150, 0.08)`,
-                            borderColor: `rgba(75, 17, 150, 0.2)`,
+                            bgcolor: `rgba(11, 61, 187, 0.08)`,
+                            borderColor: `rgba(11, 61, 187, 0.2)`,
                             transform: 'translateX(2px)',
                           },
                         }}
@@ -120,7 +120,7 @@ const QuickActions = ({ compact = false, iconOverride }: QuickActionsProps) => {
                             borderRadius: 2,
                             display: 'grid',
                             placeItems: 'center',
-                            bgcolor: `rgba(75, 17, 150, 0.08)`,
+                            bgcolor: `rgba(11, 61, 187, 0.08)`,
                             color: BRAND_INK,
                             transition: 'all 200ms ease',
                             flexShrink: 0,

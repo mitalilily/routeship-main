@@ -49,9 +49,9 @@ const WalletMenu = ({ iconOnly = false, iconOverride }: WalletMenuProps) => {
             color: BRAND_PRIMARY,
             transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              background: `rgba(75, 17, 150, 0.08)`,
-              borderColor: `rgba(75, 17, 150, 0.2)`,
-              boxShadow: `0 4px 12px rgba(75, 17, 150, 0.12)`,
+              background: `rgba(11, 61, 187, 0.08)`,
+              borderColor: `rgba(11, 61, 187, 0.2)`,
+              boxShadow: `0 4px 12px rgba(11, 61, 187, 0.12)`,
               transform: 'translateY(-2px)',
             },
           }}
@@ -76,9 +76,9 @@ const WalletMenu = ({ iconOnly = false, iconOverride }: WalletMenuProps) => {
             border: '1px solid rgba(0, 0, 0, 0.08)',
             transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              background: `rgba(75, 17, 150, 0.06)`,
-              borderColor: `rgba(75, 17, 150, 0.15)`,
-              boxShadow: `0 8px 20px rgba(75, 17, 150, 0.1)`,
+              background: `rgba(11, 61, 187, 0.06)`,
+              borderColor: `rgba(11, 61, 187, 0.15)`,
+              boxShadow: `0 8px 20px rgba(11, 61, 187, 0.1)`,
               transform: 'translateY(-2px)',
             },
           }}
@@ -135,7 +135,7 @@ const WalletMenu = ({ iconOnly = false, iconOverride }: WalletMenuProps) => {
               color: '#fff',
               background: `black`,
 
-              boxShadow: '0 6px 14px rgba(75, 17, 150, 0.18)',
+              boxShadow: '0 6px 14px rgba(11, 61, 187, 0.18)',
               transition: 'all 0.18s ease',
 
               flexShrink: 0,
@@ -147,7 +147,7 @@ const WalletMenu = ({ iconOnly = false, iconOverride }: WalletMenuProps) => {
 
               '&:hover': {
                 transform: 'translateY(-1px)',
-                boxShadow: '0 10px 20px rgba(75, 17, 150, 0.25)',
+                boxShadow: '0 10px 20px rgba(11, 61, 187, 0.25)',
                 background: `linear-gradient(135deg, #B40312 0%, #8F0210 100%)`,
               },
 

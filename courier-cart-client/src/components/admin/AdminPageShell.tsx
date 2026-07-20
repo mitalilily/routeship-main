@@ -60,7 +60,7 @@ export default function AdminPageShell({
             px: { xs: 2, md: 3 },
             py: { xs: 2.2, md: 2.8 },
             background:
-              'radial-gradient(circle at top right, rgba(75,17,150,0.22) 0%, transparent 28%)',
+              'radial-gradient(circle at top right, rgba(11, 61, 187,0.22) 0%, transparent 28%)',
           }}
         >
           <Stack spacing={2}>

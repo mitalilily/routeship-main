@@ -279,7 +279,7 @@ const Home = () => {
           ...CARD_STYLE,
           p: { xs: 2, md: 2.5 },
           background:
-            'linear-gradient(135deg, rgba(75,17,150,0.05) 0%, rgba(255,255,255,0.94) 45%, rgba(59,130,246,0.05) 100%)',
+            'linear-gradient(135deg, rgba(11, 61, 187,0.05) 0%, rgba(255,255,255,0.94) 45%, rgba(59,130,246,0.05) 100%)',
         }}
       >
         <Stack
@@ -334,7 +334,7 @@ const Home = () => {
               sx={{
                 textTransform: 'none',
                 fontWeight: 700,
-                boxShadow: '0 12px 24px rgba(75,17,150,0.16)',
+                boxShadow: '0 12px 24px rgba(11, 61, 187,0.16)',
               }}
             >
               Create Shipment

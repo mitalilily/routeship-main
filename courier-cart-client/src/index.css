@@ -2,12 +2,14 @@
   --brand-orange: #e85500;
   --brand-orange-dark: #c23e00;
   --brand-orange-light: #ff8c3c;
-  --brand-green: #4b1196;
-  --brand-green-dark: #2b0a55;
-  --brand-green-light: #8d55dc;
-  --brand-ink: #16062f;
-  --brand-text: #40364e;
-  --brand-muted: #746a80;
+  --brand-blue: #0b3dbb;
+  --brand-blue-dark: #09339e;
+  --brand-blue-light: #4975e8;
+  --brand-teal: #29c6b7;
+  --brand-teal-light: #7bcbd4;
+  --brand-ink: #07132d;
+  --brand-text: #34343b;
+  --brand-muted: #65708a;
   --brand-surface: rgba(255, 255, 255, 0.92);
   --brand-border: rgba(232, 85, 0, 0.12);
   --brand-shadow: 0 20px 40px rgba(20, 20, 20, 0.08);
@@ -28,8 +30,8 @@ html {
 
 body {
   background:
-    linear-gradient(135deg, rgba(75, 17, 150, 0.06), rgba(255, 255, 255, 0) 42%),
-    linear-gradient(180deg, #faf8fc 0%, #f1ecf7 100%);
+    linear-gradient(135deg, rgba(11, 61, 187, 0.06), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, #f7f4f2 0%, #edf2ff 100%);
   background-attachment: fixed;
   color: var(--brand-ink);
   font-family: "Manrope", "Segoe UI", sans-serif;

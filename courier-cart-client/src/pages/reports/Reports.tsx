@@ -173,7 +173,7 @@ export default function Reports() {
           borderRadius: 5,
           border: '1px solid rgba(17, 17, 19, 0.08)',
           background:
-            'radial-gradient(circle at top right, rgba(75,17,150,0.14) 0%, transparent 22%), linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,244,241,0.98) 100%)',
+            'radial-gradient(circle at top right, rgba(11, 61, 187,0.14) 0%, transparent 22%), linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,244,241,0.98) 100%)',
           boxShadow: '0 18px 38px rgba(17, 17, 19, 0.06)',
         }}
       >

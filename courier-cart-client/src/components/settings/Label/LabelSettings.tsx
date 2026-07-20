@@ -126,7 +126,7 @@ const mockOrder = {
     pincode: '560001',
     phone: '+91 9090909090',
     gst: '29ABCDE1234A1Z5',
-    logoUrl: '/brand/routeship-logo.png',
+    logoUrl: '/brand/admin-logo-colored.svg',
   },
   returnTo: {
     name: 'Shipper Name',

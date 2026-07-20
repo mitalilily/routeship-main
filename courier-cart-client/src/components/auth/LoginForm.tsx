@@ -52,7 +52,7 @@ export default function LoginForm() {
         >
           <Box
             component="img"
-            src="/brand/routeship-logo.png"
+            src="/brand/admin-logo-colored.svg"
             alt="RouteShip"
             sx={{ width: { lg: 240, xl: 280 }, height: 'auto', objectFit: 'contain' }}
           />
@@ -124,7 +124,7 @@ export default function LoginForm() {
         <Box sx={{ width: '100%', maxWidth: 430, minWidth: 0 }}>
           <Box
             component="img"
-            src="/brand/routeship-logo.png"
+            src="/brand/admin-logo-colored.svg"
             alt="RouteShip"
             sx={{
               display: { xs: 'block', lg: 'none' },

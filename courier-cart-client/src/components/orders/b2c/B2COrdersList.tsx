@@ -2093,7 +2093,7 @@ const B2COrdersList = () => {
                   borderColor: '#E85500',
                   '&:hover': {
                     borderColor: '#E85500',
-                    backgroundColor: 'rgba(75, 17, 150, 0.04)',
+                    backgroundColor: 'rgba(11, 61, 187, 0.04)',
                   },
                 }}
               >

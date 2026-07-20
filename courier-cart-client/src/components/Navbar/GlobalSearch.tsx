@@ -233,8 +233,8 @@ const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
                 borderColor: BRAND_PRIMARY,
 
                 boxShadow: `
-                    0 0 0 4px rgba(75,17,150,0.08),
-                    0 10px 26px rgba(75,17,150,0.08)
+                    0 0 0 4px rgba(11, 61, 187,0.08),
+                    0 10px 26px rgba(11, 61, 187,0.08)
                   `,
 
                 transform: 'translateY(-1px)',
@@ -288,7 +288,7 @@ const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
                     borderRadius: '10px',
                     display: 'grid',
                     placeItems: 'center',
-                    bgcolor: 'rgba(75,17,150,0.06)',
+                    bgcolor: 'rgba(11, 61, 187,0.06)',
                   }}
                 >
                   <CiSearch

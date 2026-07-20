@@ -227,7 +227,7 @@ const ShopifyInstallPage = () => {
         <Stack spacing={2.5} alignItems="center" textAlign="center">
           <Box
             component="img"
-            src="/brand/routeship-logo.png"
+            src="/brand/admin-logo-colored.svg"
             alt="RouteShip"
             sx={{ width: 140, height: 'auto' }}
           />

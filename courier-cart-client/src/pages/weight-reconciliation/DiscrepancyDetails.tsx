@@ -148,7 +148,7 @@ export default function DiscrepancyDetails() {
             borderRadius: 5,
             border: `1px solid ${alpha(BRAND_PURPLE, 0.12)}`,
             background:
-              'radial-gradient(circle at top right, rgba(75,17,150,0.14) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
+              'radial-gradient(circle at top right, rgba(11, 61, 187,0.14) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
             boxShadow: '0 18px 38px rgba(20, 20, 20, 0.08)',
           }}
         >
