@@ -69,10 +69,32 @@ export async function pollEkartTracking(batchSize = 50) {
       if (!mapped || mapped === 'unknown') continue
 
       const prevStatus = order.order_status || ''
+      const updateData: any = {
+        order_status: mapped,
+        provider_last_status: statusText || mapped,
+        delivery_message: statusText || mapped,
+        updated_at: new Date(),
+      }
+      if (mapped === 'booked') {
+        updateData.pickup_status = 'pending'
+      } else if (
+        [
+          'pickup_initiated',
+          'in_transit',
+          'out_for_delivery',
+          'delivered',
+          'ndr',
+          'rto_initiated',
+          'rto_in_transit',
+          'rto_delivered',
+        ].includes(mapped)
+      ) {
+        updateData.pickup_status = 'pickup_initiated'
+      }
 
       await db
         .update(b2c_orders)
-        .set({ order_status: mapped, updated_at: new Date() })
+        .set(updateData)
         .where(eq(b2c_orders.id, order.id))
 
       await logTrackingEvent({

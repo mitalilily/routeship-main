@@ -720,7 +720,25 @@ export async function processEkartWebhookV2(payload: any, tx = db) {
 
   const update: any = {
     order_status: mapped,
+    provider_last_status: String(statusRaw || mapped || '').trim().slice(0, 80) || null,
+    delivery_message: String(statusRaw || mapped || '').trim().slice(0, 100) || null,
     updated_at: new Date(),
+  }
+  if (mapped === 'booked') {
+    update.pickup_status = 'pending'
+  } else if (
+    [
+      'pickup_initiated',
+      'in_transit',
+      'out_for_delivery',
+      'delivered',
+      'ndr',
+      'rto_initiated',
+      'rto_in_transit',
+      'rto_delivered',
+    ].includes(mapped)
+  ) {
+    update.pickup_status = 'pickup_initiated'
   }
 
   const prevStatus = order.order_status || ''
@@ -1501,14 +1519,15 @@ const mapEkartStatus = (...parts: unknown[]): string => {
   }
   if (s.includes('delivered')) return 'delivered'
   if (s.includes('out for delivery') || s.includes('ofd')) return 'out_for_delivery'
+  if (s.includes('order placed') || s.includes('booked') || s.includes('created')) {
+    return 'booked'
+  }
   if (
-    s.includes('order placed') ||
     s.includes('consignment manifested') ||
     s.includes('manifest') ||
     s.includes('pickup scheduled') ||
     s.includes('pickup requested') ||
-    s.includes('pickup') ||
-    s.includes('created')
+    s.includes('pickup')
   ) {
     return 'pickup_initiated'
   }
@@ -1540,6 +1559,13 @@ const preserveEkartStatusTransition = (currentStatus: unknown, nextStatus: strin
     in_transit: 4,
     out_for_delivery: 5,
     delivered: 6,
+  }
+
+  if (
+    current === 'pickup_initiated' &&
+    ['pending', 'booked', 'shipment_created'].includes(next)
+  ) {
+    return next
   }
 
   if (rank[current] !== undefined && rank[next] !== undefined && rank[next] < rank[current]) {
@@ -1728,6 +1754,13 @@ const preserveXpressbeesStatusTransition = (currentStatus: unknown, mappedStatus
     delivered: 6,
   }
 
+  if (
+    current === 'pickup_initiated' &&
+    ['pending', 'booked', 'shipment_created'].includes(mapped)
+  ) {
+    return mapped
+  }
+
   if (rank[current] !== undefined && rank[mapped] !== undefined && rank[mapped] < rank[current]) {
     return current
   }
@@ -1861,7 +1894,10 @@ export async function processEkartWebhook(payload: any, tx = db) {
     updated_at: new Date(),
   }
 
-  if (internalStatus === 'pickup_initiated') {
+  if (internalStatus === 'booked') {
+    updateData.pickup_status = 'pending'
+    updateData.pickup_error = null
+  } else if (internalStatus === 'pickup_initiated') {
     updateData.pickup_status = 'pickup_initiated'
     updateData.pickup_error = null
     updateData.manifest_error = null
@@ -2234,7 +2270,10 @@ export async function processXpressbeesWebhook(payload: any, tx = db) {
     updated_at: new Date(),
   }
 
-  if (isXpressbeesPickupProgressStatus(effectiveStatus)) {
+  if (effectiveStatus === 'booked') {
+    updateData.pickup_status = 'pending'
+    updateData.pickup_error = null
+  } else if (isXpressbeesPickupProgressStatus(effectiveStatus)) {
     updateData.pickup_status = 'pickup_initiated'
     updateData.pickup_error = null
     updateData.manifest_error = null
