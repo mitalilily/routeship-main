@@ -58,6 +58,10 @@ export interface InnofulfillShippingLabelInput {
   tenantId: string
   userId: string
 }
+export interface InnofulfillInvoiceQuery {
+  type: string
+  level: 'product' | 'shipping'
+}
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -278,6 +282,32 @@ export const downloadInnofulfillShippingLabel = async (
       Accept: 'application/pdf, application/json',
       ...authHeaders,
     },
+    responseType: 'arraybuffer',
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+    headers: response.headers,
+  }
+}
+
+export const downloadInnofulfillInvoice = async (
+  orderId: string,
+  query: InnofulfillInvoiceQuery,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+  const encodedOrderId = encodeURIComponent(orderId)
+
+  const response = await axios.get(`${apiBase}/gateway/pdf-generator/invoice/${encodedOrderId}`, {
+    headers: {
+      Accept: 'application/pdf, application/json',
+      ...authHeaders,
+    },
+    params: query,
     responseType: 'arraybuffer',
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,

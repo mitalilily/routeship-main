@@ -4,6 +4,7 @@ import {
   cancelInnofulfillOrdersBulk,
   checkInnofulfillEcommServiceability,
   createInnofulfillOrder,
+  downloadInnofulfillInvoice,
   downloadInnofulfillShippingLabel,
   getInnofulfillOrder,
   listInnofulfillOrders,
@@ -18,6 +19,7 @@ const SUPPORTED_DELIVERY_MODES = new Set(['SURFACE', 'AIR'])
 const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_ORDER_TYPES = new Set(['FORWARD', 'REVERSE'])
 const SUPPORTED_ORDER_CATEGORIES = new Set(['ECOMM', 'HYPERLOCAL'])
+const SUPPORTED_INVOICE_LEVELS = new Set(['product', 'shipping'])
 const ORDER_LIST_QUERY_PARAMS = new Set([
   'page',
   'limit',
@@ -127,6 +129,34 @@ const getForwardableQueryParams = (
 
 const hasAddressType = (addresses: unknown[], type: string) =>
   addresses.some((address) => isPlainObject(address) && normalizeString(address.type).toUpperCase() === type)
+
+const sendInnofulfillDocumentResponse = (
+  res: Response,
+  result: { status: number; data: unknown; headers?: Record<string, unknown> },
+) => {
+  const contentType = String(result.headers?.['content-type'] || 'application/octet-stream')
+  const contentDisposition = result.headers?.['content-disposition']
+
+  res.status(result.status)
+  res.setHeader('Content-Type', contentType)
+  if (contentDisposition) {
+    res.setHeader('Content-Disposition', String(contentDisposition))
+  }
+
+  if (contentType.includes('application/json')) {
+    const rawBody = Buffer.isBuffer(result.data)
+      ? result.data.toString('utf8')
+      : Buffer.from(result.data as ArrayBuffer).toString('utf8')
+
+    try {
+      return res.json(JSON.parse(rawBody))
+    } catch {
+      return res.send(rawBody)
+    }
+  }
+
+  return res.send(Buffer.from(result.data as ArrayBuffer))
+}
 
 export const innofulfillLoginController = async (req: Request, res: Response) => {
   const username = normalizeString(req.body?.username)
@@ -665,28 +695,8 @@ export const innofulfillDownloadShippingLabelController = async (req: Request, r
       },
       authHeaders,
     )
-    const contentType = String(result.headers?.['content-type'] || 'application/octet-stream')
-    const contentDisposition = result.headers?.['content-disposition']
 
-    res.status(result.status)
-    res.setHeader('Content-Type', contentType)
-    if (contentDisposition) {
-      res.setHeader('Content-Disposition', String(contentDisposition))
-    }
-
-    if (contentType.includes('application/json')) {
-      const rawBody = Buffer.isBuffer(result.data)
-        ? result.data.toString('utf8')
-        : Buffer.from(result.data).toString('utf8')
-
-      try {
-        return res.json(JSON.parse(rawBody))
-      } catch {
-        return res.send(rawBody)
-      }
-    }
-
-    return res.send(Buffer.from(result.data))
+    return sendInnofulfillDocumentResponse(res, result)
   } catch (error: any) {
     console.error('Innofulfill shipping label request failed', {
       message: error?.message || String(error),
@@ -697,6 +707,52 @@ export const innofulfillDownloadShippingLabelController = async (req: Request, r
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill shipping label service',
+    })
+  }
+}
+
+export const innofulfillDownloadInvoiceController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const orderId = normalizeString(req.params.orderId)
+  const type = normalizeString(req.query.type)
+  const level = normalizeString(req.query.level).toLowerCase()
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!orderId || !type || !SUPPORTED_INVOICE_LEVELS.has(level)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid invoice parameters',
+      required: ['orderId', 'type', 'level=product|shipping'],
+    })
+  }
+
+  try {
+    const result = await downloadInnofulfillInvoice(
+      orderId,
+      {
+        type,
+        level: level as 'product' | 'shipping',
+      },
+      authHeaders,
+    )
+
+    return sendInnofulfillDocumentResponse(res, result)
+  } catch (error: any) {
+    console.error('Innofulfill invoice request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill invoice service',
     })
   }
 }
