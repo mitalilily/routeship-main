@@ -50,6 +50,7 @@ import externalApiRoutes from './routes/externalApi.routes'
 import globalSearchRoutes from './routes/globalSearch.routes'
 import ftlRequestRoutes from './routes/ftlRequest.routes'
 import integrationRoutes from './routes/integrationRoutes'
+import innofulfillRoutes from './routes/innofulfill.routes'
 import internationalShipmentRoutes from './routes/internationalShipment.routes'
 import invoicesRoutes from './routes/invoice.routes'
 import invoicePreferencesRoutes from './routes/invoicePreferences.routes'
@@ -176,6 +177,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/api/user', userRoutes)
 app.use('/api/profile', profileRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/innofulfill', innofulfillRoutes)
 app.use('/api/integrations', integrationRoutes)
 app.use('/api/payments', walletRoutes)
 app.use('/api/uploads', uploadRoutes)
