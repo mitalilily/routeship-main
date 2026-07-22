@@ -1016,6 +1016,7 @@ export const innofulfillCreateInvoiceConfigurationController = async (req: Reque
         normalizeString(seller.name) &&
         normalizeString(seller.tenantId),
     )
+  const hasValidAllSellers = sellerSelection === 'ALL' && sellers.length === 0
 
   if (!hasInnofulfillAuth(authHeaders)) {
     return res.status(401).json({
@@ -1027,7 +1028,7 @@ export const innofulfillCreateInvoiceConfigurationController = async (req: Reque
   if (
     !payload ||
     !name ||
-    !hasValidSpecificSellers ||
+    (!hasValidSpecificSellers && !hasValidAllSellers) ||
     !fields ||
     !SUPPORTED_INVOICE_CONFIG_LEVELS.has(invoiceLevel)
   ) {
@@ -1036,10 +1037,7 @@ export const innofulfillCreateInvoiceConfigurationController = async (req: Reque
       message: 'Missing or invalid invoice configuration fields',
       required: [
         'name',
-        'sellerSelection=SPECIFIC',
-        'sellers[].id',
-        'sellers[].name',
-        'sellers[].tenantId',
+        'sellerSelection=ALL with empty sellers or sellerSelection=SPECIFIC with seller details',
         'fields',
         'invoiceLevel=shipping level',
       ],
