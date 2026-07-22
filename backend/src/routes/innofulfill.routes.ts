@@ -11,6 +11,7 @@ import {
   innofulfillListOrdersController,
   innofulfillLoginController,
   innofulfillRefreshTokenController,
+  innofulfillTrackShipmentByAwbController,
 } from '../controllers/innofulfill.controller'
 
 const router = Router()
@@ -28,6 +29,7 @@ router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkMani
 router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)
 router.post('/gateway/pdf-generator/shipping-label', innofulfillDownloadShippingLabelController)
 router.get('/gateway/pdf-generator/invoice/:orderId', innofulfillDownloadInvoiceController)
+router.get('/gateway/tracking-v2/api/tracking/awb/:awbNumber', innofulfillTrackShipmentByAwbController)
 router.get('/gateway/booking-service/orders/:orderId', innofulfillGetOrderController)
 
 export default router

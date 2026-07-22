@@ -11,6 +11,7 @@ import {
   loginToInnofulfill,
   manifestInnofulfillOrdersBulk,
   refreshInnofulfillToken,
+  trackInnofulfillShipmentByAwb,
 } from '../models/services/innofulfill.service'
 
 const SUPPORTED_SIGNIN_TYPES = new Set(['EMAIL'])
@@ -753,6 +754,42 @@ export const innofulfillDownloadInvoiceController = async (req: Request, res: Re
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill invoice service',
+    })
+  }
+}
+
+export const innofulfillTrackShipmentByAwbController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const awbNumber = normalizeString(req.params.awbNumber)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!awbNumber) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required path parameter: awbNumber',
+    })
+  }
+
+  try {
+    const result = await trackInnofulfillShipmentByAwb(awbNumber, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill AWB tracking request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill tracking service',
     })
   }
 }

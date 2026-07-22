@@ -319,3 +319,28 @@ export const downloadInnofulfillInvoice = async (
     headers: response.headers,
   }
 }
+
+export const trackInnofulfillShipmentByAwb = async (
+  awbNumber: string,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+  const encodedAwbNumber = encodeURIComponent(awbNumber)
+
+  const response = await axios.get(
+    `${apiBase}/gateway/tracking-v2/api/tracking/awb/${encodedAwbNumber}`,
+    {
+      headers: {
+        Accept: 'application/json',
+        ...authHeaders,
+      },
+      timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+      validateStatus: () => true,
+    },
+  )
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
