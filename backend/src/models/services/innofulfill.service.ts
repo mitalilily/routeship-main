@@ -8,6 +8,11 @@ export interface InnofulfillLoginInput {
   signinType: InnofulfillSigninType
 }
 
+export interface InnofulfillRefreshTokenInput {
+  userId: string
+  refreshToken: string
+}
+
 export type InnofulfillTenantHeaders = Record<string, string>
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
@@ -22,6 +27,27 @@ export const loginToInnofulfill = async (
   const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
 
   const response = await axios.post(`${apiBase}/auth/login`, input, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...tenantHeaders,
+    },
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const refreshInnofulfillToken = async (
+  input: InnofulfillRefreshTokenInput,
+  tenantHeaders: InnofulfillTenantHeaders = {},
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(`${apiBase}/auth/refresh-token`, input, {
     headers: {
       'Content-Type': 'application/json',
       ...tenantHeaders,
