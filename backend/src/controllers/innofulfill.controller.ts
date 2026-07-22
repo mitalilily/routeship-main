@@ -4,6 +4,7 @@ import {
   cancelInnofulfillOrdersBulk,
   checkInnofulfillEcommServiceability,
   createInnofulfillOrder,
+  downloadInnofulfillShippingLabel,
   getInnofulfillOrder,
   listInnofulfillOrders,
   loginToInnofulfill,
@@ -630,6 +631,72 @@ export const innofulfillBulkCancelOrdersController = async (req: Request, res: R
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill cancel service',
+    })
+  }
+}
+
+export const innofulfillDownloadShippingLabelController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const orderId = normalizeString(req.body?.orderId)
+  const tenantId = normalizeString(req.body?.tenantId)
+  const userId = normalizeString(req.body?.userId)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!orderId || !tenantId || !userId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required fields',
+      required: ['orderId', 'tenantId', 'userId'],
+    })
+  }
+
+  try {
+    const result = await downloadInnofulfillShippingLabel(
+      {
+        orderId,
+        tenantId,
+        userId,
+      },
+      authHeaders,
+    )
+    const contentType = String(result.headers?.['content-type'] || 'application/octet-stream')
+    const contentDisposition = result.headers?.['content-disposition']
+
+    res.status(result.status)
+    res.setHeader('Content-Type', contentType)
+    if (contentDisposition) {
+      res.setHeader('Content-Disposition', String(contentDisposition))
+    }
+
+    if (contentType.includes('application/json')) {
+      const rawBody = Buffer.isBuffer(result.data)
+        ? result.data.toString('utf8')
+        : Buffer.from(result.data).toString('utf8')
+
+      try {
+        return res.json(JSON.parse(rawBody))
+      } catch {
+        return res.send(rawBody)
+      }
+    }
+
+    return res.send(Buffer.from(result.data))
+  } catch (error: any) {
+    console.error('Innofulfill shipping label request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill shipping label service',
     })
   }
 }

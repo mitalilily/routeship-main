@@ -3,6 +3,7 @@ import {
   innofulfillBulkCancelOrdersController,
   innofulfillBulkManifestOrdersController,
   innofulfillCreateOrderController,
+  innofulfillDownloadShippingLabelController,
   innofulfillEcommRateCalculationController,
   innofulfillEcommServiceabilityController,
   innofulfillGetOrderController,
@@ -24,6 +25,7 @@ router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
 router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
 router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkManifestOrdersController)
 router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)
+router.post('/gateway/pdf-generator/shipping-label', innofulfillDownloadShippingLabelController)
 router.get('/gateway/booking-service/orders/:orderId', innofulfillGetOrderController)
 
 export default router

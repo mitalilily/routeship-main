@@ -53,6 +53,11 @@ export interface InnofulfillBulkCancelInput {
     reason: string
   }>
 }
+export interface InnofulfillShippingLabelInput {
+  orderId: string
+  tenantId: string
+  userId: string
+}
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -258,5 +263,29 @@ export const cancelInnofulfillOrdersBulk = async (
   return {
     status: response.status,
     data: response.data,
+  }
+}
+
+export const downloadInnofulfillShippingLabel = async (
+  input: InnofulfillShippingLabelInput,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(`${apiBase}/gateway/pdf-generator/shipping-label`, input, {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/pdf, application/json',
+      ...authHeaders,
+    },
+    responseType: 'arraybuffer',
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+    headers: response.headers,
   }
 }
