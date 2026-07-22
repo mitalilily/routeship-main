@@ -900,6 +900,17 @@ export const innofulfillCreateLabelConfigurationController = async (req: Request
   const sellerSelection = normalizeString(payload?.sellerSelection).toUpperCase()
   const sellers = Array.isArray(payload?.sellers) ? payload.sellers : []
   const fields = isPlainObject(payload?.fields) ? payload.fields : null
+  const hasValidSpecificSellers =
+    sellerSelection === 'SPECIFIC' &&
+    sellers.length > 0 &&
+    sellers.every(
+      (seller) =>
+        isPlainObject(seller) &&
+        normalizeString(seller.id) &&
+        normalizeString(seller.name) &&
+        normalizeString(seller.tenantId),
+    )
+  const hasValidAllSellers = sellerSelection === 'ALL' && sellers.length === 0
 
   if (!hasInnofulfillAuth(authHeaders)) {
     return res.status(401).json({
@@ -911,21 +922,17 @@ export const innofulfillCreateLabelConfigurationController = async (req: Request
   if (
     !payload ||
     !name ||
-    sellerSelection !== 'SPECIFIC' ||
-    sellers.length === 0 ||
-    !sellers.every(
-      (seller) =>
-        isPlainObject(seller) &&
-        normalizeString(seller.id) &&
-        normalizeString(seller.name) &&
-        normalizeString(seller.tenantId),
-    ) ||
+    (!hasValidSpecificSellers && !hasValidAllSellers) ||
     !fields
   ) {
     return res.status(400).json({
       success: false,
       message: 'Missing or invalid label configuration fields',
-      required: ['name', 'sellerSelection=SPECIFIC', 'sellers[].id', 'sellers[].name', 'sellers[].tenantId', 'fields'],
+      required: [
+        'name',
+        'sellerSelection=ALL with empty sellers or sellerSelection=SPECIFIC with seller details',
+        'fields',
+      ],
     })
   }
 
