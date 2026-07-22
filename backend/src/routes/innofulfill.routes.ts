@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   innofulfillBulkCancelOrdersController,
   innofulfillBulkManifestOrdersController,
+  innofulfillCreateLabelConfigurationController,
   innofulfillCreateOrderController,
   innofulfillDeliveryWebhookController,
   innofulfillDownloadInvoiceController,
@@ -31,6 +32,7 @@ router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
 router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkManifestOrdersController)
 router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)
 router.get('/gateway/pdf-generator/label-configs', innofulfillListLabelConfigurationsController)
+router.post('/gateway/pdf-generator/label-configs', innofulfillCreateLabelConfigurationController)
 router.post('/gateway/pdf-generator/shipping-label', innofulfillDownloadShippingLabelController)
 router.get('/gateway/pdf-generator/invoice/:orderId', innofulfillDownloadInvoiceController)
 router.get('/gateway/tracking-v2/api/tracking/awb/:awbNumber', innofulfillTrackShipmentByAwbController)

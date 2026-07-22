@@ -8,6 +8,7 @@ import {
   calculateInnofulfillEcommRates,
   cancelInnofulfillOrdersBulk,
   checkInnofulfillEcommServiceability,
+  createInnofulfillLabelConfiguration,
   createInnofulfillOrder,
   downloadInnofulfillInvoice,
   downloadInnofulfillShippingLabel,
@@ -880,6 +881,69 @@ export const innofulfillListLabelConfigurationsController = async (req: Request,
     return res.status(result.status).json(result.data)
   } catch (error: any) {
     console.error('Innofulfill label configurations request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill label configuration service',
+    })
+  }
+}
+
+export const innofulfillCreateLabelConfigurationController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const payload = isPlainObject(req.body) ? req.body : null
+  const name = normalizeString(payload?.name)
+  const sellerSelection = normalizeString(payload?.sellerSelection).toUpperCase()
+  const sellers = Array.isArray(payload?.sellers) ? payload.sellers : []
+  const fields = isPlainObject(payload?.fields) ? payload.fields : null
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (
+    !payload ||
+    !name ||
+    sellerSelection !== 'SPECIFIC' ||
+    sellers.length === 0 ||
+    !sellers.every(
+      (seller) =>
+        isPlainObject(seller) &&
+        normalizeString(seller.id) &&
+        normalizeString(seller.name) &&
+        normalizeString(seller.tenantId),
+    ) ||
+    !fields
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid label configuration fields',
+      required: ['name', 'sellerSelection=SPECIFIC', 'sellers[].id', 'sellers[].name', 'sellers[].tenantId', 'fields'],
+    })
+  }
+
+  try {
+    const result = await createInnofulfillLabelConfiguration(
+      {
+        ...payload,
+        name,
+        sellerSelection,
+        sellers,
+        fields,
+      },
+      authHeaders,
+    )
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill create label configuration request failed', {
       message: error?.message || String(error),
       code: error?.code,
       status: error?.response?.status,
