@@ -44,6 +44,9 @@ export type InnofulfillTenantHeaders = Record<string, string>
 export type InnofulfillAuthHeaders = Record<string, string>
 export type InnofulfillQueryParams = Record<string, string | string[]>
 export type InnofulfillOrderPayload = Record<string, unknown>
+export interface InnofulfillBulkManifestInput {
+  orderIds: string[]
+}
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -195,6 +198,31 @@ export const getInnofulfillOrder = async (
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,
   })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const manifestInnofulfillOrdersBulk = async (
+  input: InnofulfillBulkManifestInput,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(
+    `${apiBase}/gateway/booking-service/orders/manifest/bulk`,
+    input,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+      validateStatus: () => true,
+    },
+  )
 
   return {
     status: response.status,

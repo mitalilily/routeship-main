@@ -6,6 +6,7 @@ import {
   getInnofulfillOrder,
   listInnofulfillOrders,
   loginToInnofulfill,
+  manifestInnofulfillOrdersBulk,
   refreshInnofulfillToken,
 } from '../models/services/innofulfill.service'
 
@@ -539,6 +540,45 @@ export const innofulfillGetOrderController = async (req: Request, res: Response)
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill orders service',
+    })
+  }
+}
+
+export const innofulfillBulkManifestOrdersController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const orderIds = Array.isArray(req.body?.orderIds)
+    ? req.body.orderIds.map((orderId: unknown) => normalizeString(orderId)).filter(Boolean)
+    : []
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (orderIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid orderIds. Provide a non-empty array of order IDs.',
+      required: ['orderIds'],
+    })
+  }
+
+  try {
+    const result = await manifestInnofulfillOrdersBulk({ orderIds }, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill bulk manifest request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill manifest service',
     })
   }
 }
