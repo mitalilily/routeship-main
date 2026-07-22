@@ -143,7 +143,7 @@ const startMockWooCommerceServer = async () => {
             id: 7,
             name: 'Existing order webhook',
             topic: 'order.created',
-            delivery_url: 'https://api.shiplifi.com/api/webhook/woocommerce/orders',
+            delivery_url: 'https://your-backend-service.up.railway.app/api/webhook/woocommerce/orders',
             status: 'active',
           },
         ])

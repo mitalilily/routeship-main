@@ -2774,10 +2774,10 @@ const buildTrackingUrl = (trackingNumber: string) => {
   if (!awb) return undefined
 
   const frontendUrl = String(
-    process.env.FRONTEND_URL ||
+      process.env.FRONTEND_URL ||
       process.env.CLIENT_URL ||
       process.env.APP_URL ||
-      'https://app.shiplifi.com',
+      'https://client-production-43d6.up.railway.app',
   )
     .trim()
     .replace(/\/+$/, '')

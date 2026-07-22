@@ -2,7 +2,7 @@ import { Box, Link, Stack, Typography } from '@mui/material'
 import { FiArrowUpRight } from 'react-icons/fi'
 import PhoneForm from './PhoneForm'
 
-const LANDING_PAGE_URL = 'https://reliable-dusk-717444.netlify.app/'
+const LANDING_PAGE_URL = import.meta.env.VITE_LANDING_URL || '/'
 
 export default function LoginForm() {
   return (

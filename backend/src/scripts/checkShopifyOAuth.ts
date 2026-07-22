@@ -38,13 +38,13 @@ const mask = (value: string) => {
 }
 
 const applyMockEnv = () => {
-  process.env.API_URL = 'https://api.shiplifi.com'
+  process.env.API_URL = 'https://your-backend-service.up.railway.app'
   process.env.SHOPIFY_CLIENT_ID = 'mock_shopify_client_id'
   process.env.SHOPIFY_CLIENT_SECRET = 'mock_shopify_client_secret'
   process.env.SHOPIFY_SCOPES =
     'read_orders,write_orders,read_customers,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders'
   process.env.SHOPIFY_API_VERSION = '2026-04'
-  process.env.SHOPIFY_OAUTH_SUCCESS_URL = 'https://app.shiplifi.com/channels/connected'
+  process.env.SHOPIFY_OAUTH_SUCCESS_URL = 'https://client-production-43d6.up.railway.app/channels/connected'
   process.env.SHOPIFY_USE_EXPIRING_OFFLINE_TOKENS = 'true'
   process.env.SHOPIFY_SEND_OAUTH_SCOPE = 'false'
 }

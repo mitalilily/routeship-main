@@ -5,7 +5,7 @@ Use these URLs when asking Delhivery to enable Tracking Push API / Scan Push for
 ## Required Scan Push URL
 
 ```text
-https://api.shiplifi.com/api/webhook/delhivery/scan
+https://your-backend-service.up.railway.app/api/webhook/delhivery/scan
 ```
 
 Configuration to share with Delhivery:
@@ -20,7 +20,7 @@ Configuration to share with Delhivery:
 ## Optional Document Push URL
 
 ```text
-https://api.shiplifi.com/api/webhook/delhivery/document
+https://your-backend-service.up.railway.app/api/webhook/delhivery/document
 ```
 
 Use this only if Delhivery separately supports POD, sorter image, QC image, or other document push callbacks.
@@ -36,13 +36,13 @@ Admin Panel > Couriers > Courier Credentials > Delhivery
 The backend derives the URLs from `API_URL`. Production should use:
 
 ```text
-API_URL=https://api.shiplifi.com
+API_URL=https://your-backend-service.up.railway.app
 ```
 
 Optional overrides are available for unusual hosting cases:
 
 ```text
-DELHIVERY_SCAN_PUSH_WEBHOOK_URL=https://api.shiplifi.com/api/webhook/delhivery/scan
-DELHIVERY_DOCUMENT_PUSH_WEBHOOK_URL=https://api.shiplifi.com/api/webhook/delhivery/document
-DELHIVERY_LEGACY_WEBHOOK_URL=https://api.shiplifi.com/api/webhook/delhivery/order
+DELHIVERY_SCAN_PUSH_WEBHOOK_URL=https://your-backend-service.up.railway.app/api/webhook/delhivery/scan
+DELHIVERY_DOCUMENT_PUSH_WEBHOOK_URL=https://your-backend-service.up.railway.app/api/webhook/delhivery/document
+DELHIVERY_LEGACY_WEBHOOK_URL=https://your-backend-service.up.railway.app/api/webhook/delhivery/order
 ```

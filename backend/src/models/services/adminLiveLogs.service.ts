@@ -1,15 +1,15 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 
-const DEFAULT_PM2_LOG_DIR = process.env.PM2_LOG_DIR || '/home/deploy/.pm2/logs'
-const DEFAULT_PM2_APP_NAME = process.env.PM2_APP_NAME || 'shiplifi-backend'
+const DEFAULT_LOG_DIR = process.env.RAILWAY_LOG_DIR || process.env.LOG_DIR || 'logs'
+const DEFAULT_LOG_APP_NAME = process.env.RAILWAY_SERVICE_NAME || process.env.LOG_APP_NAME || 'backend'
 const DEFAULT_LIMIT = 1000
 const MAX_LIMIT = 1000
 const READ_CHUNK_BYTES = 64 * 1024
 const MAX_READ_BYTES = 512 * 1024
 
 const resolveLogPath = (suffix: 'out' | 'error') =>
-  path.join(DEFAULT_PM2_LOG_DIR, `${DEFAULT_PM2_APP_NAME}-${suffix}.log`)
+  path.join(DEFAULT_LOG_DIR, `${DEFAULT_LOG_APP_NAME}-${suffix}.log`)
 
 const normalizeLimit = (limit?: number) => {
   if (!Number.isFinite(limit)) return DEFAULT_LIMIT

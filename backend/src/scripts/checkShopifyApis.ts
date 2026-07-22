@@ -194,7 +194,7 @@ const startMockShopifyServer = async () => {
                   node: {
                     id: 'gid://shopify/WebhookSubscription/111',
                     topic: 'ORDERS_CREATE',
-                    uri: 'https://api.shiplifi.com/api/webhooks/shopify/order-created',
+                    uri: 'https://your-backend-service.up.railway.app/api/webhooks/shopify/order-created',
                   },
                 },
               ],

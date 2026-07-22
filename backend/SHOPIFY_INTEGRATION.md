@@ -38,17 +38,17 @@ Create one Shiplifi app from the Shopify Dev Dashboard. The Shopify app's client
 Configure the app URL:
 
 ```text
-https://api.shiplifi.com/api/integrations/shopify/oauth/install
+https://your-backend-service.up.railway.app/api/integrations/shopify/oauth/install
 ```
 
 That install URL now hands new merchants to a public Shiplifi bootstrap page at `/shopify/install`, which starts Shopify OAuth without requiring an existing Shiplifi login and then exchanges a short-lived bootstrap token after Shopify redirects back.
 
-The live Shopify app configuration should also be embedded and should point its `application_url` at the hosted app frontend origin (`https://app.shiplifi.com/`), not at the backend install endpoint. After changing `courier-cart-client/shopify.app.toml`, deploy the app config to Shopify so the dashboard sees the updated embedded setting.
+The live Shopify app configuration should also be embedded and should point its `application_url` at the Railway-hosted app frontend origin, not at the backend install endpoint. After changing `courier-cart-client/shopify.app.toml`, deploy the app config to Shopify so the dashboard sees the updated embedded setting.
 
 Configure the allowed redirection URL:
 
 ```text
-https://api.shiplifi.com/api/integrations/shopify/oauth/callback
+https://your-backend-service.up.railway.app/api/integrations/shopify/oauth/callback
 ```
 
 For local testing, use a public HTTPS tunnel for the backend and add that callback too:
@@ -62,13 +62,13 @@ https://your-ngrok-domain.ngrok-free.app/api/integrations/shopify/oauth/callback
 `API_URL` must be the public backend origin and must not include `/api`.
 
 ```bash
-API_URL=https://api.shiplifi.com
+API_URL=https://your-backend-service.up.railway.app
 SHOPIFY_CLIENT_ID=your_shopify_client_id
 SHOPIFY_CLIENT_SECRET=your_shopify_client_secret
 SHOPIFY_BOOTSTRAP_SECRET=optional_shared_secret_for_public_install_bootstrap
 SHOPIFY_SCOPES=read_orders,write_orders,read_customers,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders
 SHOPIFY_API_VERSION=2026-04
-SHOPIFY_OAUTH_SUCCESS_URL=https://app.shiplifi.com/channels/connected
+SHOPIFY_OAUTH_SUCCESS_URL=https://client-production-43d6.up.railway.app/channels/connected
 SHOPIFY_SEND_OAUTH_SCOPE=false
 ```
 
@@ -176,7 +176,7 @@ cd ../courier-cart-client && npm run build
 On production, after the Shopify Dev Dashboard credentials are present, run:
 
 ```bash
-cd /srv/shiplifi/current/backend
+cd backend
 NODE_ENV=production npm run check:shopify-oauth -- --require-public --shop=your-store.myshopify.com
 ```
 
@@ -200,10 +200,10 @@ If order address fields are missing during step 9, re-check protected customer d
 
 ## Installation Audit Log
 
-Production writes a dedicated JSON Lines audit trail to:
+Production writes a dedicated JSON Lines audit trail to the configured Railway volume or service filesystem path:
 
 ```text
-/srv/shiplifi/logs/shopify-install-audit.jsonl
+logs/shopify-install-audit.jsonl
 ```
 
 Each line contains only installation stage, pass/fail status, timestamp, request ID, shop domain, duration, and a sanitized error category. Shopify session tokens, Admin API tokens, refresh tokens, HMAC values, app secrets, and customer data are never recorded. The file rotates to `.1` at 10 MB, and an audit-write failure never blocks installation.
@@ -211,11 +211,11 @@ Each line contains only installation stage, pass/fail status, timestamp, request
 Follow a review attempt live:
 
 ```bash
-tail -f /srv/shiplifi/logs/shopify-install-audit.jsonl
+tail -f logs/shopify-install-audit.jsonl
 ```
 
 Show failures only:
 
 ```bash
-jq -c 'select(.status == "failed")' /srv/shiplifi/logs/shopify-install-audit.jsonl
+jq -c 'select(.status == "failed")' logs/shopify-install-audit.jsonl
 ```

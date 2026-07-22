@@ -1,5 +1,5 @@
 -- Ensure Delhivery B2C rate-card rows are visible as courier options.
--- Idempotent: safe to run on every VPS release.
+-- Idempotent: safe to run on every Railway release.
 
 begin;
 

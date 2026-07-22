@@ -4,7 +4,7 @@ import path from 'path'
 
 const env = process.env.NODE_ENV || 'development'
 
-// Always load from inside backend/ (works locally + VPS)
+// Always load from inside backend/ (works locally + Railway)
 const envFile = path.resolve(__dirname, `.env.${env}`)
 
 dotenv.config({ path: envFile })

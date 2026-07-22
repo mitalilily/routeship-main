@@ -34,13 +34,13 @@ Do not include `/api` in this value.
 Example:
 
 ```bash
-API_URL=https://api.shiplifi.com
+API_URL=https://your-backend-service.up.railway.app
 ```
 
 The app will register this webhook delivery URL:
 
 ```text
-https://api.shiplifi.com/api/webhook/woocommerce/orders
+https://your-backend-service.up.railway.app/api/webhook/woocommerce/orders
 ```
 
 Optional:

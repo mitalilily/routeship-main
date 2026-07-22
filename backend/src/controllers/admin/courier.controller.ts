@@ -441,7 +441,7 @@ const normalizePublicUrl = (value: unknown, fallback: string) => {
 }
 
 const getPublicApiUrl = () =>
-  normalizePublicUrl(process.env.API_URL || process.env.PUBLIC_API_URL, 'https://api.shiplifi.com')
+  normalizePublicUrl(process.env.API_URL || process.env.PUBLIC_API_URL, 'https://your-backend-service.up.railway.app')
 
 const resolvePublicWebhookUrl = (envName: string, path: string) => {
   const configured = optionalCredentialString(process.env[envName])

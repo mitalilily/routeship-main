@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.shiplifi.com'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 export function buildApiUrl(path) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
