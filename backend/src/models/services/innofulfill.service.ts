@@ -13,7 +13,16 @@ export interface InnofulfillRefreshTokenInput {
   refreshToken: string
 }
 
+export interface InnofulfillEcommServiceabilityInput {
+  fromPincode: number
+  toPincode: number
+  paymentMode?: 'PREPAID' | 'COD'
+  operationType: string
+  carriers?: string[]
+}
+
 export type InnofulfillTenantHeaders = Record<string, string>
+export type InnofulfillAuthHeaders = Record<string, string>
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -51,6 +60,27 @@ export const refreshInnofulfillToken = async (
     headers: {
       'Content-Type': 'application/json',
       ...tenantHeaders,
+    },
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const checkInnofulfillEcommServiceability = async (
+  input: InnofulfillEcommServiceabilityInput,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(`${apiBase}/gateway/serviceability/ecomm`, input, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders,
     },
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,
