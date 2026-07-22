@@ -63,6 +63,7 @@ export interface InnofulfillInvoiceQuery {
   level: 'product' | 'shipping'
 }
 export type InnofulfillLabelConfigurationPayload = Record<string, unknown>
+export type InnofulfillInvoiceConfigurationPayload = Record<string, unknown>
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -402,6 +403,28 @@ export const listInnofulfillInvoiceConfigurations = async (
       ...authHeaders,
     },
     params: query,
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const createInnofulfillInvoiceConfiguration = async (
+  payload: InnofulfillInvoiceConfigurationPayload,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(`${apiBase}/gateway/pdf-generator/invoice-configs`, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...authHeaders,
+    },
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,
   })
