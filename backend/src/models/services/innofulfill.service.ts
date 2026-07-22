@@ -344,3 +344,25 @@ export const trackInnofulfillShipmentByAwb = async (
     data: response.data,
   }
 }
+
+export const listInnofulfillLabelConfigurations = async (
+  query: InnofulfillQueryParams,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.get(`${apiBase}/gateway/pdf-generator/label-configs`, {
+    headers: {
+      Accept: 'application/json',
+      ...authHeaders,
+    },
+    params: query,
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}

@@ -9,6 +9,7 @@ import {
   innofulfillEcommRateCalculationController,
   innofulfillEcommServiceabilityController,
   innofulfillGetOrderController,
+  innofulfillListLabelConfigurationsController,
   innofulfillListOrdersController,
   innofulfillLoginController,
   innofulfillRefreshTokenController,
@@ -29,6 +30,7 @@ router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
 router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
 router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkManifestOrdersController)
 router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)
+router.get('/gateway/pdf-generator/label-configs', innofulfillListLabelConfigurationsController)
 router.post('/gateway/pdf-generator/shipping-label', innofulfillDownloadShippingLabelController)
 router.get('/gateway/pdf-generator/invoice/:orderId', innofulfillDownloadInvoiceController)
 router.get('/gateway/tracking-v2/api/tracking/awb/:awbNumber', innofulfillTrackShipmentByAwbController)
