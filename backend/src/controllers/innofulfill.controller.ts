@@ -9,6 +9,7 @@ import {
 const SUPPORTED_SIGNIN_TYPES = new Set(['EMAIL'])
 const SUPPORTED_PAYMENT_MODES = new Set(['PREPAID', 'COD'])
 const SUPPORTED_DELIVERY_MODES = new Set(['SURFACE', 'AIR'])
+const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
 const TENANT_HEADER_NAMES = [
   'x-tenant-id',
   'x-root-tenant-id',
@@ -221,8 +222,11 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
   const length = normalizeNumber(req.body?.length)
   const height = normalizeNumber(req.body?.height)
   const width = normalizeNumber(req.body?.width)
+  const distance = normalizeNumber(req.body?.distance)
   const deliveryMode = normalizeString(req.body?.filters?.delivery_mode).toUpperCase()
   const authHeaders = getForwardableAuthHeaders(req)
+  const isEcommRate = serviceType === 'ECOMM' && productType === 'ECOMM'
+  const isHyperlocalRate = serviceType === 'HYPERLOCAL' && productType === 'HYPERLOCAL'
 
   if (!hasInnofulfillAuth(authHeaders)) {
     return res.status(401).json({
@@ -234,8 +238,9 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
   if (
     !isValidPincode(fromPincode) ||
     !isValidPincode(toPincode) ||
-    serviceType !== 'ECOMM' ||
-    productType !== 'ECOMM' ||
+    !SUPPORTED_RATE_TYPES.has(serviceType) ||
+    !SUPPORTED_RATE_TYPES.has(productType) ||
+    serviceType !== productType ||
     !isPositiveNumber(weight) ||
     !isPositiveNumber(length) ||
     !isPositiveNumber(height) ||
@@ -247,8 +252,8 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
       required: [
         'fromPincode',
         'toPincode',
-        'serviceType=ECOMM',
-        'productType=ECOMM',
+        'serviceType=ECOMM|HYPERLOCAL',
+        'productType=ECOMM|HYPERLOCAL',
         'weight',
         'length',
         'height',
@@ -257,10 +262,24 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
     })
   }
 
-  if (!SUPPORTED_DELIVERY_MODES.has(deliveryMode)) {
+  if (isEcommRate && !SUPPORTED_DELIVERY_MODES.has(deliveryMode)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid filters.delivery_mode. Currently supported: SURFACE, AIR',
+    })
+  }
+
+  if (isHyperlocalRate && !isPositiveNumber(distance)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid distance. HYPERLOCAL rate calculation requires distance in kilometres.',
+    })
+  }
+
+  if (isHyperlocalRate && req.body?.filters?.delivery_mode !== undefined) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid filters for HYPERLOCAL. Leave filters as an empty object.',
     })
   }
 
@@ -279,21 +298,24 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
       {
         fromPincode,
         toPincode,
-        serviceType: 'ECOMM',
-        productType: 'ECOMM',
+        serviceType: serviceType as 'ECOMM' | 'HYPERLOCAL',
+        productType: productType as 'ECOMM' | 'HYPERLOCAL',
         weight,
         length,
         height,
         width,
+        ...(isHyperlocalRate ? { distance: distance! } : {}),
         ...(typeof req.body?.includeDefaultCharges === 'boolean'
           ? { includeDefaultCharges: req.body.includeDefaultCharges }
           : {}),
         ...(req.body?.userOptions && typeof req.body.userOptions === 'object'
           ? { userOptions: req.body.userOptions }
           : {}),
-        filters: {
-          delivery_mode: deliveryMode as 'SURFACE' | 'AIR',
-        },
+        filters: isEcommRate
+          ? {
+              delivery_mode: deliveryMode as 'SURFACE' | 'AIR',
+            }
+          : {},
       },
       authHeaders,
     )

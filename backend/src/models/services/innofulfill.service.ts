@@ -24,17 +24,20 @@ export interface InnofulfillEcommServiceabilityInput {
 export interface InnofulfillEcommRateCalculationInput {
   fromPincode: number
   toPincode: number
-  serviceType: 'ECOMM'
-  productType: 'ECOMM'
+  serviceType: 'ECOMM' | 'HYPERLOCAL'
+  productType: 'ECOMM' | 'HYPERLOCAL'
   weight: number
   length: number
   height: number
   width: number
+  distance?: number
   includeDefaultCharges?: boolean
   userOptions?: Record<string, unknown>
-  filters: {
+  filters:
+    | {
     delivery_mode: 'SURFACE' | 'AIR'
   }
+    | Record<string, never>
 }
 
 export type InnofulfillTenantHeaders = Record<string, string>
