@@ -21,6 +21,22 @@ export interface InnofulfillEcommServiceabilityInput {
   carriers?: string[]
 }
 
+export interface InnofulfillEcommRateCalculationInput {
+  fromPincode: number
+  toPincode: number
+  serviceType: 'ECOMM'
+  productType: 'ECOMM'
+  weight: number
+  length: number
+  height: number
+  width: number
+  includeDefaultCharges?: boolean
+  userOptions?: Record<string, unknown>
+  filters: {
+    delivery_mode: 'SURFACE' | 'AIR'
+  }
+}
+
 export type InnofulfillTenantHeaders = Record<string, string>
 export type InnofulfillAuthHeaders = Record<string, string>
 
@@ -85,6 +101,31 @@ export const checkInnofulfillEcommServiceability = async (
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,
   })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const calculateInnofulfillEcommRates = async (
+  input: InnofulfillEcommRateCalculationInput,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(
+    `${apiBase}/gateway/ure/api/external/rate-calculation/calculate/v2`,
+    input,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+      validateStatus: () => true,
+    },
+  )
 
   return {
     status: response.status,

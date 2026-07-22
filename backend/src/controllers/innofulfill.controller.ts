@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import {
+  calculateInnofulfillEcommRates,
   checkInnofulfillEcommServiceability,
   loginToInnofulfill,
   refreshInnofulfillToken,
@@ -7,6 +8,7 @@ import {
 
 const SUPPORTED_SIGNIN_TYPES = new Set(['EMAIL'])
 const SUPPORTED_PAYMENT_MODES = new Set(['PREPAID', 'COD'])
+const SUPPORTED_DELIVERY_MODES = new Set(['SURFACE', 'AIR'])
 const TENANT_HEADER_NAMES = [
   'x-tenant-id',
   'x-root-tenant-id',
@@ -15,6 +17,13 @@ const TENANT_HEADER_NAMES = [
 ]
 
 const normalizeString = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
+const normalizeNumber = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value.trim()))) {
+    return Number(value.trim())
+  }
+  return null
+}
 const normalizePincode = (value: unknown) => {
   if (typeof value === 'number' && Number.isInteger(value)) return value
   if (typeof value === 'string' && /^\d+$/.test(value.trim())) return Number(value.trim())
@@ -23,6 +32,7 @@ const normalizePincode = (value: unknown) => {
 
 const isValidPincode = (value: number | null): value is number =>
   value !== null && Number.isInteger(value) && value >= 100000 && value <= 999999
+const isPositiveNumber = (value: number | null): value is number => value !== null && value > 0
 
 const getForwardableTenantHeaders = (req: Request) =>
   TENANT_HEADER_NAMES.reduce<Record<string, string>>((headers, headerName) => {
@@ -198,6 +208,107 @@ export const innofulfillEcommServiceabilityController = async (req: Request, res
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill serviceability service',
+    })
+  }
+}
+
+export const innofulfillEcommRateCalculationController = async (req: Request, res: Response) => {
+  const fromPincode = normalizePincode(req.body?.fromPincode)
+  const toPincode = normalizePincode(req.body?.toPincode)
+  const serviceType = normalizeString(req.body?.serviceType).toUpperCase()
+  const productType = normalizeString(req.body?.productType).toUpperCase()
+  const weight = normalizeNumber(req.body?.weight)
+  const length = normalizeNumber(req.body?.length)
+  const height = normalizeNumber(req.body?.height)
+  const width = normalizeNumber(req.body?.width)
+  const deliveryMode = normalizeString(req.body?.filters?.delivery_mode).toUpperCase()
+  const authHeaders = getForwardableAuthHeaders(req)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (
+    !isValidPincode(fromPincode) ||
+    !isValidPincode(toPincode) ||
+    serviceType !== 'ECOMM' ||
+    productType !== 'ECOMM' ||
+    !isPositiveNumber(weight) ||
+    !isPositiveNumber(length) ||
+    !isPositiveNumber(height) ||
+    !isPositiveNumber(width)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid required fields',
+      required: [
+        'fromPincode',
+        'toPincode',
+        'serviceType=ECOMM',
+        'productType=ECOMM',
+        'weight',
+        'length',
+        'height',
+        'width',
+      ],
+    })
+  }
+
+  if (!SUPPORTED_DELIVERY_MODES.has(deliveryMode)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid filters.delivery_mode. Currently supported: SURFACE, AIR',
+    })
+  }
+
+  if (
+    req.body?.includeDefaultCharges !== undefined &&
+    typeof req.body.includeDefaultCharges !== 'boolean'
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid includeDefaultCharges. Provide a boolean value.',
+    })
+  }
+
+  try {
+    const result = await calculateInnofulfillEcommRates(
+      {
+        fromPincode,
+        toPincode,
+        serviceType: 'ECOMM',
+        productType: 'ECOMM',
+        weight,
+        length,
+        height,
+        width,
+        ...(typeof req.body?.includeDefaultCharges === 'boolean'
+          ? { includeDefaultCharges: req.body.includeDefaultCharges }
+          : {}),
+        ...(req.body?.userOptions && typeof req.body.userOptions === 'object'
+          ? { userOptions: req.body.userOptions }
+          : {}),
+        filters: {
+          delivery_mode: deliveryMode as 'SURFACE' | 'AIR',
+        },
+      },
+      authHeaders,
+    )
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill ECOMM rate calculation request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill rate calculation service',
     })
   }
 }
