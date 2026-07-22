@@ -2,6 +2,8 @@ import { Request, Response } from 'express'
 import {
   calculateInnofulfillEcommRates,
   checkInnofulfillEcommServiceability,
+  createInnofulfillOrder,
+  getInnofulfillOrder,
   listInnofulfillOrders,
   loginToInnofulfill,
   refreshInnofulfillToken,
@@ -11,6 +13,8 @@ const SUPPORTED_SIGNIN_TYPES = new Set(['EMAIL'])
 const SUPPORTED_PAYMENT_MODES = new Set(['PREPAID', 'COD'])
 const SUPPORTED_DELIVERY_MODES = new Set(['SURFACE', 'AIR'])
 const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
+const SUPPORTED_ORDER_TYPES = new Set(['FORWARD', 'REVERSE'])
+const SUPPORTED_ORDER_CATEGORIES = new Set(['ECOMM', 'HYPERLOCAL'])
 const ORDER_LIST_QUERY_PARAMS = new Set([
   'page',
   'limit',
@@ -65,6 +69,8 @@ const normalizePincode = (value: unknown) => {
 const isValidPincode = (value: number | null): value is number =>
   value !== null && Number.isInteger(value) && value >= 100000 && value <= 999999
 const isPositiveNumber = (value: number | null): value is number => value !== null && value > 0
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
 const getForwardableTenantHeaders = (req: Request) =>
   TENANT_HEADER_NAMES.reduce<Record<string, string>>((headers, headerName) => {
@@ -115,6 +121,9 @@ const getForwardableQueryParams = (
 
     return params
   }, {})
+
+const hasAddressType = (addresses: unknown[], type: string) =>
+  addresses.some((address) => isPlainObject(address) && normalizeString(address.type).toUpperCase() === type)
 
 export const innofulfillLoginController = async (req: Request, res: Response) => {
   const username = normalizeString(req.body?.username)
@@ -404,6 +413,124 @@ export const innofulfillListOrdersController = async (req: Request, res: Respons
     return res.status(result.status).json(result.data)
   } catch (error: any) {
     console.error('Innofulfill list orders request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill orders service',
+    })
+  }
+}
+
+export const innofulfillCreateOrderController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const payload = isPlainObject(req.body) ? req.body : null
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!payload) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid request body',
+    })
+  }
+
+  const orderType = normalizeString(payload.orderType).toUpperCase()
+  const orderStatus = normalizeString(payload.orderStatus).toUpperCase()
+  const parcelCategory = normalizeString(payload.parcelCategory).toUpperCase()
+  const deliveryPromise = normalizeString(payload.deliveryPromise).toUpperCase()
+  const deliveryMode = normalizeString(payload.deliveryMode).toUpperCase()
+  const carrierId = normalizeString(payload.carrierId)
+  const carrierName = normalizeString(payload.carrierName)
+  const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
+  const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
+  const isEcommOrder = parcelCategory === 'ECOMM' && deliveryPromise === 'ECOMM'
+  const isHyperlocalOrder = parcelCategory === 'HYPERLOCAL' && deliveryPromise === 'HYPERLOCAL'
+
+  if (
+    !SUPPORTED_ORDER_TYPES.has(orderType) ||
+    orderStatus !== 'CONFIRMED' ||
+    !SUPPORTED_ORDER_CATEGORIES.has(parcelCategory) ||
+    parcelCategory !== deliveryPromise ||
+    (isEcommOrder && !SUPPORTED_DELIVERY_MODES.has(deliveryMode)) ||
+    (isHyperlocalOrder && deliveryMode !== '') ||
+    (isEcommOrder && !carrierId) ||
+    !carrierName ||
+    !Array.isArray(payload.addresses) ||
+    !hasAddressType(addresses, 'PICKUP') ||
+    !hasAddressType(addresses, 'DELIVERY') ||
+    !Array.isArray(payload.shipments) ||
+    shipments.length === 0 ||
+    !isPlainObject(payload.payment)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid required fields',
+      required: [
+        'orderType=FORWARD|REVERSE',
+        'orderStatus=CONFIRMED',
+        'parcelCategory=ECOMM|HYPERLOCAL',
+        'deliveryPromise matching parcelCategory',
+        'deliveryMode=SURFACE|AIR for ECOMM or empty for HYPERLOCAL',
+        'carrierId for ECOMM',
+        'carrierName',
+        'addresses with PICKUP and DELIVERY',
+        'shipments',
+        'payment',
+      ],
+    })
+  }
+
+  try {
+    const result = await createInnofulfillOrder(payload, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill create order request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill orders service',
+    })
+  }
+}
+
+export const innofulfillGetOrderController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const orderId = normalizeString(req.params.orderId)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!orderId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required path parameter: orderId',
+    })
+  }
+
+  try {
+    const result = await getInnofulfillOrder(orderId, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill get order request failed', {
       message: error?.message || String(error),
       code: error?.code,
       status: error?.response?.status,

@@ -43,6 +43,7 @@ export interface InnofulfillEcommRateCalculationInput {
 export type InnofulfillTenantHeaders = Record<string, string>
 export type InnofulfillAuthHeaders = Record<string, string>
 export type InnofulfillQueryParams = Record<string, string | string[]>
+export type InnofulfillOrderPayload = Record<string, unknown>
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -148,6 +149,49 @@ export const listInnofulfillOrders = async (
       ...authHeaders,
     },
     params: query,
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const createInnofulfillOrder = async (
+  payload: InnofulfillOrderPayload,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(`${apiBase}/gateway/booking-service/orders`, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders,
+    },
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const getInnofulfillOrder = async (
+  orderId: string,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+  const encodedOrderId = encodeURIComponent(orderId)
+
+  const response = await axios.get(`${apiBase}/gateway/booking-service/orders/${encodedOrderId}`, {
+    headers: {
+      Accept: 'application/json',
+      ...authHeaders,
+    },
     timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
     validateStatus: () => true,
   })

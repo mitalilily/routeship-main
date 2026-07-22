@@ -1,7 +1,9 @@
 import { Router } from 'express'
 import {
+  innofulfillCreateOrderController,
   innofulfillEcommRateCalculationController,
   innofulfillEcommServiceabilityController,
+  innofulfillGetOrderController,
   innofulfillListOrdersController,
   innofulfillLoginController,
   innofulfillRefreshTokenController,
@@ -17,5 +19,7 @@ router.post(
   innofulfillEcommRateCalculationController,
 )
 router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
+router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
+router.get('/gateway/booking-service/orders/:orderId', innofulfillGetOrderController)
 
 export default router
