@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import {
   calculateInnofulfillEcommRates,
   checkInnofulfillEcommServiceability,
+  listInnofulfillOrders,
   loginToInnofulfill,
   refreshInnofulfillToken,
 } from '../models/services/innofulfill.service'
@@ -10,6 +11,36 @@ const SUPPORTED_SIGNIN_TYPES = new Set(['EMAIL'])
 const SUPPORTED_PAYMENT_MODES = new Set(['PREPAID', 'COD'])
 const SUPPORTED_DELIVERY_MODES = new Set(['SURFACE', 'AIR'])
 const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
+const ORDER_LIST_QUERY_PARAMS = new Set([
+  'page',
+  'limit',
+  'sortOrder',
+  'orderId',
+  'referenceId',
+  'orderStatus',
+  'orderType',
+  'parcelCategory',
+  'deliveryMode',
+  'deliveryPromise',
+  'carrierName',
+  'awbNumber',
+  'phone',
+  'paymentType',
+  'startDate',
+  'endDate',
+  'manifested',
+  'autoManifest',
+  'returnable',
+  'filterByCurrentUser',
+  'bulkId',
+  'destinationCity',
+  'destinationZip',
+  'addresses.type',
+  'addresses.state',
+  'addresses.city',
+  'addresses.zip',
+  'addresses.country',
+])
 const TENANT_HEADER_NAMES = [
   'x-tenant-id',
   'x-root-tenant-id',
@@ -65,6 +96,25 @@ const getForwardableAuthHeaders = (req: Request) => {
 
 const hasInnofulfillAuth = (headers: Record<string, string>) =>
   Boolean(headers['Api-Key'] || (headers.Authorization && headers.TenantId))
+
+const getForwardableQueryParams = (
+  query: Request['query'],
+  allowedParams: Set<string>,
+) =>
+  Object.entries(query).reduce<Record<string, string | string[]>>((params, [key, value]) => {
+    if (!allowedParams.has(key)) return params
+
+    if (typeof value === 'string' && value.trim()) {
+      params[key] = value.trim()
+    } else if (Array.isArray(value)) {
+      const values = value
+        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+        .map((item) => item.trim())
+      if (values.length) params[key] = values
+    }
+
+    return params
+  }, {})
 
 export const innofulfillLoginController = async (req: Request, res: Response) => {
   const username = normalizeString(req.body?.username)
@@ -331,6 +381,37 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill rate calculation service',
+    })
+  }
+}
+
+export const innofulfillListOrdersController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  try {
+    const result = await listInnofulfillOrders(
+      getForwardableQueryParams(req.query, ORDER_LIST_QUERY_PARAMS),
+      authHeaders,
+    )
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill list orders request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill orders service',
     })
   }
 }

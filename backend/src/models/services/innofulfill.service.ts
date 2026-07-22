@@ -42,6 +42,7 @@ export interface InnofulfillEcommRateCalculationInput {
 
 export type InnofulfillTenantHeaders = Record<string, string>
 export type InnofulfillAuthHeaders = Record<string, string>
+export type InnofulfillQueryParams = Record<string, string | string[]>
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -129,6 +130,27 @@ export const calculateInnofulfillEcommRates = async (
       validateStatus: () => true,
     },
   )
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const listInnofulfillOrders = async (
+  query: InnofulfillQueryParams,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.get(`${apiBase}/gateway/booking-service/orders`, {
+    headers: {
+      ...authHeaders,
+    },
+    params: query,
+    timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+    validateStatus: () => true,
+  })
 
   return {
     status: response.status,

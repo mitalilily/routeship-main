@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   innofulfillEcommRateCalculationController,
   innofulfillEcommServiceabilityController,
+  innofulfillListOrdersController,
   innofulfillLoginController,
   innofulfillRefreshTokenController,
 } from '../controllers/innofulfill.controller'
@@ -15,5 +16,6 @@ router.post(
   '/gateway/ure/api/external/rate-calculation/calculate/v2',
   innofulfillEcommRateCalculationController,
 )
+router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
 
 export default router
