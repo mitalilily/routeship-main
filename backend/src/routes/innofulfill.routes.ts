@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  innofulfillBulkCancelOrdersController,
   innofulfillBulkManifestOrdersController,
   innofulfillCreateOrderController,
   innofulfillEcommRateCalculationController,
@@ -22,6 +23,7 @@ router.post(
 router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
 router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
 router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkManifestOrdersController)
+router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)
 router.get('/gateway/booking-service/orders/:orderId', innofulfillGetOrderController)
 
 export default router

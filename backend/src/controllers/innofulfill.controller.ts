@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import {
   calculateInnofulfillEcommRates,
+  cancelInnofulfillOrdersBulk,
   checkInnofulfillEcommServiceability,
   createInnofulfillOrder,
   getInnofulfillOrder,
@@ -579,6 +580,56 @@ export const innofulfillBulkManifestOrdersController = async (req: Request, res:
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill manifest service',
+    })
+  }
+}
+
+export const innofulfillBulkCancelOrdersController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const orders = Array.isArray(req.body?.orders)
+    ? req.body.orders
+        .map((order: unknown) => {
+          if (!isPlainObject(order)) return null
+
+          return {
+            orderId: normalizeString(order.orderId),
+            reason: normalizeString(order.reason),
+          }
+        })
+        .filter((order: { orderId: string; reason: string } | null): order is { orderId: string; reason: string } =>
+          Boolean(order?.orderId && order.reason),
+        )
+    : []
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!Array.isArray(req.body?.orders) || orders.length !== req.body.orders.length || orders.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid orders. Each entry requires orderId and reason.',
+      required: ['orders[].orderId', 'orders[].reason'],
+    })
+  }
+
+  try {
+    const result = await cancelInnofulfillOrdersBulk({ orders }, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill bulk cancel request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill cancel service',
     })
   }
 }

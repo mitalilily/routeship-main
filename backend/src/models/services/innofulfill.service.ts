@@ -47,6 +47,12 @@ export type InnofulfillOrderPayload = Record<string, unknown>
 export interface InnofulfillBulkManifestInput {
   orderIds: string[]
 }
+export interface InnofulfillBulkCancelInput {
+  orders: Array<{
+    orderId: string
+    reason: string
+  }>
+}
 
 const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 
@@ -213,6 +219,31 @@ export const manifestInnofulfillOrdersBulk = async (
 
   const response = await axios.post(
     `${apiBase}/gateway/booking-service/orders/manifest/bulk`,
+    input,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      timeout: Number(process.env.INNOFULFILL_REQUEST_TIMEOUT_MS || 15000),
+      validateStatus: () => true,
+    },
+  )
+
+  return {
+    status: response.status,
+    data: response.data,
+  }
+}
+
+export const cancelInnofulfillOrdersBulk = async (
+  input: InnofulfillBulkCancelInput,
+  authHeaders: InnofulfillAuthHeaders,
+) => {
+  const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+
+  const response = await axios.post(
+    `${apiBase}/gateway/booking-service/orders/cancel/bulk`,
     input,
     {
       headers: {
