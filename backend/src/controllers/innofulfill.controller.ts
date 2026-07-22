@@ -13,6 +13,7 @@ import {
   downloadInnofulfillInvoice,
   downloadInnofulfillShippingLabel,
   getInnofulfillOrder,
+  listInnofulfillInvoiceConfigurations,
   listInnofulfillLabelConfigurations,
   listInnofulfillOrders,
   loginToInnofulfill,
@@ -65,6 +66,7 @@ const ORDER_LIST_QUERY_PARAMS = new Set([
   'addresses.country',
 ])
 const LABEL_CONFIG_QUERY_PARAMS = new Set(['page', 'limit', 'search'])
+const INVOICE_CONFIG_QUERY_PARAMS = new Set(['page', 'limit', 'search', 'invoiceLevel'])
 const TENANT_HEADER_NAMES = [
   'x-tenant-id',
   'x-root-tenant-id',
@@ -959,6 +961,37 @@ export const innofulfillCreateLabelConfigurationController = async (req: Request
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill label configuration service',
+    })
+  }
+}
+
+export const innofulfillListInvoiceConfigurationsController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  try {
+    const result = await listInnofulfillInvoiceConfigurations(
+      getForwardableQueryParams(req.query, INVOICE_CONFIG_QUERY_PARAMS),
+      authHeaders,
+    )
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill invoice configurations request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill invoice configuration service',
     })
   }
 }
