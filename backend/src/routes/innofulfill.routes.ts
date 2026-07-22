@@ -3,6 +3,7 @@ import {
   innofulfillBulkCancelOrdersController,
   innofulfillBulkManifestOrdersController,
   innofulfillCreateOrderController,
+  innofulfillDeliveryWebhookController,
   innofulfillDownloadInvoiceController,
   innofulfillDownloadShippingLabelController,
   innofulfillEcommRateCalculationController,
@@ -18,6 +19,7 @@ const router = Router()
 
 router.post('/auth/login', innofulfillLoginController)
 router.post('/auth/refresh-token', innofulfillRefreshTokenController)
+router.post('/webhook/delivery', innofulfillDeliveryWebhookController)
 router.post('/gateway/serviceability/ecomm', innofulfillEcommServiceabilityController)
 router.post(
   '/gateway/ure/api/external/rate-calculation/calculate/v2',

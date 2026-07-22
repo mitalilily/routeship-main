@@ -1,4 +1,9 @@
+import crypto from 'crypto'
 import { Request, Response } from 'express'
+import { and, eq, gte, isNull } from 'drizzle-orm'
+import { db } from '../models/client'
+import { courier_credentials } from '../models/schema/courierCredentials'
+import { pending_webhooks } from '../schema/schema'
 import {
   calculateInnofulfillEcommRates,
   cancelInnofulfillOrdersBulk,
@@ -21,6 +26,12 @@ const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_ORDER_TYPES = new Set(['FORWARD', 'REVERSE'])
 const SUPPORTED_ORDER_CATEGORIES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_INVOICE_LEVELS = new Set(['product', 'shipping'])
+const INNOFULFILL_PROVIDER = 'innofulfill'
+const INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS = ['x-webhook-signature']
+const INNOFULFILL_WEBHOOK_SENSITIVE_HEADERS = new Set([
+  ...INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS,
+  'authorization',
+])
 const ORDER_LIST_QUERY_PARAMS = new Set([
   'page',
   'limit',
@@ -130,6 +141,60 @@ const getForwardableQueryParams = (
 
 const hasAddressType = (addresses: unknown[], type: string) =>
   addresses.some((address) => isPlainObject(address) && normalizeString(address.type).toUpperCase() === type)
+
+const getHeaderValue = (headers: Request['headers'], headerName: string) => {
+  const value = headers[headerName.toLowerCase()]
+  if (Array.isArray(value)) return normalizeString(value[0])
+  return normalizeString(value)
+}
+
+const timingSafeStringEqual = (left: string, right: string) => {
+  const leftBuffer = Buffer.from(left)
+  const rightBuffer = Buffer.from(right)
+
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer)
+}
+
+const isValidInnofulfillWebhookSignature = (signature: string, secret: string, rawBody: string) => {
+  const normalizedSignature = signature.startsWith('Bearer ')
+    ? signature.slice('Bearer '.length).trim()
+    : signature
+  const hmacHex = crypto.createHmac('sha256', secret).update(rawBody).digest('hex')
+  const hmacBase64 = crypto.createHmac('sha256', secret).update(rawBody).digest('base64')
+  const candidates = [hmacHex, `sha256=${hmacHex}`, hmacBase64, `sha256=${hmacBase64}`]
+
+  return candidates.some((candidate) => timingSafeStringEqual(normalizedSignature, candidate))
+}
+
+const fetchInnofulfillWebhookSignatureKey = async () => {
+  const envSecret = normalizeString(process.env.INNOFULFILL_WEBHOOK_SIGNATURE_KEY)
+  if (envSecret) return envSecret
+
+  try {
+    const [row] = await db
+      .select({
+        webhookSecret: courier_credentials.webhookSecret,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, INNOFULFILL_PROVIDER))
+      .limit(1)
+
+    return normalizeString(row?.webhookSecret)
+  } catch (error: any) {
+    console.error('Failed to load Innofulfill webhook signature key', {
+      message: error?.message || String(error),
+    })
+    return ''
+  }
+}
+
+const sanitizeInnofulfillWebhookHeaders = (headers: Request['headers']) =>
+  Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [
+      key,
+      INNOFULFILL_WEBHOOK_SENSITIVE_HEADERS.has(key.toLowerCase()) ? '[redacted]' : value,
+    ]),
+  )
 
 const sendInnofulfillDocumentResponse = (
   res: Response,
@@ -790,6 +855,119 @@ export const innofulfillTrackShipmentByAwbController = async (req: Request, res:
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill tracking service',
+    })
+  }
+}
+
+export const innofulfillDeliveryWebhookController = async (req: Request, res: Response) => {
+  const rawBody = normalizeString((req as any).rawBody) || JSON.stringify(req.body || {})
+  const payload = isPlainObject(req.body) ? req.body : null
+  const signature = getHeaderValue(req.headers, 'x-webhook-signature')
+  const webhookId = getHeaderValue(req.headers, 'x-webhook-id') || normalizeString(payload?.id)
+  const headerEvent = getHeaderValue(req.headers, 'x-webhook-event')
+  const eventObject = isPlainObject(payload?.event) ? payload.event : {}
+  const data = isPlainObject(payload?.data) ? payload.data : {}
+  const eventName = headerEvent || normalizeString(eventObject.triggerEventName)
+  const eventCode = normalizeString(eventObject.eventCode)
+  const businessLine = normalizeString(eventObject.businessLine)
+  const categoryCode = normalizeString(eventObject.categoryCode)
+  const awbNumber = normalizeString(data.awbNumber) || normalizeString(data.cAwbNumber)
+  const orderStatus = normalizeString(data.orderStatus) || eventCode || 'unknown'
+
+  if (!payload) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid webhook payload',
+    })
+  }
+
+  if (!signature) {
+    return res.status(401).json({
+      success: false,
+      message: 'Missing webhook signature',
+    })
+  }
+
+  const signatureKey = await fetchInnofulfillWebhookSignatureKey()
+  if (!signatureKey) {
+    console.error('Innofulfill webhook rejected: signature key is not configured')
+    return res.status(500).json({
+      success: false,
+      message: 'Webhook signature key is not configured',
+    })
+  }
+
+  if (!isValidInnofulfillWebhookSignature(signature, signatureKey, rawBody)) {
+    console.warn('Innofulfill webhook rejected: invalid signature', {
+      webhookId: webhookId || null,
+      event: eventName || null,
+      awbNumber: awbNumber || null,
+    })
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid webhook signature',
+    })
+  }
+
+  if (!webhookId || !eventName || !awbNumber) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required webhook fields',
+      required: ['id or X-Webhook-ID', 'X-Webhook-Event or event.triggerEventName', 'data.awbNumber'],
+    })
+  }
+
+  try {
+    const dedupeWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const pendingStatus = `${INNOFULFILL_PROVIDER}:${webhookId}:${orderStatus}`
+    const [existingPending] = await db
+      .select({ id: pending_webhooks.id })
+      .from(pending_webhooks)
+      .where(
+        and(
+          eq(pending_webhooks.awb_number, awbNumber),
+          eq(pending_webhooks.status, pendingStatus),
+          isNull(pending_webhooks.processed_at),
+          gte(pending_webhooks.created_at, dedupeWindowStart),
+        ),
+      )
+      .limit(1)
+
+    if (!existingPending) {
+      await db.insert(pending_webhooks).values({
+        awb_number: awbNumber,
+        status: pendingStatus,
+        payload: {
+          __provider: INNOFULFILL_PROVIDER,
+          webhookId,
+          event: eventName,
+          eventCode,
+          businessLine,
+          categoryCode,
+          tenantId: getHeaderValue(req.headers, 'x-tenant-id') || normalizeString(payload.tenantId),
+          userId: getHeaderValue(req.headers, 'x-user-id') || normalizeString(payload.userId),
+          headers: sanitizeInnofulfillWebhookHeaders(req.headers),
+          body: payload,
+        },
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      received: true,
+      duplicate: Boolean(existingPending),
+    })
+  } catch (error: any) {
+    console.error('Innofulfill delivery webhook processing failed', {
+      message: error?.message || String(error),
+      webhookId,
+      event: eventName,
+      awbNumber,
+    })
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
     })
   }
 }
