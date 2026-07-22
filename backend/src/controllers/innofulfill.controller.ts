@@ -30,7 +30,7 @@ const SUPPORTED_RATE_TYPES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_ORDER_TYPES = new Set(['FORWARD', 'REVERSE'])
 const SUPPORTED_ORDER_CATEGORIES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_INVOICE_LEVELS = new Set(['product', 'shipping'])
-const SUPPORTED_INVOICE_CONFIG_LEVELS = new Set(['shipping level'])
+const SUPPORTED_INVOICE_CONFIG_LEVELS = new Set(['shipping level', 'product level'])
 const INNOFULFILL_PROVIDER = 'innofulfill'
 const INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS = ['x-webhook-signature']
 const INNOFULFILL_WEBHOOK_SENSITIVE_HEADERS = new Set([
@@ -1039,7 +1039,7 @@ export const innofulfillCreateInvoiceConfigurationController = async (req: Reque
         'name',
         'sellerSelection=ALL with empty sellers or sellerSelection=SPECIFIC with seller details',
         'fields',
-        'invoiceLevel=shipping level',
+        'invoiceLevel=shipping level|product level',
       ],
     })
   }
