@@ -29,10 +29,17 @@ const sync = async () => {
       );
       CREATE TABLE IF NOT EXISTS routeship_international_rates (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(), rate_card_id uuid NOT NULL REFERENCES routeship_international_rate_cards(id) ON DELETE CASCADE,
-        delivery_partner varchar(150) NOT NULL, destination_country varchar(2) NOT NULL,
+        delivery_partner varchar(150) NOT NULL, destination_country varchar(120) NOT NULL,
+        destination_zone varchar(20),
         min_weight numeric(10,3) NOT NULL DEFAULT 0, max_weight numeric(10,3) NOT NULL,
         base_rate numeric(12,2) NOT NULL DEFAULT 0, rate_per_kg numeric(12,2) NOT NULL,
         currency varchar(3) NOT NULL DEFAULT 'INR', estimated_days varchar(40), is_active boolean NOT NULL DEFAULT true,
+        created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS routeship_international_country_zones (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(), country_name varchar(160) NOT NULL,
+        country_key varchar(180) NOT NULL UNIQUE, zone_code varchar(20) NOT NULL,
+        is_active boolean NOT NULL DEFAULT true,
         created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
       );
       CREATE TABLE IF NOT EXISTS routeship_b2c_courier_rate_configs (
@@ -58,6 +65,9 @@ const sync = async () => {
       ALTER TABLE routeship_diesel_rates ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_international_rate_cards ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_international_rates ALTER COLUMN id SET DEFAULT gen_random_uuid();
+      ALTER TABLE routeship_international_rates ALTER COLUMN destination_country TYPE varchar(120);
+      ALTER TABLE routeship_international_rates ADD COLUMN IF NOT EXISTS destination_zone varchar(20);
+      ALTER TABLE routeship_international_country_zones ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE shiplifi_holidays ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_b2c_courier_rate_configs ALTER COLUMN id SET DEFAULT gen_random_uuid();
       INSERT INTO shiplifi_zones (id, code, name, description, business_type)

@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type React from 'react'
 import { FiChevronUp, FiPlus, FiTrash2, FiX } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { createInternationalShipment } from '../../api/international.api'
+import { createInternationalShipment, fetchInternationalRateCards } from '../../api/international.api'
 import { toast } from '../../components/UI/Toast'
 import { usePickupAddresses } from '../../hooks/Pickup/usePickupAddresses'
 
@@ -171,6 +171,7 @@ function Field({
 export default function InternationalOrderForm() {
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
+  const [rateCards, setRateCards] = useState<any[]>([])
   const [paymentMethod, setPaymentMethod] = useState('prepaid')
   const [rov, setRov] = useState('owner-risk')
   const [itemType, setItemType] = useState('non-commercial')
@@ -190,7 +191,7 @@ export default function InternationalOrderForm() {
     pincode: '',
     city: '',
     state: '',
-    country: 'US',
+    country: '',
   })
   const [otherDetails, setOtherDetails] = useState({
     invoiceNumber: '',
@@ -239,6 +240,8 @@ export default function InternationalOrderForm() {
   const applicableWeight = Math.max(packageTotals.physical, packageTotals.volumetric)
   const pickupAddresses = pickupData?.pickupAddresses ?? []
   const selectedPickup = pickupAddresses.find((row) => row.pickupId === selectedPickupId)
+  const destinationCountries = rateCards[0]?.destinationCountries ?? []
+  const selectedDestination = destinationCountries.find((country: any) => country.countryName === consignee.country)
 
   useEffect(() => {
     if (selectedPickupId || pickupAddresses.length === 0) return
@@ -246,6 +249,28 @@ export default function InternationalOrderForm() {
     const defaultPickup = pickupAddresses.find((row) => row.isPrimary) ?? pickupAddresses[0]
     setSelectedPickupId(defaultPickup.pickupId)
   }, [pickupAddresses, selectedPickupId])
+
+  useEffect(() => {
+    const loadInternationalDestinations = async () => {
+      try {
+        const cards = await fetchInternationalRateCards()
+        setRateCards(cards)
+        const firstCountry = cards[0]?.destinationCountries?.[0]?.countryName
+        if (firstCountry) {
+          setConsignee((current) => ({
+            ...current,
+            country: current.country || firstCountry,
+          }))
+        }
+      } catch (error: any) {
+        toast.open({
+          message: error?.response?.data?.error || 'Failed to load international destinations',
+          severity: 'error',
+        })
+      }
+    }
+    loadInternationalDestinations()
+  }, [])
 
   const formatPickupAddress = (row: (typeof pickupAddresses)[number]) => {
     const pickup = row.pickup
@@ -457,7 +482,18 @@ export default function InternationalOrderForm() {
                   <Field label="State" required value={consignee.state} onChange={(value) => updateConsignee('state', value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <Field label="Country" required value={consignee.country} onChange={(value) => updateConsignee('country', value)} />
+                  <Field label="Country" required select value={consignee.country} onChange={(value) => updateConsignee('country', value)}>
+                    {destinationCountries.map((country: any) => (
+                      <MenuItem key={country.countryKey || country.countryName} value={country.countryName}>
+                        {country.countryName} {country.zoneCode ? `(Zone ${country.zoneCode})` : ''}
+                      </MenuItem>
+                    ))}
+                  </Field>
+                  {selectedDestination?.zoneCode ? (
+                    <Typography sx={{ color: MUTED, fontSize: '0.72rem', mt: 0.5 }}>
+                      International zone: {selectedDestination.zoneCode}
+                    </Typography>
+                  ) : null}
                 </Grid>
               </Grid>
             </Box>

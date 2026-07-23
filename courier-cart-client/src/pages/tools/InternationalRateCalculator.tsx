@@ -19,8 +19,6 @@ import { calculateInternationalRate, fetchInternationalRateCards } from '../../a
 import { toast } from '../../components/UI/Toast'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
 
-const countries = ['US', 'GB', 'AE', 'AU', 'CA', 'SG', 'DE', 'FR', 'NL', 'AF']
-
 export default function InternationalRateCalculator() {
   const [rateCards, setRateCards] = useState<any[]>([])
   const [form, setForm] = useState({
@@ -30,12 +28,13 @@ export default function InternationalRateCalculator() {
     weight: '1.000',
     destinationCity: '',
     destinationState: '',
-    destinationCountry: 'US',
+    destinationCountry: '',
   })
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [calculating, setCalculating] = useState(false)
   const selectedCard = useMemo(() => rateCards.find((card) => card.id === form.rateCardId), [rateCards, form.rateCardId])
+  const destinationCountries = selectedCard?.destinationCountries ?? []
 
   useEffect(() => {
     const load = async () => {
@@ -43,7 +42,14 @@ export default function InternationalRateCalculator() {
       try {
         const cards = await fetchInternationalRateCards()
         setRateCards(cards)
-        if (cards[0]) setForm((prev) => ({ ...prev, rateCardId: cards[0].id, originZone: cards[0].originZone }))
+        if (cards[0]) {
+          setForm((prev) => ({
+            ...prev,
+            rateCardId: cards[0].id,
+            originZone: cards[0].originZone,
+            destinationCountry: cards[0]?.destinationCountries?.[0]?.countryName || prev.destinationCountry,
+          }))
+        }
       } catch (error: any) {
         toast.open({ message: error?.response?.data?.error || 'Failed to load international rate cards', severity: 'error' })
       } finally {
@@ -55,7 +61,13 @@ export default function InternationalRateCalculator() {
 
   const updateCard = (rateCardId: string) => {
     const card = rateCards.find((item) => item.id === rateCardId)
-    setForm((prev) => ({ ...prev, rateCardId, deliveryPartner: '', originZone: card?.originZone || '' }))
+    setForm((prev) => ({
+      ...prev,
+      rateCardId,
+      deliveryPartner: '',
+      originZone: card?.originZone || '',
+      destinationCountry: card?.destinationCountries?.[0]?.countryName || '',
+    }))
   }
 
   const calculate = async () => {
@@ -88,7 +100,11 @@ export default function InternationalRateCalculator() {
               <TextField size="small" label="Destination City" value={form.destinationCity} onChange={(e) => setForm({ ...form, destinationCity: e.target.value })} />
               <TextField size="small" label="Destination State" value={form.destinationState} onChange={(e) => setForm({ ...form, destinationState: e.target.value })} />
               <TextField select size="small" label="Destination Country" value={form.destinationCountry} onChange={(e) => setForm({ ...form, destinationCountry: e.target.value })}>
-                {countries.map((country) => <MenuItem key={country} value={country}>{country}</MenuItem>)}
+                {destinationCountries.map((country: any) => (
+                  <MenuItem key={country.countryKey || country.countryName} value={country.countryName}>
+                    {country.countryName} {country.zoneCode ? `(Zone ${country.zoneCode})` : ''}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
             <Button variant="contained" onClick={calculate} disabled={!form.rateCardId || calculating} sx={{ mt: 2, textTransform: 'none', borderRadius: 2 }}>
@@ -102,18 +118,19 @@ export default function InternationalRateCalculator() {
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Rate Results</Typography>
             <TableContainer>
               <Table size="small">
-                <TableHead><TableRow><TableCell>Partner</TableCell><TableCell>Rate Card</TableCell><TableCell>Weight</TableCell><TableCell>Rate/kg</TableCell><TableCell>Total</TableCell><TableCell>ETA</TableCell></TableRow></TableHead>
+                <TableHead><TableRow><TableCell>Partner</TableCell><TableCell>Rate Card</TableCell><TableCell>Zone</TableCell><TableCell>Weight</TableCell><TableCell>Rate/kg</TableCell><TableCell>Total</TableCell><TableCell>ETA</TableCell></TableRow></TableHead>
                 <TableBody>
                   {results.length ? results.map((result) => (
                     <TableRow key={result.id}>
                       <TableCell>{result.deliveryPartner}</TableCell>
                       <TableCell>{result.rateCard}</TableCell>
+                      <TableCell>{result.destinationZone || '-'}</TableCell>
                       <TableCell>{Number(result.weight).toFixed(3)} kg</TableCell>
                       <TableCell>{result.currency} {Number(result.ratePerKg).toFixed(2)}</TableCell>
                       <TableCell>{result.currency} {Number(result.total).toFixed(2)}</TableCell>
                       <TableCell>{result.estimatedDays || '—'}</TableCell>
                     </TableRow>
-                  )) : <TableRow><TableCell colSpan={6} align="center">Calculate to see rates</TableCell></TableRow>}
+                  )) : <TableRow><TableCell colSpan={7} align="center">Calculate to see rates</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </TableContainer>

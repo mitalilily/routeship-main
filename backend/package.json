@@ -33,6 +33,8 @@
     "repair:admin-auth": "tsx src/scripts/repairAdminAuth.ts",
     "check:admin-login": "tsx src/scripts/checkAdminLogin.ts",
     "sync:rate-card-features": "tsx src/scripts/syncRateCardFeatures.ts",
+    "configure:r2-cors": "tsx src/scripts/configureR2Cors.ts",
+    "seed:international-fedex-basic": "tsx src/scripts/seedInternationalFedexBasicRates.ts",
     "check:rate-card-features": "tsx src/scripts/checkRateCardFeatures.ts",
     "seed:locations": "tsx src/scripts/seedLocations.ts locations.xlsx",
     "import:b2b-oda": "tsx src/scripts/importB2BOdaPincodes.ts",
