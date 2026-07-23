@@ -5172,11 +5172,138 @@ export const fetchAvailableCouriersWithRates = async (
       // Only filter out null/undefined, not couriers without local rates
       .filter((c) => c !== null && c !== undefined)
 
+    const requiredRateType = isReverseShipment ? 'rto' : 'forward'
+    const hasProviderInCombined = (provider: string) =>
+      combined.some(
+        (courier: any) =>
+          String(courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '')
+            .trim()
+            .toLowerCase() === provider,
+      )
+
+    if (effectiveShipmentType === 'b2c' && !hasProviderInCombined('xpressbees')) {
+      const xpressbeesBucketRows = providerCourierBuckets.get('xpressbees')?.rows ?? []
+      const xpressbeesFallbackCards = localRates.flatMap((rate) => {
+        if (inferProviderFromRateCard(rate) !== 'xpressbees') return []
+        if (rate.type !== requiredRateType) return []
+        if (
+          !isSupportedB2CProviderCourier('xpressbees', {
+            id: rate.courier_id,
+            name: rate.courier_name,
+            mode: rate.mode,
+          })
+        ) {
+          return []
+        }
+
+        const courierId = Number(rate.courier_id)
+        if (!Number.isFinite(courierId)) return []
+        if (
+          isCourierDisabledForProvider('xpressbees', {
+            id: courierId,
+            name: rate.courier_name,
+            mode: rate.mode,
+          })
+        ) {
+          return []
+        }
+        if (!isCourierInSystem('xpressbees', courierId)) return []
+
+        const courierRow = xpressbeesBucketRows.find(
+          (courier) => Number(courier.id) === courierId,
+        )
+        if (!courierRow) return []
+
+        return buildServiceabilityRateOptions(rate).map((applicableRate: any) => {
+          const rateCardFreight = Number(applicableRate.rate ?? 0)
+          const rateCardCod = shouldIncludeCodCharges
+            ? Number(applicableRate.cod_charges ?? 0)
+            : 0
+          const rateCardOther = Number(applicableRate.other_charges ?? 0)
+          const rateCardTotal = rateCardFreight + rateCardCod + rateCardOther
+          const courierOptionName =
+            applicableRate.matched_by !== 'legacy'
+              ? formatCourierOptionName(courierRow.name, applicableRate.max_slab_weight)
+              : courierRow.name
+          const mode = normalizeB2CShippingMode(applicableRate.mode || rate.mode) || 'surface'
+
+          const responseRate = {
+            ...applicableRate,
+            rate: rateCardFreight,
+            cod_charges: rateCardCod,
+            other_charges: rateCardOther,
+            total_charges: rateCardTotal,
+          }
+
+          return {
+            id: courierId,
+            name: courierOptionName,
+            displayName: courierOptionName,
+            courier_option_key: makeCourierIdentityKey({
+              id: courierId,
+              integration_type: 'xpressbees',
+              serviceProvider: 'xpressbees',
+              rate_card_id: applicableRate.shipping_rate_id ?? null,
+              max_slab_weight: applicableRate.max_slab_weight ?? null,
+            }),
+            rate_card_id: applicableRate.shipping_rate_id ?? null,
+            integration_type: 'xpressbees',
+            serviceProvider: courierRow.serviceProvider ?? 'xpressbees',
+            isVirtualProvider: courierRow.isVirtualProvider === true,
+            isRateCardBackedB2C: true,
+            cod: true,
+            prepaid: true,
+            edd: '3-5 Days',
+            approxZone,
+            zone: approxZone?.name || approxZone?.code || null,
+            zone_id: approxZone?.id || null,
+            zone_code: approxZone?.code || null,
+            zone_name: approxZone?.name || null,
+            booking_available: true,
+            can_book: true,
+            booking_blocked_reason: null,
+            createdAt: courierRow.createdAt,
+            shipping_mode: mode,
+            service_mode: mode,
+            provider_serviceability: {
+              fallback: true,
+              reason: 'local_rate_card_xpressbees',
+              serviceability_mode: 'local_rate_card_fallback',
+              mode,
+              shipping_mode: mode,
+              service_mode: mode,
+            },
+            localRates: { [requiredRateType]: responseRate },
+            courier_cost_estimate: rateCardTotal,
+            freight_charges: rateCardFreight,
+            cod_charges: rateCardCod,
+            other_charges: rateCardOther,
+            total_charges: rateCardTotal,
+            chargeable_weight: applicableRate.chargeable_weight ?? chargeableWeight,
+            volumetric_weight: applicableRate.volumetric_weight,
+            slabs: applicableRate.slab_count,
+            rate: rateCardFreight,
+            max_slab_weight: applicableRate.max_slab_weight ?? null,
+            rate_card_fallback: 'xpressbees_local_rate_card',
+          }
+        })
+      })
+
+      if (xpressbeesFallbackCards.length) {
+        console.warn('[Serviceability] Appending Xpressbees B2C local rate-card fallback', {
+          mode: isCalculator ? 'calculator' : 'standard',
+          origin: params.origin ?? params.source_pincode ?? null,
+          destination: params.destination ?? params.destination_pincode ?? null,
+          count: xpressbeesFallbackCards.length,
+        })
+        combined = [...combined, ...xpressbeesFallbackCards]
+      }
+    }
+
     const requireLocalRates = effectiveShipmentType === 'b2c'
     combined = combined.filter((c: any) => {
       const providerKey = (c.integration_type || '').toLowerCase()
       const inSystem = isCourierInSystem(providerKey, c.id)
-      const requiredRateType = isReverseShipment ? 'rto' : 'forward'
       const localRatesAvailable = !requireLocalRates || Boolean(c.localRates?.[requiredRateType])
 
       if (!inSystem || !localRatesAvailable) {
