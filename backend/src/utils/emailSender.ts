@@ -82,12 +82,12 @@ const renderDataTable = (rows: Array<{ label: string; value: string }>) => `
 `
 
 const renderEmailFrame = ({
-  eyebrow = 'Shiplifi',
+  eyebrow = 'RouteShip',
   title,
   intro,
   body,
   outro,
-  footerNote = 'This is an automated message from Shiplifi.',
+  footerNote = 'This is an automated message from RouteShip.',
 }: EmailFrameOptions) => `
   <div style="margin:0; padding:32px 16px; background:#F3F4F6;">
     <div style="max-width:640px; margin:0 auto; background:#FFFFFF; border:1px solid ${BRAND_BORDER};">
@@ -116,7 +116,7 @@ const renderEmailFrame = ({
       </div>
       <div style="padding:16px 28px; border-top:1px solid ${BRAND_BORDER}; background:${BRAND_SURFACE};">
         <div style="font-size:12px; color:${BRAND_MUTED};">${footerNote}</div>
-        <div style="font-size:12px; color:#9CA3AF; margin-top:6px;">© ${new Date().getFullYear()} Shiplifi</div>
+        <div style="font-size:12px; color:#9CA3AF; margin-top:6px;">&copy; ${new Date().getFullYear()} RouteShip</div>
       </div>
     </div>
   </div>
@@ -205,14 +205,14 @@ const sendEmail = async (
 // Login / verification Email for OTP-based auth
 export const sendVerificationEmail = async (to: string, token: string) => {
   const html = renderEmailFrame({
-    eyebrow: 'Secure Sign-In',
-    title: 'Your verification code',
+    eyebrow: 'RouteShip OTP Verification',
+    title: 'Your RouteShip OTP',
     intro:
-      'A sign-in request was received for your Shiplifi merchant account. Use the code below to continue securely.',
+      'A sign-in request was received for your RouteShip merchant account. Use the OTP below to continue securely.',
     body: `
       <div style="margin:22px 0; padding:20px; background:${BRAND_SURFACE}; border:1px solid ${BRAND_BORDER}; text-align:center;">
         <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:${BRAND_MUTED}; font-weight:800; margin-bottom:10px;">
-          One-time code
+          One-time password
         </div>
         <div style="font-size:30px; letter-spacing:8px; font-weight:800; color:${BRAND_WINE};">
           ${escapeHtml(token)}
@@ -223,7 +223,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
     `,
   })
 
-  await sendEmail(to, 'Your Shiplifi verification code', html)
+  await sendEmail(to, 'RouteShip OTP verification', html)
 }
 
 export const sendPhoneVerificationEmail = async (to: string, token: string, phone: string) => {
@@ -339,8 +339,8 @@ export const sendInvoiceReadyEmail = async (opts: {
     body: `
       ${renderDataTable([
         { label: 'Invoice number', value: escapeHtml(invoiceNo) },
-        { label: 'Billing period', value: `${escapeHtml(periodStart)} — ${escapeHtml(periodEnd)}` },
-        { label: 'Amount (GST inclusive)', value: `₹${Number(totalAmount).toFixed(2)}` },
+        { label: 'Billing period', value: `${escapeHtml(periodStart)} &mdash; ${escapeHtml(periodEnd)}` },
+        { label: 'Amount (GST inclusive)', value: `&#8377;${Number(totalAmount).toFixed(2)}` },
       ])}
       <div style="margin-top:18px;">
         ${
@@ -393,7 +393,7 @@ export const sendInvoiceReminderEmail = async (opts: {
     body: `
       ${renderDataTable([
         { label: 'Invoice number', value: escapeHtml(invoiceNo) },
-        { label: 'Outstanding amount', value: `₹${Number(amount).toFixed(2)}` },
+        { label: 'Outstanding amount', value: `&#8377;${Number(amount).toFixed(2)}` },
       ])}
       ${
         pdfUrl || csvUrl

@@ -1,7 +1,7 @@
 const normalize = (value?: unknown) => String(value ?? '').trim()
 
-export const DEFAULT_EMAIL_FROM_NAME = 'Shiplifi'
-export const DEFAULT_EMAIL_FROM_ADDRESS = 'no-reply@shiplifi.com'
+export const DEFAULT_EMAIL_FROM_NAME = 'RouteShip'
+export const DEFAULT_EMAIL_FROM_ADDRESS = 'no-reply@routeship.com'
 
 export const getEmailFromAddress = () => normalize(process.env.EMAIL_FROM) || DEFAULT_EMAIL_FROM_ADDRESS
 

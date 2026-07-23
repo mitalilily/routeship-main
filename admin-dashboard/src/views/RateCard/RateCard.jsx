@@ -16,6 +16,7 @@ import Papa from 'papaparse'
 import { useEffect, useMemo, useState } from 'react'
 
 import CustomModal from 'components/Modal/CustomModal'
+import DownloadSampleCSVButton from 'components/CSV/DownloadSampleCSVButton'
 import { RateCardEditModal } from 'components/Modal/RateCardEditModal'
 import TableFilters from 'components/Tables/TableFilters'
 import FileUploader from 'components/upload/FileUploader'
@@ -113,6 +114,67 @@ const RateCard = () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const buildFlatRateCardSampleRows = (allZones = []) => {
+    const zoneFields = Object.fromEntries(
+      allZones.flatMap((zone, index) => [
+        [`${zone.name} (Forward)`, index === 0 ? 45 : 55 + index * 8],
+        [`${zone.name} (RTO)`, index === 0 ? 35 : 45 + index * 7],
+      ]),
+    )
+
+    return [
+      {
+        'Courier ID': 100,
+        'Courier Name': 'Delhivery Surface',
+        'Service Provider': 'delhivery',
+        Mode: 'surface',
+        'Min Weight': 0.5,
+        ...zoneFields,
+        'COD Charges': 35,
+        'COD Percent': 2,
+        'Other Charges': 0,
+      },
+    ]
+  }
+
+  const buildB2CSlabRateCardSampleRows = (allZones = []) => {
+    const firstSlabZoneRates = Object.fromEntries(
+      allZones.map((zone, index) => [zone.name, index === 0 ? 45 : 55 + index * 8]),
+    )
+    const additionalSlabZoneRates = Object.fromEntries(
+      allZones.map((zone, index) => [zone.name, index === 0 ? 25 : 30 + index * 5]),
+    )
+
+    return [
+      {
+        'Courier ID': 100,
+        Courier: 'Delhivery Surface',
+        'Service Provider': 'delhivery',
+        Mode: 'surface',
+        Slab: '0.5 kg',
+        'Slab Type': 'first',
+        'Weight (KG)': 0.5,
+        ...firstSlabZoneRates,
+        'COD Rs': 35,
+        'COD %': 2,
+        'RTO %': 80,
+      },
+      {
+        'Courier ID': 100,
+        Courier: 'Delhivery Surface',
+        'Service Provider': 'delhivery',
+        Mode: 'surface',
+        Slab: '0.5 kg',
+        'Slab Type': 'additional',
+        'Weight (KG)': 0.5,
+        ...additionalSlabZoneRates,
+        'COD Rs': '',
+        'COD %': '',
+        'RTO %': '',
+      },
+    ]
   }
 
   const zoneColumns = useMemo(() => {
@@ -305,15 +367,33 @@ const RateCard = () => {
         title="Import Rates"
         size="xl"
         action={
-          <Button
-            size="sm"
-            colorScheme="blue"
-            onClick={() => downloadCSV(courierList ?? [], zones ?? [], data ?? [])}
-          >
-            Download CSV
-          </Button>
+          <Flex gap={2} flexWrap="wrap" justify="flex-end">
+            <DownloadSampleCSVButton
+              headers={buildFlatRateCardSampleRows(zones ?? [])}
+              filename="rate_card_flat_template.csv"
+              buttonText="Flat Sample CSV"
+              colorScheme="blue"
+              tooltip="Download the simple zone-wise import format"
+            />
+            <DownloadSampleCSVButton
+              headers={buildB2CSlabRateCardSampleRows(zones ?? [])}
+              filename="rate_card_b2c_slab_template.csv"
+              buttonText="B2C Slab Sample CSV"
+              colorScheme="teal"
+              tooltip="Download the slab-wise B2C import format"
+            />
+          </Flex>
         }
       >
+        <Box mb={4} p={3} bg="blue.50" borderRadius="md" border="1px solid" borderColor="blue.100">
+          <Text fontSize="sm" fontWeight="semibold" color="blue.800">
+            Choose a sample format before uploading
+          </Text>
+          <Text fontSize="xs" color="blue.700" mt={1}>
+            Flat CSV updates one row per courier and mode. B2C slab CSV supports first/additional
+            slab rows, zone-wise rates, COD charges, and RTO percentage.
+          </Text>
+        </Box>
         <FileUploader
           maxSizeMb={5}
           folderKey="rates"
