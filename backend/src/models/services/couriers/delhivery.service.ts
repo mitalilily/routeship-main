@@ -2826,6 +2826,7 @@ export class DelhiveryService {
       const resolvedInvoiceNumber = invoiceNumber || orderNumber
       const orderAmount = Number(params.order_amount ?? 0)
       const orderItems = Array.isArray(params.order_items) ? params.order_items : []
+      const defaultHsnCode = sanitizeString(process.env.DELHIVERY_DEFAULT_HSN_CODE || '999999')
       const hsnCodes = Array.from(
         new Set(
           orderItems
@@ -2833,6 +2834,7 @@ export class DelhiveryService {
             .filter((code) => code.length > 0),
         ),
       )
+      const resolvedHsnCode = hsnCodes.length ? hsnCodes.join(', ') : defaultHsnCode
 
       if (!orderNumber) {
         throw new HttpError(400, 'order_number is required to create a Delhivery shipment.')
@@ -2879,7 +2881,10 @@ export class DelhiveryService {
       const sellerName = sanitizeString(params.company?.name || pickup.name || 'Shiplifi')
       const sellerGst = sanitizeString(params.company?.gst || pickup.gst_number || '')
       const productNames = orderItems
-        .map((item) => sanitizeString(item?.name))
+        .map((item) => {
+          const rawItem = item as any
+          return sanitizeString(rawItem?.name || rawItem?.productName || rawItem?.product_name)
+        })
         .filter((name) => name.length > 0)
       const productsDesc = productNames.length ? productNames.join(', ') : 'General Merchandise'
 
@@ -2928,7 +2933,7 @@ export class DelhiveryService {
         cod_amount: codAmount,
         total_amount: orderAmount,
         products_desc: productsDesc,
-        hsn_code: hsnCodes.join(', '),
+        hsn_code: resolvedHsnCode,
         weight: packageWeightGrams,
         shipment_length: Number(params.package_length ?? 10),
         shipment_width: Number(params.package_breadth ?? 10),
@@ -3021,7 +3026,8 @@ export class DelhiveryService {
         pickup_time: payload.shipments[0].pickup_time ?? null,
         weight_g: packageWeightGrams,
         payment_mode: paymentMode,
-        hsn_present: hsnCodes.length,
+        hsn_present: resolvedHsnCode ? 1 : 0,
+        hsn_code: resolvedHsnCode,
         invoice_number: resolvedInvoiceNumber,
         shipping_mode: shippingMode,
         cod_amount: codAmount,
