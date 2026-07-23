@@ -238,7 +238,6 @@ function Header({ standalone = false }) {
           <a href="/tracking" onClick={() => setOpen(false)}>Tracking</a>
           <a href="/rate-calculator" onClick={() => setOpen(false)}>Calculator</a>
           <a href="/#pricing" onClick={() => setOpen(false)}>Pricing</a>
-          <a className="nav-login" href={CLIENT_AUTH_PATH}>Log in</a>
           <a className="button button-small" href={CLIENT_AUTH_PATH}>Start shipping <Icon name="arrow" /></a>
         </div>
       </nav>
