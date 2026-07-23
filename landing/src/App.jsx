@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
-const BLUE = 0x0b3dbb;
-const ORANGE = 0xff4b0a;
+const BLUE = 0x310276;
+const ORANGE = 0xFE6502;
 
 const features = [
   ["01", "One smart dashboard", "Orders, labels, NDR, tracking and analytics — finally speaking the same language.", "grid"],
