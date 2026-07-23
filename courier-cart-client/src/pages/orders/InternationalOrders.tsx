@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom'
 import { fetchMyInternationalShipments } from '../../api/international.api'
 import { toast } from '../../components/UI/Toast'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
+import ManualRequestDetailsDialog from '../../components/orders/ManualRequestDetailsDialog'
 
 const statusColor = (status?: string) => {
   if (status === 'booked' || status === 'in_transit') return 'primary'
@@ -36,6 +37,7 @@ export default function InternationalOrders() {
   const navigate = useNavigate()
   const [shipments, setShipments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [selectedShipment, setSelectedShipment] = useState<any | null>(null)
 
   const loadShipments = async () => {
     setLoading(true)
@@ -52,6 +54,84 @@ export default function InternationalOrders() {
   useEffect(() => {
     loadShipments()
   }, [])
+
+  const selectedShipmentSections = selectedShipment
+    ? [
+        {
+          title: 'Request',
+          fields: [
+            { label: 'Request ID', value: selectedShipment.shipmentNumber },
+            { label: 'Status', value: String(selectedShipment.status || '').replace(/_/g, ' ') },
+            { label: 'AWB', value: selectedShipment.awbNumber },
+            { label: 'Created', value: formatDate(selectedShipment.createdAt) },
+            { label: 'Booked', value: formatDate(selectedShipment.bookedDate) },
+            { label: 'Updated', value: formatDate(selectedShipment.updatedAt) },
+          ],
+        },
+        {
+          title: 'Consignee',
+          fields: [
+            { label: 'Name', value: selectedShipment.consigneeName },
+            { label: 'Phone', value: selectedShipment.consigneePhone },
+            { label: 'Alternate Phone', value: selectedShipment.consigneeAlternatePhone },
+            { label: 'Email', value: selectedShipment.consigneeEmail },
+            { label: 'GSTIN', value: selectedShipment.consigneeGstin },
+          ],
+        },
+        {
+          title: 'Destination',
+          fields: [
+            { label: 'Address Line 1', value: selectedShipment.addressLine1 },
+            { label: 'Address Line 2', value: selectedShipment.addressLine2 },
+            { label: 'Landmark', value: selectedShipment.landmark },
+            { label: 'City', value: selectedShipment.destinationCity },
+            { label: 'State', value: selectedShipment.destinationState },
+            { label: 'Pincode', value: selectedShipment.destinationPincode },
+            { label: 'Country', value: selectedShipment.destinationCountry },
+          ],
+        },
+        {
+          title: 'Shipment',
+          fields: [
+            { label: 'Pickup ID', value: selectedShipment.pickupId },
+            { label: 'Payment Method', value: selectedShipment.paymentMethod },
+            { label: 'ROV', value: selectedShipment.rov },
+            { label: 'Item Type', value: selectedShipment.itemType },
+            { label: 'Item Category', value: selectedShipment.itemCategory },
+            { label: 'Shipping Mode', value: selectedShipment.shippingMode },
+            { label: 'Order Value', value: selectedShipment.orderValue },
+            { label: 'Applicable Weight', value: selectedShipment.applicableWeight ? `${selectedShipment.applicableWeight} kg` : null },
+          ],
+        },
+        {
+          title: 'Invoice and Reference',
+          fields: [
+            { label: 'Invoice Number', value: selectedShipment.invoiceNumber },
+            { label: 'Order Date', value: formatDate(selectedShipment.orderDate) },
+            { label: 'Eway Bill No', value: selectedShipment.ewayBillNo },
+            { label: 'Customer Reference No', value: selectedShipment.customerReferenceNo },
+            { label: 'Seller Name', value: selectedShipment.sellerName },
+            { label: 'Admin Notes', value: selectedShipment.adminNotes },
+          ],
+        },
+        {
+          title: 'Products',
+          raw: selectedShipment.products,
+        },
+        {
+          title: 'Packages',
+          raw: selectedShipment.packages,
+        },
+        {
+          title: 'Rate Quote',
+          raw: selectedShipment.rateQuote,
+        },
+        {
+          title: 'Captured Form Data',
+          raw: selectedShipment.formData,
+        },
+      ]
+    : []
 
   return (
     <ListPageLayout
@@ -116,7 +196,16 @@ export default function InternationalOrders() {
             <TableBody>
               {shipments.length ? shipments.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.shipmentNumber}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setSelectedShipment(row)}
+                      sx={{ p: 0, minWidth: 0, textTransform: 'none', fontWeight: 800 }}
+                    >
+                      {row.shipmentNumber}
+                    </Button>
+                  </TableCell>
                   <TableCell>{row.consigneeName}</TableCell>
                   <TableCell>{row.destinationCountry}</TableCell>
                   <TableCell>{row.shippingMode || '—'}</TableCell>
@@ -142,6 +231,13 @@ export default function InternationalOrders() {
           </Typography>
         </Box>
       </Paper>
+      <ManualRequestDetailsDialog
+        open={Boolean(selectedShipment)}
+        title={selectedShipment?.shipmentNumber || 'International request'}
+        subtitle="International shipment request details"
+        sections={selectedShipmentSections}
+        onClose={() => setSelectedShipment(null)}
+      />
     </ListPageLayout>
   )
 }

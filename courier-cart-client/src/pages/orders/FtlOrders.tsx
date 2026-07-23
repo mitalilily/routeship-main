@@ -21,6 +21,7 @@ import { FiRefreshCw, FiSend } from 'react-icons/fi'
 import { createFtlRequest, fetchMyFtlRequests, type FtlRequest, type FtlRequestPayload } from '../../api/ftl.api'
 import { toast } from '../../components/UI/Toast'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
+import ManualRequestDetailsDialog from '../../components/orders/ManualRequestDetailsDialog'
 
 const initialForm: FtlRequestPayload = {
   firstName: '',
@@ -72,6 +73,7 @@ export default function FtlOrders() {
   const [requests, setRequests] = useState<FtlRequest[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState<FtlRequest | null>(null)
 
   const loadRequests = async () => {
     setLoading(true)
@@ -117,6 +119,72 @@ export default function FtlOrders() {
       setSubmitting(false)
     }
   }
+
+  const selectedRequestSections = selectedRequest
+    ? [
+        {
+          title: 'Request',
+          fields: [
+            { label: 'Request ID', value: selectedRequest.requestNumber },
+            { label: 'Status', value: selectedRequest.status?.replace(/_/g, ' ') },
+            { label: 'AWB', value: selectedRequest.awbNumber },
+            { label: 'Created', value: formatDate(selectedRequest.createdAt) },
+            { label: 'Processed', value: formatDate(selectedRequest.processedDate) },
+            { label: 'Updated', value: formatDate(selectedRequest.updatedAt) },
+          ],
+        },
+        {
+          title: 'Customer',
+          fields: [
+            { label: 'Name', value: selectedRequest.customerName },
+            { label: 'Phone', value: selectedRequest.customerPhone },
+            { label: 'Email', value: selectedRequest.customerEmail },
+            { label: 'Company', value: selectedRequest.companyName },
+          ],
+        },
+        {
+          title: 'Pickup',
+          fields: [
+            { label: 'Address', value: selectedRequest.originAddress },
+            { label: 'City', value: selectedRequest.originCity },
+            { label: 'State', value: selectedRequest.originState },
+            { label: 'Pincode', value: selectedRequest.originPincode },
+            { label: 'Country', value: selectedRequest.originCountry },
+          ],
+        },
+        {
+          title: 'Delivery',
+          fields: [
+            { label: 'Address', value: selectedRequest.destinationAddress },
+            { label: 'City', value: selectedRequest.destinationCity },
+            { label: 'State', value: selectedRequest.destinationState },
+            { label: 'Pincode', value: selectedRequest.destinationPincode },
+            { label: 'Country', value: selectedRequest.destinationCountry },
+          ],
+        },
+        {
+          title: 'Cargo',
+          fields: [
+            { label: 'Vehicle Type', value: selectedRequest.vehicleType },
+            { label: 'Material Type', value: selectedRequest.materialType },
+            { label: 'Weight', value: selectedRequest.weightKg ? `${selectedRequest.weightKg} kg` : null },
+            { label: 'Truck Count', value: selectedRequest.truckCount },
+            { label: 'Preferred Pickup Date', value: formatDate(selectedRequest.loadingDate) },
+            { label: 'Notes', value: selectedRequest.notes },
+          ],
+        },
+        {
+          title: 'Processing',
+          fields: [
+            { label: 'Admin Notes', value: selectedRequest.adminNotes },
+          ],
+        },
+        {
+          title: 'Captured Form Data',
+          raw: (selectedRequest as any).formData,
+        },
+      ]
+    : []
 
   return (
     <ListPageLayout
@@ -224,7 +292,16 @@ export default function FtlOrders() {
                     const status = statusLabels[request.status] || { label: request.status, color: 'default' as const }
                     return (
                       <TableRow key={request.id}>
-                        <TableCell>{request.requestNumber}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="text"
+                            size="small"
+                            onClick={() => setSelectedRequest(request)}
+                            sx={{ p: 0, minWidth: 0, textTransform: 'none', fontWeight: 800 }}
+                          >
+                            {request.requestNumber}
+                          </Button>
+                        </TableCell>
                         <TableCell>{request.originCity} → {request.destinationCity}</TableCell>
                         <TableCell>{request.vehicleType}</TableCell>
                         <TableCell>{request.awbNumber || '—'}</TableCell>
@@ -244,6 +321,13 @@ export default function FtlOrders() {
         </Card>
 
       </Stack>
+      <ManualRequestDetailsDialog
+        open={Boolean(selectedRequest)}
+        title={selectedRequest?.requestNumber || 'FTL request'}
+        subtitle="Full truck load request details"
+        sections={selectedRequestSections}
+        onClose={() => setSelectedRequest(null)}
+      />
     </ListPageLayout>
   )
 }

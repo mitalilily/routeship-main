@@ -27,6 +27,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import PageHeader from 'components/Admin/PageHeader'
+import ManualRequestDetailsModal from 'components/Admin/ManualRequestDetailsModal'
 import Card from 'components/Card/Card'
 import CardBody from 'components/Card/CardBody'
 import { useEffect, useState } from 'react'
@@ -47,8 +48,10 @@ export default function InternationalShipments() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [detailShipment, setDetailShipment] = useState(null)
   const [editForm, setEditForm] = useState({ status: 'requested', awbNumber: '', bookedDate: '', adminNotes: '' })
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const detailDisclosure = useDisclosure()
   const toast = useToast()
 
   const loadShipments = async () => {
@@ -78,6 +81,83 @@ export default function InternationalShipments() {
     })
     onOpen()
   }
+
+  const openDetails = (shipment) => {
+    setDetailShipment(shipment)
+    detailDisclosure.onOpen()
+  }
+
+  const closeDetails = () => {
+    detailDisclosure.onClose()
+    setDetailShipment(null)
+  }
+
+  const detailSections = detailShipment
+    ? [
+        {
+          title: 'Request',
+          fields: [
+            { label: 'Request ID', value: detailShipment.shipmentNumber },
+            { label: 'Status', value: String(detailShipment.status || '').replace(/_/g, ' ') },
+            { label: 'AWB', value: detailShipment.awbNumber },
+            { label: 'Created', value: formatDate(detailShipment.createdAt) },
+            { label: 'Booked', value: formatDate(detailShipment.bookedDate) },
+            { label: 'Updated', value: formatDate(detailShipment.updatedAt) },
+          ],
+        },
+        {
+          title: 'Customer and Consignee',
+          fields: [
+            { label: 'Consignee Name', value: detailShipment.consigneeName },
+            { label: 'Phone', value: detailShipment.consigneePhone },
+            { label: 'Alternate Phone', value: detailShipment.consigneeAlternatePhone },
+            { label: 'Email', value: detailShipment.consigneeEmail },
+            { label: 'GSTIN', value: detailShipment.consigneeGstin },
+            { label: 'User Email', value: detailShipment.userEmail },
+          ],
+        },
+        {
+          title: 'Destination',
+          fields: [
+            { label: 'Address Line 1', value: detailShipment.addressLine1 },
+            { label: 'Address Line 2', value: detailShipment.addressLine2 },
+            { label: 'Landmark', value: detailShipment.landmark },
+            { label: 'City', value: detailShipment.destinationCity },
+            { label: 'State', value: detailShipment.destinationState },
+            { label: 'Pincode', value: detailShipment.destinationPincode },
+            { label: 'Country', value: detailShipment.destinationCountry },
+          ],
+        },
+        {
+          title: 'Shipment',
+          fields: [
+            { label: 'Pickup ID', value: detailShipment.pickupId },
+            { label: 'Payment Method', value: detailShipment.paymentMethod },
+            { label: 'ROV', value: detailShipment.rov },
+            { label: 'Item Type', value: detailShipment.itemType },
+            { label: 'Item Category', value: detailShipment.itemCategory },
+            { label: 'Shipping Mode', value: detailShipment.shippingMode },
+            { label: 'Order Value', value: detailShipment.orderValue },
+            { label: 'Applicable Weight', value: detailShipment.applicableWeight ? `${detailShipment.applicableWeight} kg` : null },
+          ],
+        },
+        {
+          title: 'Invoice and Reference',
+          fields: [
+            { label: 'Invoice Number', value: detailShipment.invoiceNumber },
+            { label: 'Order Date', value: formatDate(detailShipment.orderDate) },
+            { label: 'Eway Bill No', value: detailShipment.ewayBillNo },
+            { label: 'Customer Reference No', value: detailShipment.customerReferenceNo },
+            { label: 'Seller Name', value: detailShipment.sellerName },
+            { label: 'Admin Notes', value: detailShipment.adminNotes },
+          ],
+        },
+        { title: 'Products', raw: detailShipment.products },
+        { title: 'Packages', raw: detailShipment.packages },
+        { title: 'Rate Quote', raw: detailShipment.rateQuote },
+        { title: 'Captured Form Data', raw: detailShipment.formData },
+      ]
+    : []
 
   const saveShipment = async () => {
     if (!selected) return
@@ -118,7 +198,20 @@ export default function InternationalShipments() {
               <Tbody>
                 {shipments.length ? shipments.map((shipment) => (
                   <Tr key={shipment.id}>
-                    <Td><Text fontWeight="700">{shipment.shipmentNumber}</Text><Text fontSize="xs" color="gray.500">{formatDate(shipment.createdAt)}</Text></Td>
+                    <Td>
+                      <Button
+                        variant="link"
+                        colorScheme="blue"
+                        fontWeight="800"
+                        onClick={() => openDetails(shipment)}
+                        h="auto"
+                        minW={0}
+                        p={0}
+                      >
+                        {shipment.shipmentNumber}
+                      </Button>
+                      <Text fontSize="xs" color="gray.500">{formatDate(shipment.createdAt)}</Text>
+                    </Td>
                     <Td><Text fontWeight="600">{shipment.consigneeName}</Text><Text fontSize="xs" color="gray.500">{shipment.consigneePhone}</Text><Text fontSize="xs" color="gray.500">{shipment.userEmail}</Text></Td>
                     <Td>{shipment.destinationCity}, {shipment.destinationCountry}</Td>
                     <Td>{shipment.shippingMode || '—'}</Td>
@@ -151,6 +244,13 @@ export default function InternationalShipments() {
           <ModalFooter><Button variant="ghost" mr={3} onClick={onClose}>Cancel</Button><Button colorScheme="blue" onClick={saveShipment} isLoading={saving}>Save</Button></ModalFooter>
         </ModalContent>
       </Modal>
+      <ManualRequestDetailsModal
+        isOpen={detailDisclosure.isOpen}
+        onClose={closeDetails}
+        title={detailShipment?.shipmentNumber || 'International request'}
+        subtitle="International shipment request details"
+        sections={detailSections}
+      />
     </Box>
   )
 }

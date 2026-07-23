@@ -28,6 +28,7 @@ import {
 } from '@chakra-ui/react'
 import Card from 'components/Card/Card'
 import CardBody from 'components/Card/CardBody'
+import ManualRequestDetailsModal from 'components/Admin/ManualRequestDetailsModal'
 import PageHeader from 'components/Admin/PageHeader'
 import { useEffect, useState } from 'react'
 import { FiEdit3, FiRefreshCw } from 'react-icons/fi'
@@ -66,6 +67,7 @@ export default function FtlRequests() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [detailRequest, setDetailRequest] = useState(null)
   const [editForm, setEditForm] = useState({
     status: 'requested',
     awbNumber: '',
@@ -73,6 +75,7 @@ export default function FtlRequests() {
     adminNotes: '',
   })
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const detailDisclosure = useDisclosure()
   const toast = useToast()
 
   const loadRequests = async () => {
@@ -108,6 +111,81 @@ export default function FtlRequests() {
     })
     onOpen()
   }
+
+  const openDetails = (request) => {
+    setDetailRequest(request)
+    detailDisclosure.onOpen()
+  }
+
+  const closeDetails = () => {
+    detailDisclosure.onClose()
+    setDetailRequest(null)
+  }
+
+  const detailSections = detailRequest
+    ? [
+        {
+          title: 'Request',
+          fields: [
+            { label: 'Request ID', value: detailRequest.requestNumber },
+            { label: 'Status', value: String(detailRequest.status || '').replace(/_/g, ' ') },
+            { label: 'AWB', value: detailRequest.awbNumber },
+            { label: 'Created', value: formatDate(detailRequest.createdAt) },
+            { label: 'Processed', value: formatDate(detailRequest.processedDate) },
+            { label: 'Updated', value: formatDate(detailRequest.updatedAt) },
+          ],
+        },
+        {
+          title: 'Customer',
+          fields: [
+            { label: 'Name', value: detailRequest.customerName },
+            { label: 'Phone', value: detailRequest.customerPhone },
+            { label: 'Email', value: detailRequest.customerEmail },
+            { label: 'Company', value: detailRequest.companyName || detailRequest.profileCompanyName },
+            { label: 'User Email', value: detailRequest.userEmail },
+          ],
+        },
+        {
+          title: 'Pickup',
+          fields: [
+            { label: 'Address', value: detailRequest.originAddress },
+            { label: 'City', value: detailRequest.originCity },
+            { label: 'State', value: detailRequest.originState },
+            { label: 'Pincode', value: detailRequest.originPincode },
+            { label: 'Country', value: detailRequest.originCountry },
+          ],
+        },
+        {
+          title: 'Delivery',
+          fields: [
+            { label: 'Address', value: detailRequest.destinationAddress },
+            { label: 'City', value: detailRequest.destinationCity },
+            { label: 'State', value: detailRequest.destinationState },
+            { label: 'Pincode', value: detailRequest.destinationPincode },
+            { label: 'Country', value: detailRequest.destinationCountry },
+          ],
+        },
+        {
+          title: 'Cargo',
+          fields: [
+            { label: 'Vehicle Type', value: detailRequest.vehicleType },
+            { label: 'Material Type', value: detailRequest.materialType },
+            { label: 'Weight', value: detailRequest.weightKg ? `${detailRequest.weightKg} kg` : null },
+            { label: 'Truck Count', value: detailRequest.truckCount },
+            { label: 'Preferred Pickup Date', value: formatDate(detailRequest.loadingDate) },
+            { label: 'Notes', value: detailRequest.notes },
+          ],
+        },
+        {
+          title: 'Processing',
+          fields: [{ label: 'Admin Notes', value: detailRequest.adminNotes }],
+        },
+        {
+          title: 'Captured Form Data',
+          raw: detailRequest.formData,
+        },
+      ]
+    : []
 
   const saveRequest = async () => {
     if (!selected) return
@@ -195,7 +273,17 @@ export default function FtlRequests() {
                 {requests.length ? requests.map((request) => (
                   <Tr key={request.id}>
                     <Td>
-                      <Text fontWeight="700">{request.requestNumber}</Text>
+                      <Button
+                        variant="link"
+                        colorScheme="blue"
+                        fontWeight="800"
+                        onClick={() => openDetails(request)}
+                        h="auto"
+                        minW={0}
+                        p={0}
+                      >
+                        {request.requestNumber}
+                      </Button>
                       <Text fontSize="xs" color="gray.500">{formatDate(request.createdAt)}</Text>
                     </Td>
                     <Td>
@@ -269,6 +357,13 @@ export default function FtlRequests() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      <ManualRequestDetailsModal
+        isOpen={detailDisclosure.isOpen}
+        onClose={closeDetails}
+        title={detailRequest?.requestNumber || 'FTL request'}
+        subtitle="Full truck load request details"
+        sections={detailSections}
+      />
     </Box>
   )
 }
