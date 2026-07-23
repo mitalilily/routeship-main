@@ -1,4 +1,4 @@
-import { Box, Skeleton, Stack } from '@mui/material'
+import { Box, Button, Skeleton, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { FiMail, FiPlus } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -6,6 +6,7 @@ import type { SupportTicketPrefill } from '../../api/support.api'
 import { FilterBar, type FilterField } from '../../components/FilterBar'
 import CustomDrawer from '../../components/UI/drawer/CustomDrawer'
 import ListPageLayout from '../../components/UI/layout/ListPageLayout'
+import CustomDialog from '../../components/UI/modal/CustomModal'
 import TableSkeleton from '../../components/UI/table/TableSkeleton'
 import { SupportTicketForm } from '../../components/support/SupportTicketForm'
 import SupportTicketList from '../../components/support/SupportTicketList'
@@ -87,6 +88,9 @@ const initialFilterValues = {
   subcategory: '',
 }
 
+const SUPPORT_EMAIL = 'support@routeship.in'
+const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=RouteShip%20Support%20Request`
+
 export const SupportTicketsPage = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -95,6 +99,7 @@ export const SupportTicketsPage = () => {
   const [page, setPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [ticketPrefill, setTicketPrefill] = useState<SupportTicketPrefill | null>(null)
+  const [supportEmailOpen, setSupportEmailOpen] = useState(false)
 
   const routePrefill = useMemo(
     () =>
@@ -183,9 +188,7 @@ export const SupportTicketsPage = () => {
           },
           {
             label: 'Email Support',
-            onClick: () =>
-              (window.location.href =
-                'mailto:support@routeship.in?subject=RouteShip%20Support%20Request'),
+            onClick: () => setSupportEmailOpen(true),
             icon: <FiMail />,
             variant: 'outlined',
           },
@@ -213,6 +216,61 @@ export const SupportTicketsPage = () => {
           />
         </Stack>
       </CustomDrawer>
+
+      <CustomDialog
+        title="Email Support"
+        open={supportEmailOpen}
+        onClose={() => setSupportEmailOpen(false)}
+        maxWidth="xs"
+        footer={
+          <>
+            <Button
+              variant="outlined"
+              onClick={() => setSupportEmailOpen(false)}
+              sx={{ textTransform: 'none', borderRadius: 1.5 }}
+            >
+              Close
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                window.location.href = SUPPORT_MAILTO
+              }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 1.5,
+                bgcolor: '#FE6502',
+                '&:hover': { bgcolor: '#C94F01' },
+              }}
+            >
+              Open Mail
+            </Button>
+          </>
+        }
+      >
+        <Stack gap={1.5}>
+          <Typography sx={{ fontSize: '0.95rem', color: '#374151', lineHeight: 1.7 }}>
+            Our support team will be happy to help you. Please write to us at the email below
+            and include your ticket ID, AWB, or order number if available.
+          </Typography>
+          <Box
+            sx={{
+              px: 2,
+              py: 1.4,
+              borderRadius: 2,
+              border: '1px solid rgba(254, 101, 2, 0.22)',
+              bgcolor: 'rgba(254, 101, 2, 0.06)',
+            }}
+          >
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: '#6B7280', mb: 0.4 }}>
+              Support email
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#17171A' }}>
+              {SUPPORT_EMAIL}
+            </Typography>
+          </Box>
+        </Stack>
+      </CustomDialog>
     </>
   )
 }
