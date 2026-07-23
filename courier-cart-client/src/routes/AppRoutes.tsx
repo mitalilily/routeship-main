@@ -12,6 +12,11 @@ import { normalizeAwb } from '../utils/awb'
 import GlobalRedirectHandler from './WalletRedirectHandler'
 import { buildShopifyInstallPath, isEmbeddedShopifyContext } from '../utils/shopifyEmbedded'
 
+const routerBasename =
+  import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/'
+    ? import.meta.env.BASE_URL.replace(/\/$/, '')
+    : undefined
+
 /* ---------- Lazy-loaded components ---------- */
 // Onboarding & Dashboard
 const UserOnboarding = lazy(() => import('../pages/onboarding/UserOnboarding'))
@@ -135,7 +140,7 @@ function AppEntryRoute() {
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <GlobalRedirectHandler />
       <Suspense fallback={<Box />}>
         <Routes>

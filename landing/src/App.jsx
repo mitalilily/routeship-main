@@ -4,7 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 const BLUE = 0x310276;
 const ORANGE = 0xFE6502;
-const CLIENT_AUTH_PATH = "/login";
+const CLIENT_AUTH_PATH = "/client/login";
 
 const features = [
   ["01", "One smart dashboard", "Orders, labels, NDR, tracking and analytics — finally speaking the same language.", "grid"],

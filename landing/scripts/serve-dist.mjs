@@ -5,7 +5,9 @@ import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
+const clientRoot = join(root, "client");
 const indexFile = join(root, "index.html");
+const clientIndexFile = join(clientRoot, "index.html");
 const port = Number(process.env.PORT || 3000);
 
 const mimeTypes = new Map([
@@ -23,19 +25,22 @@ const mimeTypes = new Map([
   [".webp", "image/webp"],
 ]);
 
-function sendFile(response, filePath) {
-  const isAsset = filePath.startsWith(join(root, "assets"));
+function sendFile(response, filePath, staticRoot = root) {
+  const isAsset = filePath.startsWith(join(staticRoot, "assets"));
   response.setHeader("Content-Type", mimeTypes.get(extname(filePath)) || "application/octet-stream");
   response.setHeader("Cache-Control", isAsset ? "public, max-age=31536000, immutable" : "no-cache");
   createReadStream(filePath).pipe(response);
 }
 
-async function resolveRequestPath(urlPath) {
+async function resolveRequestPath(urlPath, staticRoot = root, fallbackFile = indexFile, stripPrefix = "") {
   const decodedPath = decodeURIComponent(urlPath.split("?")[0] || "/");
-  const normalizedPath = normalize(decodedPath).replace(/^(\.\.[/\\])+/, "");
-  const requestedPath = resolve(join(root, normalizedPath));
+  const effectivePath = stripPrefix && decodedPath.startsWith(stripPrefix)
+    ? decodedPath.slice(stripPrefix.length) || "/"
+    : decodedPath;
+  const normalizedPath = normalize(effectivePath).replace(/^(\.\.[/\\])+/, "");
+  const requestedPath = resolve(join(staticRoot, normalizedPath));
 
-  if (!requestedPath.startsWith(root)) {
+  if (!requestedPath.startsWith(staticRoot)) {
     return null;
   }
 
@@ -45,10 +50,10 @@ async function resolveRequestPath(urlPath) {
       return requestedPath;
     }
   } catch {
-    return existsSync(indexFile) ? indexFile : null;
+    return existsSync(fallbackFile) ? fallbackFile : null;
   }
 
-  return existsSync(indexFile) ? indexFile : null;
+  return existsSync(fallbackFile) ? fallbackFile : null;
 }
 
 const server = createServer(async (request, response) => {
@@ -58,7 +63,44 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const filePath = await resolveRequestPath(request.url || "/");
+  const requestUrl = request.url || "/";
+  const pathname = decodeURIComponent(requestUrl.split("?")[0] || "/");
+
+  if (pathname === "/login") {
+    response.writeHead(302, { Location: "/client/login" });
+    response.end();
+    return;
+  }
+
+  if (pathname === "/client" || pathname.startsWith("/client/")) {
+    if (!existsSync(clientIndexFile)) {
+      response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("RouteShip client build not found inside landing/dist/client. Run npm run build first.");
+      return;
+    }
+
+    const clientFilePath = await resolveRequestPath(requestUrl, clientRoot, clientIndexFile, "/client");
+    if (!clientFilePath) {
+      response.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Forbidden");
+      return;
+    }
+
+    response.statusCode = 200;
+    sendFile(response, clientFilePath, clientRoot);
+    return;
+  }
+
+  if (pathname.startsWith("/brand/") || pathname.startsWith("/images/")) {
+    const clientAssetPath = await resolveRequestPath(requestUrl, clientRoot, clientIndexFile);
+    if (clientAssetPath && clientAssetPath !== clientIndexFile) {
+      response.statusCode = 200;
+      sendFile(response, clientAssetPath, clientRoot);
+      return;
+    }
+  }
+
+  const filePath = await resolveRequestPath(requestUrl);
   if (!filePath) {
     response.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Forbidden");
