@@ -60,6 +60,7 @@ import {
 import {
   calculateInternationalRateController,
   listInternationalRateCardsController,
+  updateInternationalCourierRatesController,
 } from '../../controllers/admin/b2b/internationalRate.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
 import { requireAuth } from '../../middlewares/requireAuth'
@@ -119,6 +120,7 @@ router.delete('/overheads/:id', requireAuth, isAdminMiddleware, deleteOverheadCo
 // Rate calculator
 router.post('/calculate-rate', requireAuth, isAdminMiddleware, calculateRateController)
 router.get('/international-rate-cards', requireAuth, isAdminMiddleware, listInternationalRateCardsController)
+router.put('/international-rate-cards/:id/rates', requireAuth, isAdminMiddleware, updateInternationalCourierRatesController)
 router.post('/international-rate-calculator', requireAuth, isAdminMiddleware, calculateInternationalRateController)
 
 // Pricing Configuration

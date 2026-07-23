@@ -191,6 +191,11 @@ export const b2bAdminService = {
     return normalizeArrayPayload(data)
   },
 
+  async updateInternationalCourierRates(rateCardId, payload) {
+    const { data } = await api.put(`${BASE_URL}/international-rate-cards/${rateCardId}/rates`, payload)
+    return data.data ?? data
+  },
+
   async calculateInternationalRate(payload) {
     const { data } = await api.post(`${BASE_URL}/international-rate-calculator`, payload)
     return normalizeArrayPayload(data)

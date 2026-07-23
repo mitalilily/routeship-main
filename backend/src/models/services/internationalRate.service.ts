@@ -27,9 +27,17 @@ export const listInternationalRateCards = async () => {
   const cards = await db.select().from(internationalRateCards).where(eq(internationalRateCards.isActive, true)).orderBy(asc(internationalRateCards.name))
   const rates = await db
     .select({
+      id: internationalRates.id,
       rateCardId: internationalRates.rateCardId,
       deliveryPartner: internationalRates.deliveryPartner,
+      destinationCountry: internationalRates.destinationCountry,
       destinationZone: internationalRates.destinationZone,
+      minWeight: internationalRates.minWeight,
+      maxWeight: internationalRates.maxWeight,
+      baseRate: internationalRates.baseRate,
+      ratePerKg: internationalRates.ratePerKg,
+      currency: internationalRates.currency,
+      estimatedDays: internationalRates.estimatedDays,
     })
     .from(internationalRates)
     .where(eq(internationalRates.isActive, true))
@@ -39,13 +47,94 @@ export const listInternationalRateCards = async () => {
     deliveryPartners: [...new Set(rates.filter((rate) => rate.rateCardId === card.id).map((rate) => rate.deliveryPartner))],
     destinationZones: [
       ...new Set(
-        rates
-          .filter((rate) => rate.rateCardId === card.id && rate.destinationZone)
-          .map((rate) => rate.destinationZone as string),
+        [
+          ...countries.map((country) => country.zoneCode),
+          ...rates
+            .filter((rate) => rate.rateCardId === card.id && rate.destinationZone)
+            .map((rate) => rate.destinationZone as string),
+        ],
       ),
     ].sort(),
     destinationCountries: countries,
+    rates: rates.filter((rate) => rate.rateCardId === card.id),
   }))
+}
+
+const parsePositiveNumber = (value: unknown, field: string, allowZero = false) => {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number < 0 || (!allowZero && number === 0)) {
+    throw new Error(`${field} must be ${allowZero ? 'zero or greater' : 'greater than zero'}`)
+  }
+  return number
+}
+
+const normalizeZoneCode = (value: unknown) => String(value ?? '').trim().toUpperCase()
+
+export const updateInternationalCourierRates = async (rateCardId: string, input: any) => {
+  const deliveryPartner = String(input?.deliveryPartner || '').trim()
+  const slabs = Array.isArray(input?.slabs) ? input.slabs : []
+  const currency = String(input?.currency || 'INR').trim().toUpperCase() || 'INR'
+  const estimatedDays = String(input?.estimatedDays || 'Manual quote').trim() || 'Manual quote'
+
+  if (!rateCardId) throw new Error('Rate card is required')
+  if (!deliveryPartner) throw new Error('Courier is required')
+  if (!slabs.length) throw new Error('Add at least one rate slab')
+
+  const [card] = await db
+    .select()
+    .from(internationalRateCards)
+    .where(and(eq(internationalRateCards.id, rateCardId), eq(internationalRateCards.isActive, true)))
+    .limit(1)
+  if (!card) throw new Error('International rate card not found')
+
+  const rows = slabs.flatMap((slab: any) => {
+    const minWeight = parsePositiveNumber(slab.minWeight ?? slab.min_weight ?? 0, 'Min weight', true)
+    const maxWeight = parsePositiveNumber(slab.maxWeight ?? slab.max_weight, 'Max weight')
+    if (maxWeight < minWeight) throw new Error('Max weight must be greater than or equal to min weight')
+
+    const rates = slab.rates && typeof slab.rates === 'object' ? slab.rates : {}
+    return Object.entries(rates).flatMap(([zoneCodeRaw, amountRaw]) => {
+      const zoneCode = normalizeZoneCode(zoneCodeRaw)
+      if (!zoneCode || amountRaw === '' || amountRaw === null || amountRaw === undefined) return []
+      const amount = parsePositiveNumber(amountRaw, `Rate for zone ${zoneCode}`, true)
+      return [{
+        rateCardId,
+        deliveryPartner,
+        destinationCountry: '*',
+        destinationZone: zoneCode,
+        minWeight: minWeight.toFixed(3),
+        maxWeight: maxWeight.toFixed(3),
+        baseRate: amount.toFixed(2),
+        ratePerKg: '0.00',
+        currency,
+        estimatedDays,
+        isActive: true,
+        updatedAt: new Date(),
+      }]
+    })
+  })
+
+  if (!rows.length) throw new Error('Add at least one zone rate')
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(internationalRates)
+      .where(
+        and(
+          eq(internationalRates.rateCardId, rateCardId),
+          eq(internationalRates.deliveryPartner, deliveryPartner),
+        ),
+      )
+    for (let index = 0; index < rows.length; index += 500) {
+      await tx.insert(internationalRates).values(rows.slice(index, index + 500))
+    }
+    await tx
+      .update(internationalRateCards)
+      .set({ updatedAt: new Date() })
+      .where(eq(internationalRateCards.id, rateCardId))
+  })
+
+  return { rateCardId, deliveryPartner, saved: rows.length }
 }
 
 const resolveDestination = async (destinationCountry: unknown) => {
