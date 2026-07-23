@@ -5,6 +5,8 @@ import rateData from './data/internationalFedexBasicRates.json'
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
+const RETIRED_CARD_NAMES = ['RouteShip International Package Basic']
+
 type RateRow = {
   weight: number
   rates: Record<string, number>
@@ -145,6 +147,11 @@ const seed = async () => {
     await client.query('BEGIN')
     await ensureSchema()
     const activeCardNames = (rateData.sections as RateSection[]).map((section) => getCardName(section))
+    await client.query(
+      `DELETE FROM routeship_international_rate_cards
+       WHERE name = ANY($1::text[])`,
+      [RETIRED_CARD_NAMES],
+    )
     await client.query(
       `UPDATE routeship_international_rate_cards
        SET is_active = false, updated_at = now()
