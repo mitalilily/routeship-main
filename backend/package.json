@@ -48,6 +48,7 @@
     "seed:basic-b2c-ratecard": "ts-node src/scripts/seedBasicPlanB2CRatecard.ts",
     "seed:basic-provider-ratecards": "ts-node src/scripts/seedBasicProviderRateCards.ts",
     "sync:xpressbees-couriers": "tsx src/scripts/syncXpressbeesCouriers.ts",
+    "repair:xpressbees-b2c-slabs": "tsx src/scripts/repairXpressbeesB2CRateSlabs.ts",
     "backfill:rto-events": "ts-node src/scripts/backfillRtoEvents.ts",
     "backfill:rto-charges": "ts-node src/scripts/backfillRtoCharges.ts",
     "backfill:order-statuses": "ts-node src/scripts/backfillOrderStatusesFromTracking.ts",

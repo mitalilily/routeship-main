@@ -3140,14 +3140,17 @@ export const computeB2CFreightForOrder = async (params: {
     throw new HttpError(400, 'No rate card found for selected courier/zone')
   }
 
-  const computeChargeForRateCard = (candidateRateCard: typeof rateCard) =>
+  const computeChargeForRateCard = (
+    candidateRateCard: typeof rateCard,
+    selectedMaxSlabWeight: number | null = params.selectedMaxSlabWeight ?? null,
+  ) =>
     computeB2CRateCardCharge({
       actual_weight_g: params.weightG,
       length_cm: params.lengthCm,
       width_cm: params.breadthCm,
       height_cm: params.heightCm,
       rateCard: candidateRateCard,
-      selected_max_slab_weight: params.selectedMaxSlabWeight ?? null,
+      selected_max_slab_weight: selectedMaxSlabWeight,
     })
   const isUsableFreight = (
     candidateRateCard: typeof rateCard,
@@ -3156,8 +3159,26 @@ export const computeB2CFreightForOrder = async (params: {
 
   let freightCalc = computeChargeForRateCard(rateCard)
   let pricedRateCard = rateCard
+  let usedSelectedSlabWeight = params.selectedMaxSlabWeight ?? null
 
-  if (params.selectedRateCardId && !isUsableFreight(rateCard, freightCalc)) {
+  if (!isUsableFreight(rateCard, freightCalc) && params.selectedMaxSlabWeight !== null && params.selectedMaxSlabWeight !== undefined) {
+    const unpinnedFreightCalc = computeChargeForRateCard(rateCard, null)
+    if (isUsableFreight(rateCard, unpinnedFreightCalc)) {
+      freightCalc = unpinnedFreightCalc
+      usedSelectedSlabWeight = null
+      console.warn('[B2C Freight] Selected slab was not usable; priced selected rate card without slab pin', {
+        courier_id: params.courierId,
+        service_provider: resolvedServiceProvider,
+        selected_rate_card_id: params.selectedRateCardId,
+        selected_max_slab_weight: params.selectedMaxSlabWeight,
+        mode: rateCard.mode,
+        zone_id: resolvedZoneRow.id,
+        chargeable_weight: unpinnedFreightCalc.chargeable_weight,
+      })
+    }
+  }
+
+  if (params.selectedRateCardId && !isUsableFreight(pricedRateCard, freightCalc)) {
     const fallbackCards = await fetchResolvedB2CRateCards({
       planId: activePlanId,
       zoneId: resolvedZoneRow.id,
@@ -3168,15 +3189,28 @@ export const computeB2CFreightForOrder = async (params: {
     })
 
     for (const fallbackRateCard of fallbackCards) {
-      const fallbackCalc = computeChargeForRateCard(fallbackRateCard)
+      let fallbackCalc = computeChargeForRateCard(fallbackRateCard)
+      let fallbackUsedSelectedSlabWeight = params.selectedMaxSlabWeight ?? null
+
+      if (!isUsableFreight(fallbackRateCard, fallbackCalc) && fallbackUsedSelectedSlabWeight !== null) {
+        const unpinnedFallbackCalc = computeChargeForRateCard(fallbackRateCard, null)
+        if (isUsableFreight(fallbackRateCard, unpinnedFallbackCalc)) {
+          fallbackCalc = unpinnedFallbackCalc
+          fallbackUsedSelectedSlabWeight = null
+        }
+      }
+
       if (!isUsableFreight(fallbackRateCard, fallbackCalc)) continue
       pricedRateCard = fallbackRateCard
       freightCalc = fallbackCalc
+      usedSelectedSlabWeight = fallbackUsedSelectedSlabWeight
       console.warn('[B2C Freight] Selected rate-card slab was not usable; used merged courier rate card', {
         courier_id: params.courierId,
         service_provider: resolvedServiceProvider,
         selected_rate_card_id: params.selectedRateCardId,
         fallback_rate_card_id: fallbackRateCard.shippingRateId,
+        selected_max_slab_weight: params.selectedMaxSlabWeight,
+        used_selected_max_slab_weight: usedSelectedSlabWeight,
         mode: fallbackRateCard.mode,
         zone_id: resolvedZoneRow.id,
         chargeable_weight: fallbackCalc.chargeable_weight,

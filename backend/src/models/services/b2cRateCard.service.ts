@@ -192,12 +192,28 @@ const mergeResolvedSlabs = (
   incoming: ResolvedRateCardSlab[] = [],
 ) => {
   const byRange = new Map<string, ResolvedRateCardSlab>()
+  const hasAdditionalRate = (slab: ResolvedRateCardSlab) =>
+    slab.extra_rate !== null && slab.extra_weight_unit !== null && slab.extra_weight_unit > 0
 
   for (const slab of current) {
     byRange.set(slabRangeKey(slab), slab)
   }
   for (const slab of incoming) {
-    byRange.set(slabRangeKey(slab), slab)
+    const key = slabRangeKey(slab)
+    const existing = byRange.get(key)
+    if (!existing) {
+      byRange.set(key, slab)
+      continue
+    }
+
+    if (hasAdditionalRate(slab) && !hasAdditionalRate(existing)) {
+      byRange.set(key, slab)
+      continue
+    }
+
+    if (hasAdditionalRate(slab) === hasAdditionalRate(existing) && slab.rate > 0 && slab.rate < existing.rate) {
+      byRange.set(key, slab)
+    }
   }
 
   return sortSlabsByRange(Array.from(byRange.values()))
