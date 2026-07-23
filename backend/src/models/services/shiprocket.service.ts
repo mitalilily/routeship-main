@@ -7419,7 +7419,7 @@ export const createB2CShipmentService = async (
     )
   }
 
-  const invoiceNumber = String(params.invoice_number ?? '').trim()
+  const invoiceNumber = String(params.invoice_number ?? '').trim() || String(params.order_number ?? '').trim()
   // if (!invoiceNumber) {
   //   throw new HttpError(
   //     400,

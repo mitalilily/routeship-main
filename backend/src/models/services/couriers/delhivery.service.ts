@@ -2940,6 +2940,8 @@ export class DelhiveryService {
         seller_pin: sanitizePincode(pickup.pincode),
         seller_phone: pickupPhone,
         seller_gst_tin: sellerGst,
+        invoice_number: resolvedInvoiceNumber,
+        invoice_amount: orderAmount,
         seller_inv: resolvedInvoiceNumber,
         invoice_reference: resolvedInvoiceNumber,
         invoice_date: invoiceDate,
@@ -3020,7 +3022,7 @@ export class DelhiveryService {
         weight_g: packageWeightGrams,
         payment_mode: paymentMode,
         hsn_present: hsnCodes.length,
-        invoice_number: invoiceNumber,
+        invoice_number: resolvedInvoiceNumber,
         shipping_mode: shippingMode,
         cod_amount: codAmount,
       })
@@ -3076,25 +3078,27 @@ export class DelhiveryService {
           order: orderNumber,
           response: responseData,
           packageFailures: packageFailuresWithRemarks,
+          packageFailureRemarks: packageFailuresWithRemarks.flatMap((pkg) => pkg.remarks),
         })
 
+        const packageFailureReason = packageFailuresWithRemarks
+          .map((pkg) => {
+            const joinedRemarks = pkg.remarks.join(' | ')
+            return (
+              joinedRemarks ||
+              pkg?.message ||
+              pkg?.reason ||
+              pkg?.rmk ||
+              `status=${pkg?.status ?? 'unknown'}`
+            )
+          })
+          .filter(Boolean)
+          .join(' | ')
         const failureReason =
+          packageFailureReason ||
           responseData?.message ||
           responseData?.status_message ||
           normalizeRemarks(responseData?.rmk).join(' | ') ||
-          packageFailuresWithRemarks
-            .map((pkg) => {
-              const joinedRemarks = pkg.remarks.join(' | ')
-              return (
-                joinedRemarks ||
-                pkg?.message ||
-                pkg?.reason ||
-                pkg?.rmk ||
-                `status=${pkg?.status ?? 'unknown'}`
-              )
-            })
-            .filter(Boolean)
-            .join(' | ') ||
           'Delhivery reported a failure during shipment creation.'
         throw new DelhiveryManifestError(502, failureReason, responseData)
       }
