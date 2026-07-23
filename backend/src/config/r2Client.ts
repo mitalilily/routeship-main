@@ -6,11 +6,26 @@ import path from 'path'
 const env = process.env.NODE_ENV || 'development'
 
 // Load the correct .env file
-dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) })
+dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
+
+const getR2ClientEndpoint = () => {
+  const endpoint = process.env.R2_ENDPOINT
+  if (!endpoint) return undefined
+
+  try {
+    const url = new URL(endpoint)
+    url.pathname = ''
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return endpoint
+  }
+}
 
 export const r2 = new S3Client({
   region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
+  endpoint: getR2ClientEndpoint(),
   forcePathStyle: true,
   requestChecksumCalculation: 'WHEN_REQUIRED',
   responseChecksumValidation: 'WHEN_REQUIRED',

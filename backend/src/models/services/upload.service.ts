@@ -9,7 +9,7 @@ import path from 'path'
 
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
-dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
+dotenv.config({ path: path.resolve(__dirname, `../../../.env.${env}`) })
 
 interface PresignParams {
   filename: string
@@ -22,6 +22,65 @@ const PRESIGN_DOWNLOAD_EXPIRES_IN_SECONDS = 60 * 60 * 24 // 24h
 const PRESIGN_CACHE_SAFETY_BUFFER_MS = 60 * 1000 // refresh 1 min before expiry
 const R2_UPLOAD_TIMEOUT_MS = Number(process.env.R2_UPLOAD_TIMEOUT_MS || 30000)
 const presignDownloadCache = new Map<string, { url: string; expiresAt: number }>()
+
+const normalizePathSegment = (value: string) =>
+  value
+    .trim()
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((part) =>
+      part
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^[-_.]+|[-_.]+$/g, ''),
+    )
+    .filter(Boolean)
+    .join('/')
+
+const getProjectPrefix = () => normalizePathSegment(process.env.R2_PROJECT_PREFIX || 'routeship')
+
+const hasProjectPrefix = (key: string) => {
+  const prefix = getProjectPrefix()
+  return !prefix || key === prefix || key.startsWith(`${prefix}/`)
+}
+
+const withProjectPrefix = (key: string) => {
+  const normalizedKey = key.replace(/^\/+/, '')
+  const prefix = getProjectPrefix()
+  if (!prefix || hasProjectPrefix(normalizedKey)) return normalizedKey
+  return `${prefix}/${normalizedKey}`
+}
+
+const buildObjectKey = ({
+  folderKey,
+  userId,
+  filename,
+}: {
+  folderKey: string
+  userId: string
+  filename: string
+}) => {
+  const folder = normalizePathSegment(folderKey) || 'uploads'
+  const owner = normalizePathSegment(userId) || 'anonymous'
+  return withProjectPrefix(`${folder}/${owner}/${Date.now()}-${sanitizeFilename(filename)}`)
+}
+
+const getPublicStorageBaseUrl = (bucket: string) => {
+  const endpoint = (process.env.R2_PUBLIC_URL || process.env.R2_ENDPOINT || '').replace(/\/+$/, '')
+  if (!endpoint) return ''
+
+  try {
+    const url = new URL(endpoint)
+    const pathParts = url.pathname.split('/').filter(Boolean)
+    if (pathParts[pathParts.length - 1] === bucket) {
+      return `${url.origin}/${pathParts.join('/')}`
+    }
+    return `${url.origin}${url.pathname.replace(/\/+$/, '')}/${bucket}`
+  } catch {
+    return `${endpoint}/${bucket}`
+  }
+}
 
 const presignCacheKey = (
   bucket: string,
@@ -47,7 +106,7 @@ export const presignUpload = async ({
   folderKey = 'userPp',
 }: PresignParams) => {
   const bucket = getBucketName()
-  const key = `${folderKey}/${userId}/${Date.now()}-${sanitizeFilename(filename)}`
+  const key = buildObjectKey({ folderKey, userId, filename })
 
   const command = new PutObjectCommand({
     Bucket: bucket,
@@ -57,7 +116,8 @@ export const presignUpload = async ({
 
   const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 60 * 5 }) // 5 min
 
-  const publicUrl = `${process.env.R2_ENDPOINT}/${bucket}/${key}`
+  const publicBaseUrl = getPublicStorageBaseUrl(bucket)
+  const publicUrl = publicBaseUrl ? `${publicBaseUrl}/${key}` : key
   return { uploadUrl, key, publicUrl, bucket }
 }
 
@@ -91,13 +151,14 @@ export const downloadAndUploadToR2 = async ({
 
       // If it's already a key (contains folder structure), return it as-is
       if (url.includes('/')) {
-        console.log(`✅ Using existing R2 key: ${url}`)
-        return url
+        const key = withProjectPrefix(url)
+        console.log(`Using existing R2 key: ${key}`)
+        return key
       }
 
       // If it's just a filename, construct a proper key path
       // This handles cases where Delhivery returns just a filename
-      const key = `${folderKey}/${userId}/${url}`
+      const key = buildObjectKey({ folderKey, userId, filename: url })
       console.log(`✅ Constructed R2 key from filename: ${key}`)
       return key
     }
@@ -105,8 +166,9 @@ export const downloadAndUploadToR2 = async ({
     // If it's already an R2 URL, extract the key instead of re-uploading
     const extractedKey = extractKeyFromUrl(url, bucket)
     if (extractedKey) {
-      console.log(`ℹ️ URL is already an R2 URL, using existing key: ${extractedKey}`)
-      return extractedKey
+      const key = withProjectPrefix(extractedKey)
+      console.log(`URL is already an R2 URL, using existing key: ${key}`)
+      return key
     }
 
     // Download the file from the URL (external URL)
@@ -171,9 +233,12 @@ const extractKeyFromUrl = (url: string, bucket: string): string | null => {
     if (process.env.R2_ENDPOINT && url.startsWith(process.env.R2_ENDPOINT)) {
       const urlObj = new URL(url)
       const pathParts = urlObj.pathname.split('/').filter(Boolean)
-      // Skip bucket name (first part) and get the rest as key
-      if (pathParts.length > 1) {
-        return pathParts.slice(1).join('/')
+      const bucketIndex = pathParts.indexOf(bucket)
+      if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+        return pathParts.slice(bucketIndex + 1).join('/')
+      }
+      if (pathParts.length) {
+        return pathParts.join('/')
       }
     }
     return null
@@ -249,11 +314,23 @@ const buildPresignedDownloadUrl = async (
     console.log(`🔄 Extracted key from URL: ${storageKey}, regenerating presigned URL`)
   }
 
+  const candidateKeys = hasProjectPrefix(storageKey)
+    ? [storageKey]
+    : [withProjectPrefix(storageKey), storageKey]
+
   if (options?.checkExists) {
-    const exists = await ensureObjectExists(bucket, storageKey)
-    if (!exists) {
-      return null
+    let foundKey: string | null = null
+    for (const candidateKey of candidateKeys) {
+      const exists = await ensureObjectExists(bucket, candidateKey)
+      if (exists) {
+        foundKey = candidateKey
+        break
+      }
     }
+    if (!foundKey) return null
+    storageKey = foundKey
+  } else {
+    storageKey = candidateKeys[0]
   }
 
   const cacheKey = presignCacheKey(bucket, storageKey, options)
