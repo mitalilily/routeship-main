@@ -74,8 +74,6 @@ export default function PhoneForm() {
   const [step, setStep] = useState<number>(0)
   const [preferredLoginMethod, setPreferredLoginMethod] = useState<'phone' | 'password'>('phone')
   const [email, setEmail] = useState('')
-  const [demoOtp, setDemoOtp] = useState('')
-  const [demoOtpExpiresAt, setDemoOtpExpiresAt] = useState('')
   const [termsChecked, setTermsChecked] = useState(false)
   const [openTerms, setOpenTerms] = useState(false)
 
@@ -105,9 +103,7 @@ export default function PhoneForm() {
       sessionStorage.setItem('preferredMethod', 'phone')
 
       sendOtpRequest(email.toLowerCase().trim(), {
-        onSuccess: (data: any) => {
-          setDemoOtp(data?.demoOtp || '')
-          setDemoOtpExpiresAt(data?.demoOtpExpiresAt || '')
+        onSuccess: () => {
           setStep(1)
         },
         onError: (err: any) => {
@@ -230,12 +226,6 @@ export default function PhoneForm() {
     ) : (
       <OtpForm
         email={email}
-        demoOtp={demoOtp}
-        demoOtpExpiresAt={demoOtpExpiresAt}
-        onDemoOtpUpdate={(nextOtp, nextExpiry) => {
-          setDemoOtp(nextOtp)
-          setDemoOtpExpiresAt(nextExpiry)
-        }}
         onEditEmail={() => setStep(0)}
       />
     )
@@ -306,7 +296,7 @@ export default function PhoneForm() {
               },
             }}
           >
-            <ToggleButton value="phone">Console OTP</ToggleButton>
+            <ToggleButton value="phone">Email OTP</ToggleButton>
             <ToggleButton value="password">Email + Password</ToggleButton>
           </ToggleButtonGroup>
         </Box>

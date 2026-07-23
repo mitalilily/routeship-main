@@ -34,7 +34,7 @@ import { isDemoOtpEnabled } from '../utils/demoAuth'
 const env = process.env.NODE_ENV || 'development'
 
 // Load the correct .env file
-dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) })
+dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`), override: true })
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 
@@ -247,14 +247,17 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       })
     }
 
-    // Onscreen demo OTP login must not depend on SMTP availability. Keep email delivery
-    // best-effort so a mail provider/config issue cannot block authentication.
-    sendVerificationEmail(normalizedEmail, otp).catch((emailError) => {
+    try {
+      await sendVerificationEmail(normalizedEmail, otp)
+    } catch (emailError: any) {
       console.error('OTP email delivery failed after OTP was issued:', {
         email: normalizedEmail,
         error: emailError?.message || emailError,
       })
-    })
+      return res.status(502).json({
+        error: 'Unable to send OTP email right now. Please try again shortly.',
+      })
+    }
 
     return res.json({
       message: 'OTP sent successfully to your email',

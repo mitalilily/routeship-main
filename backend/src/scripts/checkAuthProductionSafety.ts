@@ -4,7 +4,7 @@ import path from 'node:path'
 import { isDemoOtpEnabled } from '../utils/demoAuth'
 import { resolveTokenSecrets } from '../utils/tokenSecrets'
 
-assert.equal(isDemoOtpEnabled(undefined), true)
+assert.equal(isDemoOtpEnabled(undefined), false)
 assert.equal(isDemoOtpEnabled('false'), false)
 assert.equal(isDemoOtpEnabled('true'), true)
 assert.equal(isDemoOtpEnabled(' TRUE '), true)
@@ -54,6 +54,7 @@ const phoneFormSource = fs.readFileSync(
 assert.doesNotMatch(authControllerSource, /console\.(?:log|info|warn|error)\([^\n]*demo otp/i)
 assert.doesNotMatch(otpFormSource, /console\.(?:log|info|warn|error)\([^\n]*demo otp/i)
 assert.doesNotMatch(phoneFormSource, /console\.(?:log|info|warn|error)\([^\n]*demo otp/i)
-assert.match(otpFormSource, /\{demoOtp\}/)
+assert.doesNotMatch(otpFormSource, /demoOtp/)
+assert.doesNotMatch(phoneFormSource, /Console OTP/)
 
 console.log('Authentication configuration safety checks passed')

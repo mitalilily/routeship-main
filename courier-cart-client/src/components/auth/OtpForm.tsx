@@ -8,7 +8,6 @@ import { toast } from '../UI/Toast'
 
 const OTP_LENGTH = 6
 const OTP_RESEND_DELAY_MS = 30000
-const BRAND_ORANGE = '#FE6502'
 const BRAND_BLUE = '#310276'
 const BRAND_DARK = '#141414'
 
@@ -39,13 +38,10 @@ const ghostButtonStyles = {
 
 type Props = {
   email: string
-  demoOtp?: string
-  demoOtpExpiresAt?: string
-  onDemoOtpUpdate?: (otp: string, expiresAt: string) => void
   onEditEmail: () => void
 }
 
-export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpdate, onEditEmail }: Props) {
+export default function OtpForm({ email, onEditEmail }: Props) {
   const { setTokens, setUserId } = useAuth()
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''))
   const [error, setError] = useState('')
@@ -86,13 +82,6 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
     }
   }, [email])
-
-  useEffect(() => {
-    if (/^\d{6}$/.test(demoOtp || '')) {
-      setOtpDigits(demoOtp!.split(''))
-      setError('')
-    }
-  }, [demoOtp])
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return
@@ -151,12 +140,11 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
     if (!resendEnabled || resending) return
 
     resendOtp(email.toLowerCase().trim(), {
-      onSuccess: (data: any) => {
+      onSuccess: () => {
         setOtpDigits(Array(OTP_LENGTH).fill(''))
         setError('')
         setResendEnabled(false)
         setSecondsLeft(OTP_RESEND_DELAY_MS / 1000)
-        onDemoOtpUpdate?.(data?.demoOtp || '', data?.demoOtpExpiresAt || '')
 
         if (timerRef.current) clearTimeout(timerRef.current)
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
@@ -183,7 +171,7 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
         setError(err?.response?.data?.error || 'Failed to resend OTP')
       },
     })
-  }, [email, onDemoOtpUpdate, resendOtp, resendEnabled, resending])
+  }, [email, resendOtp, resendEnabled, resending])
 
   return (
     <Stack component="form" onSubmit={handleSubmit} width="100%" mt={1} gap={2}>
@@ -214,41 +202,6 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
           </Box>
         </Typography>
       </Box>
-
-      {demoOtp ? (
-        <Box
-          sx={{
-            p: 1.6,
-            borderRadius: 1.5,
-            border: '1px dashed rgba(232, 85, 0, 0.45)',
-            backgroundColor: '#fff4ec',
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              color: BRAND_ORANGE,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              mb: 0.7,
-            }}
-          >
-            Console OTP
-          </Typography>
-          <Typography sx={{ color: '#5F5A57', fontSize: '0.82rem', lineHeight: 1.6, mb: 0.8 }}>
-            Use this code to complete the console login.
-          </Typography>
-          <Typography sx={{ fontSize: '1.8rem', fontWeight: 850, color: BRAND_DARK, letterSpacing: '0.2em' }}>
-            {demoOtp}
-          </Typography>
-          {demoOtpExpiresAt ? (
-            <Typography variant="caption" sx={{ mt: 0.8, display: 'block', color: '#6E6763' }}>
-              Expires at {new Date(demoOtpExpiresAt).toLocaleString()}
-            </Typography>
-          ) : null}
-        </Box>
-      ) : null}
 
       <Box
         sx={{
@@ -317,7 +270,7 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
       )}
 
       <Typography variant="caption" color="#6E6763" textAlign="center" sx={{ userSelect: 'none' }}>
-        Enter the code shown above or from your inbox to continue to the RouteShip console.
+        Enter the code from your inbox to continue to RouteShip.
       </Typography>
 
       <CustomIconLoadingButton
