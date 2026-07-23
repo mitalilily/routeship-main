@@ -6,10 +6,14 @@ import { userPlans } from '../schema/userPlans'
 import { users } from '../schema/users'
 import { b2bAdditionalCharges, b2bOverheadRules, b2bZoneToZoneRates } from '../schema/zones'
 
-export type PlanBusinessType = 'b2c' | 'b2b'
+export type PlanBusinessType = 'b2c' | 'b2b' | 'international'
 
 export const normalizePlanBusinessType = (value?: string | null): PlanBusinessType =>
-  String(value ?? '').trim().toLowerCase() === 'b2b' ? 'b2b' : 'b2c'
+  String(value ?? '').trim().toLowerCase() === 'b2b'
+    ? 'b2b'
+    : String(value ?? '').trim().toLowerCase() === 'international'
+      ? 'international'
+      : 'b2c'
 
 interface GetPlansOptions {
   status?: 'active' | 'inactive'
@@ -23,7 +27,12 @@ const ensurePlanSplitSetup = async () => {
     ensurePlanSplitSetupPromise = (async () => {
       await db.execute(sql.raw(`
         ALTER TABLE "plans"
-        ADD COLUMN IF NOT EXISTS "business_type" varchar(10) NOT NULL DEFAULT 'b2c';
+        ADD COLUMN IF NOT EXISTS "business_type" varchar(20) NOT NULL DEFAULT 'b2c';
+      `))
+
+      await db.execute(sql.raw(`
+        ALTER TABLE "plans"
+        ALTER COLUMN "business_type" TYPE varchar(20);
       `))
 
       await db.execute(sql.raw(`
@@ -34,7 +43,12 @@ const ensurePlanSplitSetup = async () => {
 
       await db.execute(sql.raw(`
         ALTER TABLE "user_plans"
-        ADD COLUMN IF NOT EXISTS "business_type" varchar(10) NOT NULL DEFAULT 'b2c';
+        ADD COLUMN IF NOT EXISTS "business_type" varchar(20) NOT NULL DEFAULT 'b2c';
+      `))
+
+      await db.execute(sql.raw(`
+        ALTER TABLE "user_plans"
+        ALTER COLUMN "business_type" TYPE varchar(20);
       `))
 
       await db.execute(sql.raw(`
@@ -376,9 +390,12 @@ export const PlansService = {
       }
 
       const businessType = normalizePlanBusinessType(planToDeactivate.business_type)
-      const fallbackPlan = await getDefaultPlanByBusinessType(businessType, planId)
+      const fallbackPlan =
+        businessType === 'international'
+          ? null
+          : await getDefaultPlanByBusinessType(businessType, planId)
 
-      if (!fallbackPlan) {
+      if (businessType !== 'international' && !fallbackPlan) {
         throw new Error('No fallback plan available for this business type')
       }
 
@@ -388,10 +405,12 @@ export const PlansService = {
         .where(eq(plans.id, planId))
         .returning()
 
-      await db
-        .update(userPlans)
-        .set({ plan_id: fallbackPlan.id })
-        .where(and(eq(userPlans.plan_id, planId), eq(userPlans.business_type, businessType)))
+      if (fallbackPlan) {
+        await db
+          .update(userPlans)
+          .set({ plan_id: fallbackPlan.id })
+          .where(and(eq(userPlans.plan_id, planId), eq(userPlans.business_type, businessType)))
+      }
 
       return deactivatedPlan
     } catch (err) {

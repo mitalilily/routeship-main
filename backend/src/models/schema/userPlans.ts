@@ -9,7 +9,7 @@ export const userPlans = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     plan_id: uuid('plan_id').notNull(), // FK to plans.id
-    business_type: varchar('business_type', { length: 10 }).default('b2c').notNull(),
+    business_type: varchar('business_type', { length: 20 }).default('b2c').notNull(),
     assigned_at: timestamp('assigned_at').defaultNow(),
     is_active: boolean('is_active').default(true),
   },

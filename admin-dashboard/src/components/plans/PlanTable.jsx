@@ -18,6 +18,13 @@ import {
 const PlanTable = ({ data, loading, onEdit, onDelete, onActivate, onSetRate }) => {
   if (loading) return <Spinner color="brand.500" />
 
+  const getTypeColor = (type) => {
+    const normalized = String(type || 'b2c').toLowerCase()
+    if (normalized === 'b2b') return 'blue'
+    if (normalized === 'international') return 'purple'
+    return 'orange'
+  }
+
   return (
     <TableContainer border="1px solid" borderColor="gray.200" borderRadius="6px">
       <Table variant="simple">
@@ -36,7 +43,7 @@ const PlanTable = ({ data, loading, onEdit, onDelete, onActivate, onSetRate }) =
               <Td>{plan.id || index + 1}</Td>
               <Td fontWeight="600">{plan.name}</Td>
               <Td>
-                <Badge colorScheme={plan.business_type === 'b2b' ? 'blue' : 'orange'}>
+                <Badge colorScheme={getTypeColor(plan.business_type)}>
                   {String(plan.business_type || 'b2c').toUpperCase()}
                 </Badge>
               </Td>

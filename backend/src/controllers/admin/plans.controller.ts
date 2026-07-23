@@ -7,7 +7,7 @@ export const PlansController = {
     try {
       // Accept status filter from query params: ?status=active | inactive | all
       const status = req.query.status as 'active' | 'inactive' | undefined
-      const businessType = req.query.businessType as 'b2c' | 'b2b' | undefined
+      const businessType = req.query.businessType as 'b2c' | 'b2b' | 'international' | undefined
 
       const allPlans = await PlansService.getAll({ status, businessType })
       res.json(allPlans)

@@ -34,6 +34,7 @@ const PlanForm = ({ plan, onClose }) => {
         <Select value={form.business_type} onChange={(e) => setForm({ ...form, business_type: e.target.value })} isDisabled={Boolean(plan)}>
           <option value="b2c">B2C</option>
           <option value="b2b">B2B</option>
+          <option value="international">International</option>
         </Select>
       </FormControl>
       <Checkbox isChecked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })}>Status</Checkbox>

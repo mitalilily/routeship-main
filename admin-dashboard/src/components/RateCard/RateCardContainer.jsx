@@ -19,13 +19,14 @@ import { fetchAllCouriersList } from "services/courier.service";
 import { PlansService } from "services/plan.service";
 import ZoneRateMatrix from "views/B2B/ZoneRateMatrix";
 import B2CPlanRateEditor from "./B2CPlanRateEditor";
+import InternationalRateCardWorkspace from "./InternationalRateCardWorkspace";
 
 export const RateCardContainer = ({
   forceBusinessType = null,
   forcePlanId = "",
   embedded = false,
 }) => {
-  const businessTypes = ["B2B", "B2C"];
+  const businessTypes = ["B2B", "B2C", "INTERNATIONAL"];
   const forcedIndex = forceBusinessType
     ? businessTypes.indexOf(forceBusinessType.toUpperCase())
     : -1;
@@ -35,6 +36,7 @@ export const RateCardContainer = ({
   const [selectedPlanId, setSelectedPlanId] = useState(forcePlanId);
   const selectedBusinessType = businessTypes[businessTypeIndex].toLowerCase();
   const isB2BSelected = selectedBusinessType === "b2b";
+  const isInternationalSelected = selectedBusinessType === "international";
 
   useEffect(() => {
     if (forcedIndex >= 0) setBusinessTypeIndex(forcedIndex);
@@ -106,12 +108,14 @@ export const RateCardContainer = ({
               >
                 <Stack spacing={1} align="flex-start" width="100%">
                   <HStack>
-                    <Tag colorScheme={type === "B2B" ? "blue" : "purple"}>
+                    <Tag colorScheme={type === "B2B" ? "blue" : type === "INTERNATIONAL" ? "purple" : "orange"}>
                       {type}
                     </Tag>
                     <Text fontWeight="semibold">
                       {type === "B2B"
                         ? "Enterprise Rate Card"
+                        : type === "INTERNATIONAL"
+                          ? "International Rate Card"
                         : "Retail Rate Card"}
                     </Text>
                   </HStack>
@@ -122,7 +126,11 @@ export const RateCardContainer = ({
         </Tabs>
       )}
 
-      {isB2BSelected ? (
+      {isInternationalSelected ? (
+        <Box pt={4}>
+          <InternationalRateCardWorkspace planName={selectedPlan?.name || "International"} />
+        </Box>
+      ) : isB2BSelected ? (
         <Box pt={4}>
           <ZoneRateMatrix embedded />
         </Box>
