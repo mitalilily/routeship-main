@@ -32,11 +32,20 @@ import PackageDimensionsForm from './PackageDimensionsForm'
 const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 const TEXT_MUTED = '#496189'
+const INR_SYMBOL = '\u20B9'
 
 const toMoney = (value: unknown) => {
   const parsed = Number(value ?? 0)
   return Number.isFinite(parsed) ? parsed : 0
 }
+
+const formatInr = (value: unknown) =>
+  `${INR_SYMBOL} ${toMoney(value).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+
+const formatNegativeInr = (value: unknown) => `-${formatInr(value)}`
 
 export type Product = {
   productName: string
@@ -782,7 +791,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   InputProps={{
                                     startAdornment: (
                                       <Typography sx={{ color: ACCENT, fontSize: '0.9rem', mr: 1 }}>
-                                        -₹
+                                        -{INR_SYMBOL}
                                       </Typography>
                                     ),
                                   }}
@@ -807,7 +816,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   InputProps={{
                                     startAdornment: (
                                       <Typography sx={{ color: ACCENT, fontSize: '0.9rem', mr: 1 }}>
-                                        -₹
+                                        -{INR_SYMBOL}
                                       </Typography>
                                     ),
                                   }}
@@ -846,11 +855,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  ₹{' '}
-                                  {subtotal.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(subtotal)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -871,11 +876,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  â‚¹{' '}
-                                  {productTax.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(productTax)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -896,11 +897,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  â‚¹{' '}
-                                  {shippingCharges.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(shippingCharges)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -921,11 +918,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  â‚¹{' '}
-                                  {transactionFee.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(transactionFee)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -946,11 +939,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  â‚¹{' '}
-                                  {giftWrap.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(giftWrap)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -971,11 +960,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: '#B42318', fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  -â‚¹{' '}
-                                  {discount.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatNegativeInr(discount)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -996,11 +981,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: '#B42318', fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  -â‚¹{' '}
-                                  {prepaidAmount.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatNegativeInr(prepaidAmount)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -1021,11 +1002,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: TEXT_PRIMARY, fontWeight: 600, fontSize: '0.8rem' }}
                                 >
-                                  ₹{' '}
-                                  {totalOrderValue.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(totalOrderValue)}
                                 </Typography>
                               </Stack>
                             </Box>
@@ -1057,11 +1034,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                 <Typography
                                   sx={{ color: ACCENT, fontWeight: 800, fontSize: '0.9rem' }}
                                 >
-                                  ₹{' '}
-                                  {totalCollectable.toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                  {formatInr(totalCollectable)}
                                 </Typography>
                               </Stack>
                             </Box>
