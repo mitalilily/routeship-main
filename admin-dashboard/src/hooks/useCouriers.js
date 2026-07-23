@@ -33,6 +33,7 @@ import {
   updateDelhiveryLtlShipment,
   updateDelhiveryCredentials,
   updateEkartCredentials,
+  updateInnofulfillCredentials,
   updateXpressbeesAwbRange,
   updateXpressbeesCredentials,
   updateCourierStatus,
@@ -300,6 +301,17 @@ export const useUpdateXpressbeesCredentials = () => {
 
   return useMutation({
     mutationFn: updateXpressbeesCredentials,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courierCredentials'])
+    },
+  })
+}
+
+export const useUpdateInnofulfillCredentials = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateInnofulfillCredentials,
     onSuccess: () => {
       queryClient.invalidateQueries(['courierCredentials'])
     },

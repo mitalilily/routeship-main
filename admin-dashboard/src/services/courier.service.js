@@ -399,6 +399,12 @@ export const updateXpressbeesCredentials = async (payload) => {
   return data.data
 }
 
+export const updateInnofulfillCredentials = async (payload) => {
+  const { data } = await api.put('/admin/couriers/credentials/innofulfill', payload)
+  if (!data?.success) throw new Error('Failed to update Innofulfill credentials')
+  return data.data
+}
+
 export const updateXpressbeesAwbRange = async (payload) => {
   const { data } = await api.put('/admin/couriers/credentials/xpressbees/awb-range', payload)
   if (!data?.success) throw new Error(data?.message || 'Failed to update Xpressbees AWB range')

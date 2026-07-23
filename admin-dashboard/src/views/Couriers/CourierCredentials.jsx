@@ -37,6 +37,7 @@ import {
   useUpdateDelhiveryLtlShipment,
   useUpdateDelhiveryCredentials,
   useUpdateEkartCredentials,
+  useUpdateInnofulfillCredentials,
   useUpdateXpressbeesAwbRange,
   useUpdateXpressbeesCredentials,
 } from 'hooks/useCouriers'
@@ -67,6 +68,7 @@ const CourierCredentials = () => {
   const updateDelhiveryLtlShipment = useUpdateDelhiveryLtlShipment()
   const requestDelhiveryLtlPasswordReset = useRequestDelhiveryLtlPasswordReset()
   const updateEkart = useUpdateEkartCredentials()
+  const updateInnofulfill = useUpdateInnofulfillCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
   const updateXpressbeesAwbRange = useUpdateXpressbeesAwbRange()
 
@@ -219,6 +221,16 @@ const CourierCredentials = () => {
     startAwb: '',
     endAwb: '',
   })
+  const [innofulfillForm, setInnofulfillForm] = useState({
+    apiBase: 'https://apis.innofulfill.com',
+    username: '',
+    password: '',
+    apiKey: '',
+    tenantId: '',
+    userId: '',
+    signinType: 'EMAIL',
+    webhookSecret: '',
+  })
 
   useEffect(() => {
     if (data?.delhivery) {
@@ -265,6 +277,18 @@ const CourierCredentials = () => {
         deliveryBusinessService: data.xpressbees.deliveryBusinessService || 'Delivery',
         serviceabilityVersion: data.xpressbees.serviceabilityVersion || 'v1',
         trackingVersion: data.xpressbees.trackingVersion || 'v1',
+        webhookSecret: '',
+      })
+    }
+    if (data?.innofulfill) {
+      setInnofulfillForm({
+        apiBase: data.innofulfill.apiBase || 'https://apis.innofulfill.com',
+        username: data.innofulfill.username || '',
+        password: '',
+        apiKey: '',
+        tenantId: data.innofulfill.tenantId || '',
+        userId: data.innofulfill.userId || '',
+        signinType: data.innofulfill.signinType || 'EMAIL',
         webhookSecret: '',
       })
     }
@@ -1059,6 +1083,41 @@ const CourierCredentials = () => {
     )
   }
 
+  const handleSaveInnofulfill = () => {
+    updateInnofulfill.mutate(
+      {
+        apiBase: innofulfillForm.apiBase,
+        username: innofulfillForm.username,
+        tenantId: innofulfillForm.tenantId,
+        userId: innofulfillForm.userId,
+        signinType: innofulfillForm.signinType || 'EMAIL',
+        ...(innofulfillForm.password ? { password: innofulfillForm.password } : {}),
+        ...(innofulfillForm.apiKey ? { apiKey: innofulfillForm.apiKey } : {}),
+        ...(innofulfillForm.webhookSecret
+          ? { webhookSecret: innofulfillForm.webhookSecret }
+          : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Innofulfill credentials updated', status: 'success' })
+          setInnofulfillForm((prev) => ({
+            ...prev,
+            password: '',
+            apiKey: '',
+            webhookSecret: '',
+          }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update Innofulfill credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSaveXpressbeesAwbRange = () => {
     const startAwb = xpressbeesAwbForm.startAwb.trim()
     const endAwb = xpressbeesAwbForm.endAwb.trim()
@@ -1308,6 +1367,182 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Send LTL Password Reset
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">Innofulfill</Text>
+              <Badge
+                colorScheme={
+                  data?.innofulfill?.hasApiKey ||
+                  (data?.innofulfill?.username && data?.innofulfill?.hasPassword)
+                    ? 'green'
+                    : 'orange'
+                }
+              >
+                {data?.innofulfill?.hasApiKey
+                  ? 'API key set'
+                  : data?.innofulfill?.username && data?.innofulfill?.hasPassword
+                    ? 'Login configured'
+                    : 'Missing credentials'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={innofulfillForm.apiBase}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, apiBase: e.target.value }))
+                }
+                placeholder="https://apis.innofulfill.com"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Innofulfill API host. Use the production URL from Innofulfill unless they provide
+                a sandbox or merchant-specific base URL.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Username / Email</FormLabel>
+              <Input
+                value={innofulfillForm.username}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, username: e.target.value }))
+                }
+                placeholder="user@example.com"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Login email for the Innofulfill account. Ask Innofulfill for the API-enabled
+                merchant or admin user email.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                value={innofulfillForm.password}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, password: e.target.value }))
+                }
+                placeholder="Leave blank to keep existing password"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Password for the Innofulfill login user. Leave this blank when you only want to
+                keep the saved password unchanged.
+              </Text>
+              {data?.innofulfill?.hasPassword && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Login password already configured on Innofulfill.
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Signin Type</FormLabel>
+              <Input
+                value={innofulfillForm.signinType}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, signinType: e.target.value }))
+                }
+                placeholder="EMAIL"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Authentication mode sent to Innofulfill login. This integration currently supports
+                only EMAIL.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>API Key</FormLabel>
+              <Input
+                type="password"
+                value={innofulfillForm.apiKey}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, apiKey: e.target.value }))
+                }
+                placeholder={data?.innofulfill?.apiKeyMasked || 'Enter Innofulfill API key'}
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Static key used as the Api-Key header for serviceability, rate, order, document,
+                and tracking calls. Ask Innofulfill support or the dashboard owner for the API key.
+              </Text>
+              {!!data?.innofulfill?.apiKeyMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current key: {data.innofulfill.apiKeyMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Tenant ID</FormLabel>
+              <Input
+                value={innofulfillForm.tenantId}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, tenantId: e.target.value }))
+                }
+                placeholder="Tenant ID from login response"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Tenant context for bearer-token calls. Usually appears in the login response or
+                Innofulfill merchant/account settings.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>User ID</FormLabel>
+              <Input
+                value={innofulfillForm.userId}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, userId: e.target.value }))
+                }
+                placeholder="User ID from login response"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Innofulfill user identifier returned by login. Required for token refresh and
+                shipping-label document generation.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Webhook Signature Key</FormLabel>
+              <Input
+                type="password"
+                value={innofulfillForm.webhookSecret}
+                onChange={(e) =>
+                  setInnofulfillForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
+                }
+                placeholder="Leave blank to keep existing webhook signature key"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Shared secret used to verify x-webhook-signature on delivery webhooks. Configure
+                the same secret in Innofulfill webhook settings.
+              </Text>
+              {data?.innofulfill?.hasWebhookSecret && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Webhook signature key already configured on Innofulfill.
+                </Text>
+              )}
+            </FormControl>
+
+            <Text fontSize="xs" color="gray.500">
+              Operational calls use either Api-Key authentication or Authorization: Bearer access
+              token with TenantId. Access and refresh tokens are generated by Innofulfill login and
+              are not stored here as permanent credentials. Leave password, API key, or webhook
+              signature key blank to keep the saved value.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveInnofulfill}
+              isLoading={updateInnofulfill.isPending}
+              alignSelf="flex-start"
+            >
+              Save Innofulfill Credentials
             </Button>
           </VStack>
         </Box>

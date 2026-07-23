@@ -31,6 +31,7 @@ import {
   updateDelhiveryLtlClientWarehouseController,
   updateDelhiveryCredentialsController,
   updateEkartCredentialsController,
+  updateInnofulfillCredentialsController,
   updateXpressbeesAwbRangeController,
   updateXpressbeesCredentialsController,
   updateShippingRateController,
@@ -254,6 +255,12 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateXpressbeesCredentialsController,
+)
+router.put(
+  '/credentials/innofulfill',
+  requireAuth,
+  isAdminMiddleware,
+  updateInnofulfillCredentialsController,
 )
 router.put(
   '/credentials/xpressbees/awb-range',

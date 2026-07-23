@@ -509,6 +509,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         inArray(courier_credentials.provider, [
           'delhivery',
           'ekart',
+          'innofulfill',
           'xpressbees',
         ]),
       )
@@ -563,6 +564,18 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         serviceabilityVersion: 'v1',
         trackingVersion: 'v1',
         manualAwb: xpressbeesManualAwb,
+      },
+      innofulfill: {
+        provider: 'innofulfill',
+        apiBase: 'https://apis.innofulfill.com',
+        username: '',
+        signinType: 'EMAIL',
+        tenantId: '',
+        userId: '',
+        hasPassword: false,
+        hasApiKey: false,
+        apiKeyMasked: '',
+        hasWebhookSecret: false,
       },
     }
 
@@ -658,6 +671,24 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           serviceabilityVersion: metadata.serviceabilityVersion || 'v1',
           trackingVersion: metadata.trackingVersion || 'v1',
           manualAwb: xpressbeesManualAwb,
+        }
+      } else if (provider === 'innofulfill') {
+        const apiKey = row.apiKey || ''
+        const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
+        const tenantId = String(metadata.tenantId || metadata.tenant_id || '').trim()
+        const userId = String(metadata.userId || metadata.user_id || '').trim()
+        const signinType = String(metadata.signinType || metadata.signin_type || 'EMAIL').trim()
+        acc.innofulfill = {
+          provider: 'innofulfill',
+          apiBase: row.apiBase || 'https://apis.innofulfill.com',
+          username: row.username || '',
+          signinType: signinType || 'EMAIL',
+          tenantId,
+          userId,
+          hasPassword: Boolean((row.password || '').trim()),
+          hasApiKey: Boolean(apiKey.trim()),
+          apiKeyMasked: maskCourierCredential(apiKey),
+          hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
         }
       }
       return acc
@@ -1971,6 +2002,134 @@ export const updateXpressbeesCredentialsController = async (req: Request, res: R
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Xpressbees credentials' })
+  }
+}
+
+export const updateInnofulfillCredentialsController = async (req: Request, res: Response) => {
+  const {
+    apiBase,
+    username,
+    password,
+    apiKey,
+    tenantId,
+    userId,
+    signinType,
+    webhookSecret,
+  } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextPassword = typeof password === 'string' ? password.trim() : undefined
+    const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
+    const nextTenantId = typeof tenantId === 'string' ? tenantId.trim() : undefined
+    const nextUserId = typeof userId === 'string' ? userId.trim() : undefined
+    const nextSigninType = typeof signinType === 'string' ? signinType.trim().toUpperCase() : undefined
+    const nextWebhookSecret =
+      typeof webhookSecret === 'string' ? webhookSecret.trim() : undefined
+    const hasPassword = typeof nextPassword === 'string' && nextPassword.length > 0
+    const hasApiKey = typeof nextApiKey === 'string' && nextApiKey.length > 0
+    const hasWebhookSecret =
+      typeof nextWebhookSecret === 'string' && nextWebhookSecret.length > 0
+    const metadataUpdates: Record<string, string> = {}
+
+    if (nextTenantId !== undefined) metadataUpdates.tenantId = nextTenantId
+    if (nextUserId !== undefined) metadataUpdates.userId = nextUserId
+    if (nextSigninType !== undefined) metadataUpdates.signinType = nextSigninType || 'EMAIL'
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id, metadata: courier_credentials.metadata })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'innofulfill'))
+      .limit(1)
+
+    if (existing) {
+      const updatePayload: Record<string, any> = {
+        updatedAt: new Date(),
+      }
+      if (nextApiBase !== undefined) {
+        updatePayload.apiBase = nextApiBase || 'https://apis.innofulfill.com'
+      }
+      if (nextUsername !== undefined) {
+        updatePayload.username = nextUsername
+      }
+      if (hasPassword) {
+        updatePayload.password = nextPassword
+      }
+      if (hasApiKey) {
+        updatePayload.apiKey = nextApiKey
+      }
+      if (hasWebhookSecret) {
+        updatePayload.webhookSecret = nextWebhookSecret
+      }
+      if (Object.keys(metadataUpdates).length) {
+        const existingMetadata =
+          existing.metadata && typeof existing.metadata === 'object' ? existing.metadata : {}
+        updatePayload.metadata = {
+          ...existingMetadata,
+          ...metadataUpdates,
+        }
+      }
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'innofulfill'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'innofulfill',
+        apiBase: nextApiBase || 'https://apis.innofulfill.com',
+        clientName: '',
+        apiKey: hasApiKey ? nextApiKey : '',
+        clientId: '',
+        username: nextUsername || '',
+        password: hasPassword ? nextPassword : '',
+        webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
+        metadata: {
+          tenantId: nextTenantId || '',
+          userId: nextUserId || '',
+          signinType: nextSigninType || 'EMAIL',
+        },
+      })
+    }
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        username: courier_credentials.username,
+        password: courier_credentials.password,
+        apiKey: courier_credentials.apiKey,
+        webhookSecret: courier_credentials.webhookSecret,
+        metadata: courier_credentials.metadata,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'innofulfill'))
+      .limit(1)
+    const metadata = saved?.metadata && typeof saved.metadata === 'object' ? saved.metadata : {}
+    const savedApiKey = saved?.apiKey || ''
+    const savedTenantId = String((metadata as any).tenantId || (metadata as any).tenant_id || '').trim()
+    const savedUserId = String((metadata as any).userId || (metadata as any).user_id || '').trim()
+    const savedSigninType = String((metadata as any).signinType || (metadata as any).signin_type || 'EMAIL').trim()
+
+    res.json({
+      success: true,
+      message: 'Innofulfill credentials updated successfully',
+      data: {
+        provider: 'innofulfill',
+        apiBase: saved?.apiBase || 'https://apis.innofulfill.com',
+        username: saved?.username || '',
+        tenantId: savedTenantId,
+        userId: savedUserId,
+        signinType: savedSigninType || 'EMAIL',
+        hasPassword: Boolean((saved?.password || '').trim()),
+        hasApiKey: Boolean(savedApiKey.trim()),
+        apiKeyMasked: maskCourierCredential(savedApiKey),
+        hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update Innofulfill credentials' })
   }
 }
 
