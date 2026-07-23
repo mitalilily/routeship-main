@@ -185,7 +185,7 @@ export const SupportTicketsPage = () => {
             label: 'Email Support',
             onClick: () =>
               (window.location.href =
-                'mailto:info@routeship.com?subject=RouteShip%20Support%20Request'),
+                'mailto:support@routeship.in?subject=RouteShip%20Support%20Request'),
             icon: <FiMail />,
             variant: 'outlined',
           },
