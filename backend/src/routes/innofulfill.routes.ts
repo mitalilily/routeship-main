@@ -4,6 +4,7 @@ import {
   innofulfillBulkManifestOrdersController,
   innofulfillCreateInvoiceConfigurationController,
   innofulfillCreateLabelConfigurationController,
+  innofulfillCreateEcommOrderController,
   innofulfillCreateOrderController,
   innofulfillDeliveryWebhookController,
   innofulfillDownloadInvoiceController,
@@ -30,6 +31,7 @@ router.post(
   innofulfillEcommRateCalculationController,
 )
 router.get('/gateway/booking-service/orders', innofulfillListOrdersController)
+router.post('/gateway/booking-service/orders/ecomm', innofulfillCreateEcommOrderController)
 router.post('/gateway/booking-service/orders', innofulfillCreateOrderController)
 router.post('/gateway/booking-service/orders/manifest/bulk', innofulfillBulkManifestOrdersController)
 router.post('/gateway/booking-service/orders/cancel/bulk', innofulfillBulkCancelOrdersController)

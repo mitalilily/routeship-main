@@ -32,6 +32,8 @@ const SUPPORTED_ORDER_CATEGORIES = new Set(['ECOMM', 'HYPERLOCAL'])
 const SUPPORTED_INVOICE_LEVELS = new Set(['product', 'shipping'])
 const SUPPORTED_INVOICE_CONFIG_LEVELS = new Set(['shipping level', 'product level'])
 const INNOFULFILL_PROVIDER = 'innofulfill'
+const INNOFULFILL_ECOMM_CARRIER_ID = '30d5f835-a63a-4125-b095-93b3098e4e3d'
+const INNOFULFILL_ECOMM_CARRIER_NAME = 'innofulfill_ecomm'
 const INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS = ['x-webhook-signature']
 const INNOFULFILL_WEBHOOK_SENSITIVE_HEADERS = new Set([
   ...INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS,
@@ -148,6 +150,106 @@ const getForwardableQueryParams = (
 
 const hasAddressType = (addresses: unknown[], type: string) =>
   addresses.some((address) => isPlainObject(address) && normalizeString(address.type).toUpperCase() === type)
+
+const hasRequiredAddressFields = (addresses: unknown[], type: string) =>
+  addresses.some((address) => {
+    if (!isPlainObject(address) || normalizeString(address.type).toUpperCase() !== type) return false
+
+    return Boolean(
+      normalizeString(address.zip) &&
+        normalizeString(address.name) &&
+        normalizeString(address.phone) &&
+        normalizeString(address.city) &&
+        normalizeString(address.state) &&
+        normalizeString(address.country),
+    )
+  })
+
+const hasValidShipmentItem = (item: unknown) => {
+  if (!isPlainObject(item)) return false
+
+  return Boolean(
+    normalizeString(item.name) &&
+      isPositiveNumber(normalizeNumber(item.quantity)) &&
+      normalizeNumber(item.unitPrice) !== null,
+  )
+}
+
+const hasValidEcommShipment = (shipment: unknown) => {
+  if (!isPlainObject(shipment)) return false
+
+  const dimensions = isPlainObject(shipment.dimensions) ? shipment.dimensions : null
+  const items = Array.isArray(shipment.items) ? shipment.items : []
+
+  return Boolean(
+    dimensions &&
+      isPositiveNumber(normalizeNumber(dimensions.length)) &&
+      isPositiveNumber(normalizeNumber(dimensions.width)) &&
+      isPositiveNumber(normalizeNumber(dimensions.height)) &&
+      normalizeString(shipment.shipmentStatus).toUpperCase() === 'CONFIRMED' &&
+      isPositiveNumber(normalizeNumber(shipment.physicalWeight)) &&
+      normalizeString(shipment.physicalWeightUnit).toUpperCase() === 'KG' &&
+      items.length > 0 &&
+      items.every(hasValidShipmentItem),
+  )
+}
+
+const hasValidEcommPayment = (payment: unknown) => {
+  if (!isPlainObject(payment)) return false
+
+  return Boolean(
+    SUPPORTED_PAYMENT_MODES.has(normalizeString(payment.type).toUpperCase()) &&
+      normalizeString(payment.currency).toUpperCase() === 'INR' &&
+      normalizeString(payment.paymentMethod),
+  )
+}
+
+const normalizeInnofulfillEcommPayload = (payload: Record<string, unknown>) => ({
+  ...payload,
+  orderType: normalizeString(payload.orderType).toUpperCase(),
+  orderStatus: normalizeString(payload.orderStatus).toUpperCase() || 'CONFIRMED',
+  parcelCategory: 'ECOMM',
+  deliveryPromise: 'ECOMM',
+  deliveryMode: normalizeString(payload.deliveryMode).toUpperCase(),
+  carrierId: normalizeString(payload.carrierId) || INNOFULFILL_ECOMM_CARRIER_ID,
+  carrierName: normalizeString(payload.carrierName) || INNOFULFILL_ECOMM_CARRIER_NAME,
+})
+
+const validateInnofulfillEcommOrderPayload = (payload: Record<string, unknown>) => {
+  const deliveryMode = normalizeString(payload.deliveryMode).toUpperCase()
+  const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
+  const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
+
+  if (
+    !SUPPORTED_ORDER_TYPES.has(normalizeString(payload.orderType).toUpperCase()) ||
+    normalizeString(payload.orderStatus).toUpperCase() !== 'CONFIRMED' ||
+    normalizeString(payload.parcelCategory).toUpperCase() !== 'ECOMM' ||
+    normalizeString(payload.deliveryPromise).toUpperCase() !== 'ECOMM' ||
+    !SUPPORTED_DELIVERY_MODES.has(deliveryMode) ||
+    normalizeString(payload.carrierId) !== INNOFULFILL_ECOMM_CARRIER_ID ||
+    normalizeString(payload.carrierName) !== INNOFULFILL_ECOMM_CARRIER_NAME ||
+    !hasRequiredAddressFields(addresses, 'PICKUP') ||
+    !hasRequiredAddressFields(addresses, 'DELIVERY') ||
+    shipments.length === 0 ||
+    !shipments.every(hasValidEcommShipment) ||
+    !hasValidEcommPayment(payload.payment)
+  ) {
+    return [
+      'orderType=FORWARD|REVERSE',
+      'orderStatus=CONFIRMED',
+      'parcelCategory=ECOMM',
+      'deliveryPromise=ECOMM',
+      'deliveryMode=SURFACE|AIR',
+      `carrierId=${INNOFULFILL_ECOMM_CARRIER_ID}`,
+      `carrierName=${INNOFULFILL_ECOMM_CARRIER_NAME}`,
+      'addresses[] with valid PICKUP and DELIVERY entries',
+      'shipments[] with dimensions, shipmentStatus=CONFIRMED, physicalWeight, physicalWeightUnit=KG, and items[]',
+      'payment.type=PREPAID|COD, payment.currency=INR, payment.paymentMethod',
+    ]
+  }
+
+  return []
+}
 
 const getHeaderValue = (headers: Request['headers'], headerName: string) => {
   const value = headers[headerName.toLowerCase()]
@@ -554,12 +656,28 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
   const parcelCategory = normalizeString(payload.parcelCategory).toUpperCase()
   const deliveryPromise = normalizeString(payload.deliveryPromise).toUpperCase()
   const deliveryMode = normalizeString(payload.deliveryMode).toUpperCase()
-  const carrierId = normalizeString(payload.carrierId)
-  const carrierName = normalizeString(payload.carrierName)
-  const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
-  const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
   const isEcommOrder = parcelCategory === 'ECOMM' && deliveryPromise === 'ECOMM'
   const isHyperlocalOrder = parcelCategory === 'HYPERLOCAL' && deliveryPromise === 'HYPERLOCAL'
+  const carrierId = isEcommOrder
+    ? normalizeString(payload.carrierId) || INNOFULFILL_ECOMM_CARRIER_ID
+    : normalizeString(payload.carrierId)
+  const carrierName = isEcommOrder
+    ? normalizeString(payload.carrierName) || INNOFULFILL_ECOMM_CARRIER_NAME
+    : normalizeString(payload.carrierName)
+  const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
+  const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
+  const nextPayload = isEcommOrder
+    ? {
+        ...payload,
+        orderType,
+        orderStatus,
+        parcelCategory,
+        deliveryPromise,
+        carrierId,
+        carrierName,
+        deliveryMode,
+      }
+    : payload
 
   if (
     !SUPPORTED_ORDER_TYPES.has(orderType) ||
@@ -567,6 +685,8 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
     !SUPPORTED_ORDER_CATEGORIES.has(parcelCategory) ||
     parcelCategory !== deliveryPromise ||
     (isEcommOrder && !SUPPORTED_DELIVERY_MODES.has(deliveryMode)) ||
+    (isEcommOrder && carrierId !== INNOFULFILL_ECOMM_CARRIER_ID) ||
+    (isEcommOrder && carrierName !== INNOFULFILL_ECOMM_CARRIER_NAME) ||
     (isHyperlocalOrder && deliveryMode !== '') ||
     (isEcommOrder && !carrierId) ||
     !carrierName ||
@@ -586,8 +706,8 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
         'parcelCategory=ECOMM|HYPERLOCAL',
         'deliveryPromise matching parcelCategory',
         'deliveryMode=SURFACE|AIR for ECOMM or empty for HYPERLOCAL',
-        'carrierId for ECOMM',
-        'carrierName',
+        `carrierId=${INNOFULFILL_ECOMM_CARRIER_ID} for ECOMM`,
+        `carrierName=${INNOFULFILL_ECOMM_CARRIER_NAME} for ECOMM`,
         'addresses with PICKUP and DELIVERY',
         'shipments',
         'payment',
@@ -596,7 +716,7 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
   }
 
   try {
-    const result = await createInnofulfillOrder(payload, authHeaders)
+    const result = await createInnofulfillOrder(nextPayload, authHeaders)
 
     return res.status(result.status).json(result.data)
   } catch (error: any) {
@@ -609,6 +729,51 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill orders service',
+    })
+  }
+}
+
+export const innofulfillCreateEcommOrderController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const payload = isPlainObject(req.body) ? normalizeInnofulfillEcommPayload(req.body) : null
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!payload) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid request body',
+    })
+  }
+
+  const missingFields = validateInnofulfillEcommOrderPayload(payload)
+  if (missingFields.length) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid ECOMM order fields',
+      required: missingFields,
+    })
+  }
+
+  try {
+    const result = await createInnofulfillOrder(payload, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill create ECOMM order request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill ECOMM order service',
     })
   }
 }
