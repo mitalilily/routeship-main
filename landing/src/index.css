@@ -401,24 +401,6 @@ footer { background: #F4EEFF; padding: 90px 0 30px; }
 .weight-results strong { display: block; font-size: 26px; color: var(--blue); margin-top: 7px; }
 .formula { color: var(--muted); text-align: center; font: 400 9px "DM Mono"; margin: 0 0 25px; }
 
-.auth-section { background: #F5EEFF; }
-.auth-layout { display: grid; grid-template-columns: 1fr 1fr; max-width: 980px; }
-.auth-layout aside { background: linear-gradient(145deg, #EEE2FF, #FFF3EB); padding: 55px; border: 1px solid var(--line); position: relative; overflow: hidden; }
-.auth-layout aside > span { font: 500 9px "DM Mono"; color: var(--blue); letter-spacing: .12em; }
-.auth-layout aside h3 { font-size: 100px; color: var(--orange); letter-spacing: -.08em; margin: 90px 0 0; }
-.auth-layout aside p { color: var(--muted); max-width: 260px; line-height: 1.7; }
-.mini-chart { height: 130px; display: flex; gap: 9px; align-items: flex-end; margin-top: 45px; }
-.mini-chart i { flex: 1; background: var(--blue); opacity: .68; animation: chartGrow 1.2s cubic-bezier(.16,1,.3,1); transform-origin: bottom; }
-.mini-chart i:nth-child(2n) { background: var(--orange); }
-@keyframes chartGrow { from { transform: scaleY(0); } }
-.auth-form { display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 55px; }
-.form-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
-.form-meta label { flex-direction: row; align-items: center; text-transform: none; }
-.form-meta input { width: auto; min-height: auto; }
-.form-meta a { color: var(--blue); font-weight: 700; }
-.auth-note { text-align: center; color: var(--muted); font-size: 11px; }
-.auth-note a { color: var(--blue); font-weight: 800; }
-
 .contact-page { background: #F5EEFF; }
 .contact-layout { display: grid; grid-template-columns: .7fr 1.3fr; gap: 80px; }
 .contact-copy > div { padding: 28px 0; border-top: 1px solid var(--line); }
@@ -429,9 +411,8 @@ footer { background: #F4EEFF; padding: 90px 0 30px; }
 .contact-form select { appearance: none; }
 
 @media (max-width: 900px) {
-  .tracking-layout, .rate-layout, .weight-layout, .auth-layout, .contact-layout { grid-template-columns: 1fr; }
+  .tracking-layout, .rate-layout, .weight-layout, .contact-layout { grid-template-columns: 1fr; }
   .tracking-search { margin-top: -150px; }
-  .auth-layout aside { min-height: 430px; }
 }
 
 @media (max-width: 1050px) {
@@ -518,9 +499,6 @@ footer { background: #F4EEFF; padding: 90px 0 30px; }
   .parcel-stage { min-height: 390px; }
   .parcel-box { max-width: 210px; }
   .dimension-line.vertical { right: 7%; }
-  .auth-layout aside { min-height: 360px; padding: 35px; }
-  .auth-layout aside h3 { font-size: 78px; margin-top: 50px; }
-  .auth-form { padding: 35px 22px; }
   .contact-copy blockquote { font-size: 27px; margin-top: 45px; }
 }
 
