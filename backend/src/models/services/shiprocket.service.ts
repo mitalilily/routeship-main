@@ -3476,15 +3476,9 @@ export const fetchAvailableCouriersWithRates = async (
       }
     }
 
-    const isXpressbeesAirCourier = (source: { name?: unknown; mode?: unknown }) => {
+    const isXpressbeesForwardCourier = (source: { name?: unknown; mode?: unknown }) => {
       const name = String(source.name || '').trim().toLowerCase()
-      const mode = normalizeB2CShippingMode(source.mode)
-      return mode === 'air' || name.includes('air')
-    }
-
-    const isXpressbeesForwardSurfaceCourier = (source: { name?: unknown; mode?: unknown }) => {
-      const name = String(source.name || '').trim().toLowerCase()
-      return !isXpressbeesAirCourier(source) && !name.includes('reverse')
+      return !name.includes('reverse') && !name.includes('rto')
     }
 
     const isSupportedB2CProviderCourier = (
@@ -3496,7 +3490,7 @@ export const fetchAvailableCouriersWithRates = async (
       }
 
       if (providerKey === 'xpressbees') {
-        return isXpressbeesForwardSurfaceCourier(source)
+        return isXpressbeesForwardCourier(source)
       }
 
       return true
@@ -5034,6 +5028,13 @@ export const fetchAvailableCouriersWithRates = async (
             : null
 
         if (!applicableRateOptions.length) {
+          const fallbackRateMode = normalizeB2CShippingMode(
+            courier?.provider_serviceability?.mode ??
+              courier?.provider_serviceability?.shipping_mode ??
+              courier?.shipping_mode ??
+              courier?.service_mode ??
+              courier?.mode,
+          )
           return [
             {
               ...courier,
@@ -5058,6 +5059,8 @@ export const fetchAvailableCouriersWithRates = async (
               slabs: null,
               rate: providerPricedRate?.rate ?? courier.rate,
               max_slab_weight: null,
+              shipping_mode: fallbackRateMode || courier.shipping_mode || null,
+              service_mode: fallbackRateMode || courier.service_mode || null,
               rate_card_fallback: null,
             },
           ]
@@ -5108,13 +5111,13 @@ export const fetchAvailableCouriersWithRates = async (
                 ? applicableRate.mode || courier?.provider_serviceability?.shipping_mode || null
                 : providerKey === 'delhivery'
                   ? delhiveryShippingMode || applicableRate.mode || courier.shipping_mode || null
-                  : courier.shipping_mode,
+                  : applicableRate.mode || courier.shipping_mode || null,
             service_mode:
               providerKey === 'shadowfax'
                 ? courier?.provider_serviceability?.service_mode || applicableRate.mode || null
                 : providerKey === 'delhivery'
                   ? delhiveryShippingMode || applicableRate.mode || courier.service_mode || null
-                  : courier.service_mode,
+                  : applicableRate.mode || courier.service_mode || null,
             provider_serviceability:
               providerKey === 'shadowfax'
                 ? {
@@ -5132,7 +5135,26 @@ export const fetchAvailableCouriersWithRates = async (
                       service_mode:
                         delhiveryShippingMode || applicableRate.mode || courier.service_mode || null,
                     }
-                  : courier.provider_serviceability,
+                  : providerKey === 'xpressbees'
+                    ? {
+                        ...(courier.provider_serviceability || {}),
+                        mode:
+                          courier.provider_serviceability?.mode ||
+                          applicableRate.mode ||
+                          courier.shipping_mode ||
+                          null,
+                        shipping_mode:
+                          courier.provider_serviceability?.shipping_mode ||
+                          applicableRate.mode ||
+                          courier.shipping_mode ||
+                          null,
+                        service_mode:
+                          courier.provider_serviceability?.service_mode ||
+                          applicableRate.mode ||
+                          courier.service_mode ||
+                          null,
+                      }
+                    : courier.provider_serviceability,
             courier_cost_estimate: rateCardTotal,
             freight_charges: rateCardFreight,
             cod_charges: rateCardCod,
