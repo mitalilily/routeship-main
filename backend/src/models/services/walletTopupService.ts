@@ -88,7 +88,7 @@ export async function createWalletOrder(
     amount: razorpayOrder.amount,
     currency: razorpayOrder.currency,
     key: keyId,
-    name: 'Shiplifi',
+    name: 'RouteShip',
     description: 'Wallet Recharge',
     prefill: {
       name: details.name,
@@ -96,7 +96,7 @@ export async function createWalletOrder(
       contact: details.phone,
     },
     theme: {
-      color: '#4b8e40',
+      color: '#ff6b00',
     },
   }
 }

@@ -8,7 +8,7 @@ export const razorpayWebhook = async (req: Request, res: Response): Promise<any>
   const payload = req.body
   const event = payload.event
   const sig = req.headers['x-razorpay-signature'] as string
-  const rawBody = JSON.stringify(payload)
+  const rawBody = (req as any).rawBody || JSON.stringify(payload)
 
   console.log('='.repeat(80))
   console.log(`📦 [${timestamp}] Razorpay Webhook Received`)

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
-import { createWalletOrder, markTopupProcessing } from '../models/services/walletTopupService'
+import { confirmSuccess, createWalletOrder, markTopupProcessing } from '../models/services/walletTopupService'
 import { getPaymentOptions } from '../models/services/paymentOptions.service'
+import { getRazorpayApi, isValidCheckoutSignature } from '../utils/razorpay'
 
 export const createTopup = async (req: Request, res: Response): Promise<any> => {
   const amt = Number(req.body.amount)
@@ -39,8 +40,33 @@ export const createTopup = async (req: Request, res: Response): Promise<any> => 
 }
 
 export const confirmFromClient = async (req: Request, res: Response) => {
-  const { orderId, paymentId } = req.body
-  // Optional: lookup payment via Razorpay REST here
-  await markTopupProcessing(orderId, paymentId)
-  res.json({ ok: true })
+  const { orderId, paymentId, signature } = req.body
+
+  if (!orderId || !paymentId || !signature) {
+    return res.status(400).json({ error: 'Missing Razorpay payment confirmation details' })
+  }
+
+  try {
+    if (!isValidCheckoutSignature(orderId, paymentId, signature)) {
+      return res.status(400).json({ error: 'Invalid Razorpay payment signature' })
+    }
+
+    const razorpayApi = getRazorpayApi()
+    const { data: payment } = await razorpayApi.get(`/payments/${paymentId}`)
+
+    if (payment?.order_id !== orderId) {
+      return res.status(400).json({ error: 'Razorpay payment does not belong to this order' })
+    }
+
+    if (payment?.status === 'captured') {
+      await confirmSuccess(orderId, paymentId, Number(payment.amount))
+      return res.json({ ok: true, status: 'success' })
+    }
+
+    await markTopupProcessing(orderId, paymentId)
+    return res.json({ ok: true, status: payment?.status || 'processing' })
+  } catch (error) {
+    console.error('Razorpay confirmation error:', error)
+    return res.status(500).json({ error: 'Payment confirmation failed' })
+  }
 }

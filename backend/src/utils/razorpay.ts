@@ -34,6 +34,12 @@ const getCredentials = (mode: RazorpayMode): RazorpayCredentials => {
       }
 }
 
+const getActiveSecret = () => {
+  const mode = resolveMode()
+  const { key_secret } = getCredentials(mode)
+  return key_secret
+}
+
 const assertConfigured = () => {
   const mode = resolveMode()
   const credentials = getCredentials(mode)
@@ -99,4 +105,18 @@ export function isValidSig(body: string, sig: string) {
 
   const expected = crypto.createHmac('sha256', secret).update(body).digest('hex')
   return expected === sig
+}
+
+export function isValidCheckoutSignature(orderId: string, paymentId: string, signature: string) {
+  const secret = getActiveSecret()
+  if (!secret) {
+    throw new Error(`[Razorpay] Missing key secret for ${resolveMode().toUpperCase()} mode`)
+  }
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest('hex')
+
+  return expected === signature
 }

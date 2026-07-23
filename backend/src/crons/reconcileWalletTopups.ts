@@ -6,7 +6,7 @@
 import { eq, sql } from 'drizzle-orm'
 import crypto from 'node:crypto'
 import { db } from '../models/client'
-import { walletOfUser } from '../models/services/walletTopupService'
+import { confirmSuccess, walletOfUser } from '../models/services/walletTopupService'
 import { wallets, walletTopups, walletTransactions } from '../schema/schema'
 import { getRazorpayApi } from '../utils/razorpay'
 
@@ -58,19 +58,17 @@ export async function reconcileWalletTopups(): Promise<void> {
   for (const order of orders) {
     /* 2️⃣  Process only wallet top‑ups */
     const userId = order.notes?.userId as string | undefined
+    const type = order.notes?.type
     const description = order.notes?.description
-    if (!userId || description !== 'Wallet Top-up') continue
+    if (!userId || (type !== 'wallet_recharge' && description !== 'Wallet Top-up')) continue
 
     /* 3️⃣  Skip if already credited */
-    const creditedAlready =
-      (
-        await db
-          .select({ id: walletTopups.id })
-          .from(walletTopups)
-          .where(eq(walletTopups.gatewayOrderId, order.id))
-          .limit(1)
-      ).length > 0
-    if (creditedAlready) continue
+    const [existingTopup] = await db
+      .select({ id: walletTopups.id, status: walletTopups.status })
+      .from(walletTopups)
+      .where(eq(walletTopups.gatewayOrderId, order.id))
+      .limit(1)
+    if (existingTopup?.status === 'success') continue
 
     /* 4️⃣  GET /v1/orders/{orderId}/payments */
     const { data: paymentsRes } = await razorpayApi.get<PaymentsResponse>(
@@ -78,6 +76,12 @@ export async function reconcileWalletTopups(): Promise<void> {
     )
     const payment = paymentsRes.items.find((p) => p.status === 'captured')
     if (!payment) continue
+
+    if (existingTopup) {
+      await confirmSuccess(order.id, payment.id, order.amount)
+      console.log(`[Cron] âœ… Reconciled existing topup for user ${userId} (order ${order.id})`)
+      continue
+    }
 
     /* 5️⃣  Credit inside a DB transaction */
     await db.transaction(async (tx) => {
