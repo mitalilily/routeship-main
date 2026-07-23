@@ -144,10 +144,12 @@ const seed = async () => {
   try {
     await client.query('BEGIN')
     await ensureSchema()
+    const activeCardNames = (rateData.sections as RateSection[]).map((section) => getCardName(section))
     await client.query(
       `UPDATE routeship_international_rate_cards
        SET is_active = false, updated_at = now()
-       WHERE name = 'INTERNATIONAL PURCHASE RATES'`,
+       WHERE name <> ALL($1::text[])`,
+      [activeCardNames],
     )
     await seedCountryZones()
     for (const section of rateData.sections as RateSection[]) {
