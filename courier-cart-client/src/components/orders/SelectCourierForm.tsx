@@ -56,6 +56,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const orderType = watch('orderType') ?? 'prepaid'
   const selectedCourierId = watch('courierPartnerId') ?? ''
   const selectedCourierOptionKey = watch('courierOptionKey') ?? ''
+  const selectedIntegrationType = String(watchFormValue('integrationType') || '').trim().toLowerCase()
   const selectedShippingMode = String(watchFormValue('shippingMode') || '').trim().toLowerCase()
   const selectedShadowfaxForwardMode = watch('shadowfaxForwardMode') ?? undefined
   const selectedShadowfaxServiceMode = watch('shadowfaxServiceMode') ?? undefined
@@ -184,7 +185,9 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
       : {}),
     ...(preferredShadowfaxForwardMode ? { shadowfax_forward_mode: preferredShadowfaxForwardMode } : {}),
     shadowfax_service_mode: selectedShadowfaxServiceMode ?? undefined,
-    ...(shipment_type === 'b2c' && selectedShippingMode ? { shipping_mode: selectedShippingMode } : {}),
+    ...(shipment_type === 'b2c' && selectedIntegrationType === 'innofulfill' && selectedShippingMode
+      ? { shipping_mode: selectedShippingMode }
+      : {}),
     ...(shipment_type === 'b2b'
       ? {
           length: b2bMaxLength,
