@@ -3060,6 +3060,14 @@ export class DelhiveryService {
         }
         return [String(remarks).trim()].filter(Boolean)
       }
+      const isHistoricalDeliveryRestriction = (value: unknown) => {
+        const normalized = String(value || '').toLowerCase()
+        return (
+          normalized.includes('shipment restricted based on historical delivery outcomes') ||
+          (normalized.includes('historical delivery outcomes') &&
+            normalized.includes('shipment restricted'))
+        )
+      }
       const overallStatus = normalizedStatus(responseData?.status)
       const packageFailures = packages.filter(
         (pkg) =>
@@ -3106,6 +3114,18 @@ export class DelhiveryService {
           responseData?.status_message ||
           normalizeRemarks(responseData?.rmk).join(' | ') ||
           'Delhivery reported a failure during shipment creation.'
+        if (isHistoricalDeliveryRestriction(failureReason)) {
+          throw new DelhiveryManifestError(
+            422,
+            'Delhivery rejected this shipment because the consignee/address is restricted based on historical delivery outcomes. Use another courier, change the consignee/address, or book it as prepaid if Delhivery allows it.',
+            {
+              ...responseData,
+              courier_reason: failureReason,
+              non_retryable: true,
+              restriction_type: 'historical_delivery_outcomes',
+            },
+          )
+        }
         throw new DelhiveryManifestError(502, failureReason, responseData)
       }
 
