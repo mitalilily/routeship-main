@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import { Box } from '@mui/material'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import RequireAuth from '../components/auth/wrapper/RequireAuth'
+import RequireMerchantReady from '../components/auth/wrapper/RequireMerchantReady'
 import RequireOnboard from '../components/auth/wrapper/RequireOnboard'
 import Layout from '../components/UI/Layout'
 import CreateOrderWrapper from '../components/orders/CreateOrderWrapper'
@@ -172,14 +173,63 @@ export default function AppRoutes() {
             <Route path="/settings/manage_pickups" element={<PickupAddresses />} />
             <Route path="/billing/wallet_transactions" element={<WalletTransactions />} />
             <Route path="/billing/invoice_management" element={<Invoices />} />
-            <Route path="/orders/list" element={<Orders />} />
-            <Route path="/orders/create" element={<CreateOrderWrapper />} />
-            <Route path="/orders/b2c/list" element={<B2COrdersList />} />
+            <Route
+              path="/orders/list"
+              element={
+                <RequireMerchantReady>
+                  <Orders />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/create"
+              element={
+                <RequireMerchantReady>
+                  <CreateOrderWrapper />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/b2c/list"
+              element={
+                <RequireMerchantReady>
+                  <B2COrdersList />
+                </RequireMerchantReady>
+              }
+            />
             <Route path="/support/about_us" element={<AboutUs />} />
-            <Route path="/orders/b2b/list" element={<B2bOrders />} />
-            <Route path="/orders/ftl" element={<FtlOrders />} />
-            <Route path="/orders/international/list" element={<InternationalOrders />} />
-            <Route path="/orders/international/create" element={<InternationalOrderCreatePage />} />
+            <Route
+              path="/orders/b2b/list"
+              element={
+                <RequireMerchantReady>
+                  <B2bOrders />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/ftl"
+              element={
+                <RequireMerchantReady>
+                  <FtlOrders />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/international/list"
+              element={
+                <RequireMerchantReady>
+                  <InternationalOrders />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/international/create"
+              element={
+                <RequireMerchantReady>
+                  <InternationalOrderCreatePage />
+                </RequireMerchantReady>
+              }
+            />
             <Route path="/settings/invoice_preferences" element={<InvoicePreferences />} />
             <Route path="/settings/label_config" element={<LabelSettingsPage />} />
             <Route path="/settings/users_management" element={<UsersManagement />} />
