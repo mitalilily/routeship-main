@@ -383,11 +383,14 @@ function HowItWorks() {
 function Calculator() {
   const [weight, setWeight] = useState(2);
   const [zone, setZone] = useState("regional");
+  const [international, setInternational] = useState(false);
   const [cod, setCod] = useState(false);
   const price = useMemo(() => {
     const base = zone === "local" ? 45 : zone === "regional" ? 68 : 94;
-    return Math.round(base + Math.max(0, weight - 0.5) * 21 + (cod ? 29 : 0));
-  }, [weight, zone, cod]);
+    const domesticRate = base + Math.max(0, weight - 0.5) * 21 + (cod ? 29 : 0);
+    const internationalRate = 1299 + Math.max(0, weight - 0.5) * 420;
+    return Math.round(international ? internationalRate : domesticRate);
+  }, [weight, zone, cod, international]);
   return (
     <section className="calculator section editorial-dark" id="calculator">
       <div className="shell calculator-layout">
@@ -395,8 +398,9 @@ function Calculator() {
         <Reveal className="calculator-card">
           <div className="calc-field"><label htmlFor="weight">Chargeable weight <b>{weight.toFixed(1)} kg</b></label><input id="weight" type="range" min="0.5" max="20" step="0.5" value={weight} onChange={(e) => setWeight(Number(e.target.value))}/><div className="range-labels"><span>0.5 kg</span><span>20 kg</span></div></div>
           <div className="calc-field"><label>Delivery zone</label><div className="segments">{[["local","Local"],["regional","Regional"],["national","National"]].map(([value,label]) => <button className={zone === value ? "active" : ""} key={value} onClick={() => setZone(value)}>{label}</button>)}</div></div>
+          <label className="toggle-row"><span><strong>International shipment</strong><small>Estimate cross-border courier rates</small></span><input type="checkbox" checked={international} onChange={(e) => setInternational(e.target.checked)}/><i /></label>
           <label className="toggle-row"><span><strong>Cash on delivery</strong><small>Add COD handling</small></span><input type="checkbox" checked={cod} onChange={(e) => setCod(e.target.checked)}/><i /></label>
-          <div className="estimate"><span>ESTIMATED RATE</span><strong><small>₹</small>{price}<small>/ shipment</small></strong><p>Includes fuel surcharge and GST estimate</p></div>
+          <div className="estimate"><span>{international ? "ESTIMATED INTERNATIONAL RATE" : "ESTIMATED RATE"}</span><strong><small>&#8377;</small>{price}<small>/ shipment</small></strong><p>{international ? "Indicative export rate for document/parcel movement" : "Includes fuel surcharge and GST estimate"}</p></div>
           <a className="button button-full" href={CLIENT_AUTH_PATH}>Unlock this rate <Icon name="arrow" /></a>
         </Reveal>
       </div>
