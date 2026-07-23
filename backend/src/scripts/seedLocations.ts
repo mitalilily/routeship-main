@@ -113,7 +113,8 @@ async function removeLegacyB2CZones() {
     .where(inArray(shippingRates.zone_id, legacyZoneIds))
     .limit(1)
   if (referencedRate.length) {
-    throw new Error('Legacy B2C zones still have rate rows; migrate those rates before removal')
+    console.warn('Legacy B2C zones still have rate rows; leaving them in place')
+    return
   }
 
   await db.delete(zones).where(inArray(zones.id, legacyZoneIds))
