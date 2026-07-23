@@ -25,8 +25,8 @@ const resolveMode = (): RazorpayMode => {
 const getCredentials = (mode: RazorpayMode): RazorpayCredentials => {
   return mode === 'live'
     ? {
-        key_id: process.env.RAZORPAY_KEY_ID_PROD || '',
-        key_secret: process.env.RAZORPAY_KEY_SECRET_PROD || '',
+        key_id: process.env.RAZORPAY_KEY_ID_PROD || process.env.RAZORPAY_KEY_ID || '',
+        key_secret: process.env.RAZORPAY_KEY_SECRET_PROD || process.env.RAZORPAY_KEY_SECRET || '',
       }
     : {
         key_id: process.env.RAZORPAY_KEY_ID || '',

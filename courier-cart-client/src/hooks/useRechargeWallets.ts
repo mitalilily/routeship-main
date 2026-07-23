@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import axios from 'axios'
 import { confirmRecharge, createRechargeOrder } from '../api/wallet.api'
 
 interface RechargeOptions {
@@ -10,7 +11,6 @@ interface RechargeOptions {
   }
 }
 
-// Razorpay Checkout types
 interface RazorpayCheckoutOptions {
   key: string
   amount: number
@@ -30,6 +30,9 @@ interface RazorpayCheckoutOptions {
   modal: {
     ondismiss: () => void
   }
+  retry?: {
+    enabled: boolean
+  }
 }
 
 interface RazorpayPaymentResponse {
@@ -40,7 +43,7 @@ interface RazorpayPaymentResponse {
 
 interface RazorpayInstance {
   open: () => void
-  on: (event: string, callback: () => void) => void
+  on: (event: string, callback: (response?: unknown) => void) => void
   close: () => void
 }
 
@@ -48,62 +51,112 @@ interface RazorpayConstructor {
   new (options: RazorpayCheckoutOptions): RazorpayInstance
 }
 
-// Declare Razorpay type for TypeScript
 declare global {
   interface Window {
-    Razorpay: RazorpayConstructor
+    Razorpay?: RazorpayConstructor
   }
+}
+
+const RAZORPAY_CHECKOUT_SRC = 'https://checkout.razorpay.com/v1/checkout.js'
+
+const loadRazorpayCheckout = () =>
+  new Promise<void>((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve()
+      return
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      `script[src="${RAZORPAY_CHECKOUT_SRC}"]`,
+    )
+
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(), { once: true })
+      existingScript.addEventListener(
+        'error',
+        () => reject(new Error('Unable to load Razorpay checkout')),
+        { once: true },
+      )
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = RAZORPAY_CHECKOUT_SRC
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Unable to load Razorpay checkout'))
+    document.body.appendChild(script)
+  })
+
+const getErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { error?: string; message?: string } | undefined
+    return data?.error || data?.message || error.message || 'Recharge failed'
+  }
+
+  return error instanceof Error ? error.message : 'Recharge failed'
 }
 
 export const useRechargeWallet = () =>
   useMutation<void, Error, RechargeOptions>({
     mutationFn: async (options) => {
-      // Call backend → get Razorpay order details
-      const orderData = await createRechargeOrder({
-        amount: options.amount,
-        name: options.prefill.name,
-        email: options.prefill.email,
-        phone: options.prefill.contact,
-      })
+      try {
+        await loadRazorpayCheckout()
 
-      if (!orderData?.orderId || !orderData?.key) {
-        throw new Error('Invalid Razorpay order response')
-      }
+        const orderData = await createRechargeOrder({
+          amount: options.amount,
+          name: options.prefill.name,
+          email: options.prefill.email,
+          phone: options.prefill.contact,
+        })
 
-      // Initialize Razorpay Checkout
-      const options_razorpay: RazorpayCheckoutOptions = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: orderData.name || 'RouteShip',
-        description: orderData.description || 'Wallet Recharge',
-        order_id: orderData.orderId,
-        prefill: orderData.prefill,
-        theme: orderData.theme || { color: '#4b8e40' },
-        handler: async function (response: RazorpayPaymentResponse) {
-          try {
-            // Payment successful - confirm with backend
-            await confirmRecharge({
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-            })
-            // Reload page to show updated balance
-            window.location.reload()
-          } catch (error) {
-            console.error('Payment confirmation error:', error)
-            alert('Payment successful but confirmation failed. Please contact support.')
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            // User closed the checkout without paying
-            console.log('Payment cancelled by user')
+        if (!orderData?.orderId || !orderData?.key) {
+          throw new Error('Invalid Razorpay order response')
+        }
+
+        const razorpayOptions: RazorpayCheckoutOptions = {
+          key: orderData.key,
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: orderData.name || 'RouteShip',
+          description: orderData.description || 'Wallet Recharge',
+          order_id: orderData.orderId,
+          prefill: orderData.prefill,
+          theme: orderData.theme || { color: '#ff6b00' },
+          handler: async (response: RazorpayPaymentResponse) => {
+            try {
+              await confirmRecharge({
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              })
+              window.location.reload()
+            } catch (error) {
+              console.error('Payment confirmation error:', error)
+              alert('Payment successful but confirmation failed. Please contact support.')
+            }
           },
-        },
-      }
+          modal: {
+            ondismiss: () => {
+              console.log('Payment cancelled by user')
+            },
+          },
+          retry: {
+            enabled: true,
+          },
+        }
 
-      const razorpay = new window.Razorpay(options_razorpay)
-      razorpay.open()
+        if (!window.Razorpay) {
+          throw new Error('Razorpay checkout is not available')
+        }
+
+        const razorpay = new window.Razorpay(razorpayOptions)
+        razorpay.on('payment.failed', (response) => {
+          console.error('Razorpay payment failed:', response)
+        })
+        razorpay.open()
+      } catch (error) {
+        throw new Error(getErrorMessage(error))
+      }
     },
   })

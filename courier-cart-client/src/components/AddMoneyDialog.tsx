@@ -31,6 +31,9 @@ interface AddMoneyDialogProps {
 
 const quickAmounts = [500, 1000, 2000, 10000]
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Recharge failed. Please try again.'
+
 const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentBalance }) => {
   const { user } = useAuth()
   const [amount, setAmount] = useState<number>(500)
@@ -69,14 +72,14 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
       await recharge.mutateAsync({
         amount,
         prefill: {
-          name: user?.companyInfo?.businessName,
-          email: user.companyInfo?.contactEmail ?? '',
-          contact: user.companyInfo?.contactNumber ?? '',
+          name: user?.companyInfo?.businessName ?? 'RouteShip Customer',
+          email: user?.companyInfo?.contactEmail ?? '',
+          contact: user?.companyInfo?.contactNumber ?? '',
         },
       })
     } catch (err: unknown) {
       console.error('Recharge error:', err)
-      toast.open({ message: 'Recharge failed!', severity: 'error' })
+      toast.open({ message: getErrorMessage(err), severity: 'error' })
     }
   }
 

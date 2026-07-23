@@ -80,7 +80,14 @@ export async function createWalletOrder(
 
   // Get the correct key based on mode (same logic as razorpay.ts)
   const MODE: 'test' | 'live' = getRazorpayMode()
-  const keyId = MODE === 'live' ? process.env.RAZORPAY_KEY_ID_PROD! : process.env.RAZORPAY_KEY_ID!
+  const keyId =
+    MODE === 'live'
+      ? process.env.RAZORPAY_KEY_ID_PROD || process.env.RAZORPAY_KEY_ID
+      : process.env.RAZORPAY_KEY_ID
+
+  if (!keyId) {
+    throw new Error(`[Razorpay] Missing checkout key for ${MODE.toUpperCase()} mode`)
+  }
 
   // Return Razorpay order details for frontend
   return {

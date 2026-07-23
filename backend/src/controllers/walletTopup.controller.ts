@@ -3,6 +3,9 @@ import { confirmSuccess, createWalletOrder, markTopupProcessing } from '../model
 import { getPaymentOptions } from '../models/services/paymentOptions.service'
 import { getRazorpayApi, isValidCheckoutSignature } from '../utils/razorpay'
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Top-up failed'
+
 export const createTopup = async (req: Request, res: Response): Promise<any> => {
   const amt = Number(req.body.amount)
   const { name, email, phone } = req.body
@@ -35,7 +38,10 @@ export const createTopup = async (req: Request, res: Response): Promise<any> => 
     res.status(201).json(data)
   } catch (err) {
     console.error('Razorpay top-up error:', err)
-    res.status(500).json({ error: 'Top-up failed' })
+    const message = getErrorMessage(err)
+    res.status(500).json({
+      error: message.startsWith('[Razorpay]') ? message : 'Top-up failed',
+    })
   }
 }
 
@@ -67,6 +73,9 @@ export const confirmFromClient = async (req: Request, res: Response) => {
     return res.json({ ok: true, status: payment?.status || 'processing' })
   } catch (error) {
     console.error('Razorpay confirmation error:', error)
-    return res.status(500).json({ error: 'Payment confirmation failed' })
+    const message = getErrorMessage(error)
+    return res.status(500).json({
+      error: message.startsWith('[Razorpay]') ? message : 'Payment confirmation failed',
+    })
   }
 }
