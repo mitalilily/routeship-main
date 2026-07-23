@@ -228,13 +228,13 @@ export const sendVerificationEmail = async (to: string, token: string) => {
 
 export const sendPhoneVerificationEmail = async (to: string, token: string, phone: string) => {
   const html = renderEmailFrame({
-    eyebrow: 'Profile Verification',
-    title: 'Confirm your contact number',
-    intro: `A request was made to verify the contact number <strong>${escapeHtml(phone)}</strong> on your Shiplifi merchant profile.`,
+    eyebrow: 'RouteShip OTP Verification',
+    title: 'Your RouteShip OTP',
+    intro: `A request was made to verify the contact number <strong>${escapeHtml(phone)}</strong> on your RouteShip merchant profile.`,
     body: `
       <div style="margin:22px 0; padding:20px; background:${BRAND_SURFACE}; border:1px solid ${BRAND_BORDER}; text-align:center;">
         <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:${BRAND_MUTED}; font-weight:800; margin-bottom:10px;">
-          Phone verification code
+          One-time password
         </div>
         <div style="font-size:30px; letter-spacing:8px; font-weight:800; color:${BRAND_WINE};">
           ${escapeHtml(token)}
@@ -245,7 +245,7 @@ export const sendPhoneVerificationEmail = async (to: string, token: string, phon
     `,
   })
 
-  await sendEmail(to, 'Your Shiplifi phone verification code', html)
+  await sendEmail(to, 'RouteShip OTP verification', html)
 }
 
 // Employee Credentials Email
@@ -260,7 +260,7 @@ export const sendEmployeeCredentials = async (
     title: 'Your employee account is ready',
     intro: `An account has been created for you by <strong>${escapeHtml(createdBy)}</strong>.`,
     body: `
-      <p style="margin:0 0 14px;">Use the credentials below to access Shiplifi.</p>
+      <p style="margin:0 0 14px;">Use the credentials below to access RouteShip.</p>
       ${renderDataTable([
         { label: 'Email', value: escapeHtml(email) },
         { label: 'Temporary password', value: escapeHtml(password) },
@@ -270,7 +270,7 @@ export const sendEmployeeCredentials = async (
       'After signing in, update your password if required by your administrator. Contact your account owner if you have trouble accessing shipment or billing functions.',
   })
 
-  await sendEmail(to, 'Your Shiplifi employee account', html)
+  await sendEmail(to, 'Your RouteShip employee account', html)
 }
 const escapeHtml = (unsafe: string) =>
   unsafe
@@ -286,7 +286,7 @@ export const sendTempPasswordEmail = async (to: string, tempPassword: string) =>
   const html = renderEmailFrame({
     eyebrow: 'Account Security',
     title: 'Your temporary password',
-    intro: 'Your Shiplifi password has been reset.',
+    intro: 'Your RouteShip password has been reset.',
     body: `
       <div style="margin:22px 0; padding:20px; background:${BRAND_SURFACE}; border:1px solid ${BRAND_BORDER}; text-align:center;">
         <div style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:${BRAND_MUTED}; font-weight:800; margin-bottom:10px;">
@@ -302,7 +302,7 @@ export const sendTempPasswordEmail = async (to: string, tempPassword: string) =>
       'If you did not request this change, contact support immediately so your merchant account can be secured.',
   })
 
-  await sendEmail(to, 'Your temporary Shiplifi password', html)
+  await sendEmail(to, 'Your temporary RouteShip password', html)
 }
 
 export const sendInvoiceReadyEmail = async (opts: {
@@ -407,7 +407,7 @@ export const sendInvoiceReminderEmail = async (opts: {
       }
     `,
     outro:
-      'If payment has already been completed, you can ignore this reminder. For assistance, contact support through your Shiplifi account.',
+      'If payment has already been completed, you can ignore this reminder. For assistance, contact support through your RouteShip account.',
   })
 
   await sendEmail(to, `Payment Reminder: Invoice ${invoiceNo}`, html)
