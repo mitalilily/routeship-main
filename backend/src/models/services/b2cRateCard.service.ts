@@ -87,6 +87,9 @@ export function normalizeB2CServiceProvider(value: unknown): string {
   if (['xpressbess', 'xpressbee', 'xpress bees'].includes(normalized)) {
     return 'xpressbees'
   }
+  if (['innofulfil', 'inno fulfil', 'inno fulfill', 'smileecomm', 'smile ecomm'].includes(normalized)) {
+    return 'innofulfill'
+  }
 
   return normalized
 }
@@ -108,6 +111,14 @@ function inferB2CServiceProvider(row: typeof shippingRates.$inferSelect): string
     return 'delhivery'
   }
   if (courierName.includes('amazon')) return 'amazon'
+  if (
+    courierName.includes('innofulfill') ||
+    courierName.includes('innofulfil') ||
+    courierName.includes('smileecomm') ||
+    courierName.includes('smile ecomm')
+  ) {
+    return 'innofulfill'
+  }
   if (courierName.includes('ekart')) return 'ekart'
   if (courierName.includes('shadowfax')) return 'shadowfax'
   if (courierName.includes('xpress')) return 'xpressbees'

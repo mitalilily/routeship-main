@@ -111,6 +111,7 @@ import {
 } from './amazonShippingCredentials.service'
 import { DelhiveryService } from './couriers/delhivery.service'
 import { EkartService } from './couriers/ekart.service'
+import { InnofulfillCourierService } from './couriers/innofulfill.service'
 import { ShadowfaxService } from './couriers/shadowfax.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
@@ -3373,7 +3374,7 @@ export const fetchAvailableCouriersWithRates = async (
 
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
-    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon']
+    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill']
     const allCourierRows = await db
       .select({
         id: couriers.id,
@@ -3749,6 +3750,14 @@ export const fetchAvailableCouriersWithRates = async (
       const courierName = String(rate.courier_name || '').toLowerCase()
       if (courierName.includes('delhivery')) return 'delhivery'
       if (courierName.includes('amazon')) return 'amazon'
+      if (
+        courierName.includes('innofulfill') ||
+        courierName.includes('innofulfil') ||
+        courierName.includes('smileecomm') ||
+        courierName.includes('smile ecomm')
+      ) {
+        return 'innofulfill'
+      }
       if (courierName.includes('ekart')) return 'ekart'
       if (courierName.includes('shadowfax')) return 'shadowfax'
       if (courierName.includes('xpress')) return 'xpressbees'
@@ -4397,6 +4406,67 @@ export const fetchAvailableCouriersWithRates = async (
       }
     }
 
+    let innofulfillRateData: any = null
+    let innofulfillRateAmounts: any = null
+    let innofulfillRateUnavailableReason: string | null = null
+    const requestedInnofulfillHyperlocal =
+      normalizeB2CShippingMode((params as any).shipping_mode) === 'hyperlocal' ||
+      String((params as any).parcelCategory || '').toUpperCase() === 'HYPERLOCAL' ||
+      String((params as any).deliveryPromise || '').toUpperCase() === 'HYPERLOCAL'
+    if (
+      shouldRunLiveServiceability &&
+      effectiveShipmentType === 'b2c' &&
+      enabledProviders.has('innofulfill')
+    ) {
+      try {
+        const innofulfill = new InnofulfillCourierService()
+        innofulfillRateData = await innofulfill.calculateB2CRate(params, {
+          hyperlocal: requestedInnofulfillHyperlocal,
+        })
+        innofulfillRateAmounts = innofulfill.getRateAmounts(innofulfillRateData)
+        if (Number(innofulfillRateAmounts.total ?? 0) > 0) {
+          registerServiceableProvider('innofulfill', {
+            providerId: requestedInnofulfillHyperlocal
+              ? 'innofulfillHyperlocal'
+              : 'innofulfill_ecomm',
+            providerName: 'Innofulfill',
+            codAvailable: true,
+            prepaidAvailable: true,
+            edd: '3-5 Days',
+            raw: {
+              carrierId: requestedInnofulfillHyperlocal
+                ? null
+                : '30d5f835-a63a-4125-b095-93b3098e4e3d',
+              carrierName: requestedInnofulfillHyperlocal
+                ? 'innofulfillHyperlocal'
+                : 'innofulfill_ecomm',
+              carrierDisplayName: requestedInnofulfillHyperlocal
+                ? 'Innofulfill Hyperlocal'
+                : 'smileEcomm',
+              mode: requestedInnofulfillHyperlocal
+                ? 'hyperlocal'
+                : normalizeB2CShippingMode((params as any).shipping_mode) || 'surface',
+              liveRateAvailable: true,
+              rate: innofulfillRateAmounts.total,
+              freight_charges: innofulfillRateAmounts.freight,
+              other_charges: innofulfillRateAmounts.otherCharges,
+              total_charges: innofulfillRateAmounts.total,
+              chargeable_weight: innofulfillRateAmounts.chargeableWeightKg,
+              rawRate: innofulfillRateData,
+            },
+          })
+        } else {
+          innofulfillRateUnavailableReason = 'empty_live_rate'
+        }
+      } catch (err: any) {
+        innofulfillRateUnavailableReason =
+          err?.response?.data?.message || err?.message || 'rate_fetch_failed'
+        console.warn('[Serviceability] Innofulfill live rate unavailable', {
+          message: innofulfillRateUnavailableReason,
+        })
+      }
+    }
+
     if (xpressbeesAvailable) {
       registerServiceableProvider('xpressbees', {
         providerId: 'xpressbees',
@@ -4422,6 +4492,7 @@ export const fetchAvailableCouriersWithRates = async (
       xpressbees: 'Xpressbees',
       shadowfax: 'Shadowfax',
       amazon: 'Amazon Shipping',
+      innofulfill: 'Innofulfill',
     }
 
     const fallbackProviderDetails: Array<{
@@ -4499,7 +4570,12 @@ export const fetchAvailableCouriersWithRates = async (
               })
               return bucket.rows
             })()
-          : bucket.rows
+          : providerKey === 'innofulfill'
+            ? bucket.rows.filter((courier) => {
+                const isHyperlocal = String(courier.name || '').toLowerCase().includes('hyperlocal')
+                return requestedInnofulfillHyperlocal ? isHyperlocal : !isHyperlocal
+              })
+            : bucket.rows
 
       for (const courier of providerRows) {
         const xpressbeesUsesRouteServiceability =
@@ -4572,6 +4648,23 @@ export const fetchAvailableCouriersWithRates = async (
           providerKey === 'amazon' && amazonRate
             ? buildAmazonProviderPayload(amazonRateResponseData, amazonRate)
             : amazonFallbackRecord
+        const innofulfillRecord =
+          providerKey === 'innofulfill'
+            ? {
+                ...(providerMeta.raw || {}),
+                carrierId:
+                  providerMeta.raw?.carrierId || '30d5f835-a63a-4125-b095-93b3098e4e3d',
+                carrierName: providerMeta.raw?.carrierName || 'innofulfill_ecomm',
+                carrierDisplayName:
+                  providerMeta.raw?.carrierDisplayName ||
+                  providerMeta.providerName ||
+                  'Innofulfill',
+                mode:
+                  normalizeB2CShippingMode(providerMeta.raw?.mode || (params as any).shipping_mode) ||
+                  'surface',
+                liveRateAvailable: providerMeta.raw?.liveRateAvailable === true,
+              }
+            : null
         if (providerKey === 'xpressbees' && !xpressbeesRecord) {
           continue
         }
@@ -4633,19 +4726,35 @@ export const fetchAvailableCouriersWithRates = async (
           shipping_mode: delhiveryShippingMode,
           service_mode: delhiveryShippingMode,
           courier_cost_estimate:
+            innofulfillRecord?.total_charges ??
+            innofulfillRecord?.rate ??
             amazonRecord?.charge ??
             xpressbeesRecord?.total_charges ??
             xpressbeesRecord?.freight_charges ??
             shadowfaxRecord?.rate ??
             null,
           freight_charges:
-            amazonRecord?.charge ?? xpressbeesRecord?.freight_charges ?? shadowfaxRecord?.rate ?? null,
+            innofulfillRecord?.freight_charges ??
+            innofulfillRecord?.rate ??
+            amazonRecord?.charge ??
+            xpressbeesRecord?.freight_charges ??
+            shadowfaxRecord?.rate ??
+            null,
           cod_charges: xpressbeesRecord?.cod_charges ?? null,
           total_charges:
-            amazonRecord?.charge ?? xpressbeesRecord?.total_charges ?? shadowfaxRecord?.rate ?? null,
+            innofulfillRecord?.total_charges ??
+            innofulfillRecord?.rate ??
+            amazonRecord?.charge ??
+            xpressbeesRecord?.total_charges ??
+            shadowfaxRecord?.rate ??
+            null,
           chargeable_weight:
-            xpressbeesRecord?.chargeable_weight ?? Number(params.weight ?? 0) ?? null,
-          provider_serviceability: xpressbeesRecord ?? shadowfaxRecord ?? amazonRecord ?? null,
+            innofulfillRecord?.chargeable_weight ??
+            xpressbeesRecord?.chargeable_weight ??
+            Number(params.weight ?? 0) ??
+            null,
+          provider_serviceability:
+            xpressbeesRecord ?? shadowfaxRecord ?? amazonRecord ?? innofulfillRecord ?? null,
           amazon_request_token: amazonRecord?.requestToken ?? null,
           amazon_rate_id: amazonRecord?.rateId ?? null,
           amazon_service_id: amazonRecord?.serviceId ?? null,
@@ -4873,6 +4982,38 @@ export const fetchAvailableCouriersWithRates = async (
         const applicableRateOptions = applicableRateCards.flatMap((r) =>
           buildServiceabilityRateOptions(r),
         )
+        const providerPricedFreight =
+          providerKey === 'innofulfill' &&
+          courier?.provider_serviceability?.liveRateAvailable === true &&
+          Number(courier?.provider_serviceability?.total_charges ?? courier?.total_charges ?? 0) > 0
+        const providerPricedRate =
+          providerPricedFreight
+            ? {
+                rate: Number(
+                  courier?.provider_serviceability?.freight_charges ??
+                    courier?.provider_serviceability?.rate ??
+                    courier?.freight_charges ??
+                    courier?.total_charges ??
+                    0,
+                ),
+                cod_charges: 0,
+                cod_percent: 0,
+                other_charges: Number(courier?.provider_serviceability?.other_charges ?? 0),
+                total_charges: Number(
+                  courier?.provider_serviceability?.total_charges ??
+                    courier?.provider_serviceability?.rate ??
+                    courier?.total_charges ??
+                    0,
+                ),
+                mode: courier?.provider_serviceability?.mode || providerMode || 'surface',
+                chargeable_weight:
+                  courier?.provider_serviceability?.chargeable_weight ?? chargeableWeight,
+                volumetric_weight: null,
+                slab_count: null,
+                max_slab_weight: null,
+                source: 'innofulfill_live_rate',
+              }
+            : null
 
         if (!applicableRateOptions.length) {
           return [
@@ -4880,23 +5021,24 @@ export const fetchAvailableCouriersWithRates = async (
               ...courier,
               name: courierDisplayName,
               displayName: courierDisplayName,
-              localRates: {},
+              localRates: providerPricedRate ? { [rateType]: providerPricedRate } : {},
               approxZone,
               zone: approxZone?.name || approxZone?.code || null,
               zone_id: approxZone?.id || null,
               zone_code: approxZone?.code || null,
               zone_name: approxZone?.name || null,
               courier_cost_estimate:
+                providerPricedRate?.total_charges ||
                 courier?.courier_cost_estimate ||
                 courier?.rateEstimate ||
                 courier?.freight_charges ||
                 courier?.charge ||
                 courier?.cost ||
                 null,
-              chargeable_weight: chargeableWeight,
+              chargeable_weight: providerPricedRate?.chargeable_weight ?? chargeableWeight,
               volumetric_weight: null,
               slabs: null,
-              rate: courier.rate,
+              rate: providerPricedRate?.rate ?? courier.rate,
               max_slab_weight: null,
               rate_card_fallback: null,
             },
@@ -7094,6 +7236,8 @@ export const createB2CShipmentService = async (
 
   const courierIdForRate =
     selectedDelhiveryCourierId ?? (params.courier_id ? Number(params.courier_id) : null)
+  const usesProviderPricedFreight =
+    String(params.integration_type || '').toLowerCase() === 'innofulfill' && freightCharges > 0
 
   let slabbedFreight: {
     freight: number
@@ -7113,7 +7257,7 @@ export const createB2CShipmentService = async (
     slabs: null,
   }
 
-  if (courierIdForRate && freightOriginPincode && freightDestinationPincode) {
+  if (!usesProviderPricedFreight && courierIdForRate && freightOriginPincode && freightDestinationPincode) {
     try {
       const computedFreight = await computeB2CFreightForOrder({
         userId,
@@ -7336,6 +7480,7 @@ export const createB2CShipmentService = async (
     amazon_shipment_id?: string | null
     amazon_package_client_reference_id?: string | null
     amazon_label?: string | null
+    innofulfill?: any
   } = {}
 
   const rollbackActions: Array<() => Promise<void>> = []
@@ -7346,10 +7491,10 @@ export const createB2CShipmentService = async (
   try {
     // 1️⃣ CREATE SHIPMENT
     const requestedIntegrationType = String(params.integration_type || '').toLowerCase()
-    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon']
+    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill']
     if (!requestedIntegrationType || !allowedIntegrationTypes.includes(requestedIntegrationType)) {
       throw new Error(
-        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shadowfax, amazon.`,
+        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shadowfax, amazon, innofulfill.`,
       )
     }
 
@@ -7359,6 +7504,7 @@ export const createB2CShipmentService = async (
       | 'xpressbees'
       | 'shadowfax'
       | 'amazon'
+      | 'innofulfill'
     const providerName =
       integrationType === 'delhivery'
         ? 'Delhivery'
@@ -7368,7 +7514,9 @@ export const createB2CShipmentService = async (
             ? 'Xpressbees'
             : integrationType === 'shadowfax'
               ? 'Shadowfax'
-              : 'Amazon Shipping'
+              : integrationType === 'amazon'
+                ? 'Amazon Shipping'
+                : 'Innofulfill'
 
     if (!isReverseShipment) {
       const orderDateRaw =
@@ -8015,6 +8163,54 @@ export const createB2CShipmentService = async (
         ;(shipmentMeta as any).provider_mode = resolvedShadowfaxMode
         ;(shipmentMeta as any).provider_service = resolvedShadowfaxService
       }
+    } else if (integrationType === 'innofulfill') {
+      console.log('Using Innofulfill API...')
+      const innofulfill = new InnofulfillCourierService()
+      const hyperlocal =
+        normalizeB2CShippingMode(params.shipping_mode) === 'hyperlocal' ||
+        String((params as any).parcelCategory || '').toUpperCase() === 'HYPERLOCAL' ||
+        String((params as any).deliveryPromise || '').toUpperCase() === 'HYPERLOCAL'
+
+      shipmentData = await innofulfill.createB2COrder(params, { hyperlocal })
+      const innofulfillMeta = innofulfill.extractShipmentMeta(shipmentData)
+
+      if (!innofulfillMeta.orderId || !innofulfillMeta.awb) {
+        console.error('Invalid Innofulfill shipment:', {
+          order_number: params.order_number,
+          response_keys:
+            shipmentData && typeof shipmentData === 'object' ? Object.keys(shipmentData) : [],
+        })
+        throw new HttpError(
+          502,
+          'Innofulfill order creation succeeded but did not return an order ID/AWB.',
+        )
+      }
+
+      providerCourierCost = params?.courier_cost ? Number(params.courier_cost) : null
+      shipmentMeta = {
+        shipment_id: innofulfillMeta.orderId,
+        awb_number: innofulfillMeta.awb,
+        courier_name: innofulfillMeta.carrierName || 'Innofulfill',
+        courier_id: params.courier_id ? Number(params.courier_id) : null,
+        label: undefined,
+        manifest: undefined,
+        courier_cost: providerCourierCost,
+        sort_code: null,
+        provider_reference: innofulfillMeta.orderId,
+        provider_request_id: innofulfillMeta.orderId,
+        provider_service:
+          innofulfillMeta.carrierId || (hyperlocal ? 'innofulfillHyperlocal' : 'innofulfill_ecomm'),
+        provider_mode:
+          hyperlocal ? 'hyperlocal' : normalizeB2CShippingMode(params.shipping_mode) || 'surface',
+        innofulfill: {
+          order_id: innofulfillMeta.orderId,
+          awb_number: innofulfillMeta.awb,
+          carrier_id: innofulfillMeta.carrierId,
+          carrier_name: innofulfillMeta.carrierName,
+          order_status: innofulfillMeta.status,
+          response: shipmentData,
+        },
+      }
     } else if (integrationType === 'amazon') {
       console.log('Using Amazon Shipping API...')
       const amazonCredentials = await getStoredAmazonShippingCredentials()
@@ -8333,28 +8529,33 @@ export const createB2CShipmentService = async (
     }
 
     const courierIdForRate = params.courier_id ?? shipmentMeta?.courier_id
-    if (courierIdForRate === undefined || courierIdForRate === null) {
+    const hasProviderPricedFinalFreight =
+      integrationType === 'innofulfill' && Number(params.freight_charges ?? freightCharges) > 0
+    if (!hasProviderPricedFinalFreight && (courierIdForRate === undefined || courierIdForRate === null)) {
       throw new HttpError(400, 'Courier ID is required to compute freight')
     }
 
     let finalSlabbedFreight = slabbedFreight
-    finalSlabbedFreight = await computeB2CFreightForOrder({
-      userId,
-      courierId: courierIdForRate,
-      serviceProvider: params.integration_type ?? null,
-      mode: selectedDelhiveryShippingMode ?? null,
-      selectedRateCardId,
-      selectedMaxSlabWeight,
-      zoneIdOverride: params.zone_id ?? null,
-      originPincode: String(pickupPincode),
-      destinationPincode: String(destinationPincode),
-      weightG: normalizeServiceabilityWeightToGrams(params.package_weight ?? params.weight ?? 0),
-      lengthCm: Number(params.package_length ?? params.length ?? 0),
-      breadthCm: Number(params.package_breadth ?? params.breadth ?? 0),
-      heightCm: Number(params.package_height ?? params.height ?? 0),
-      orderAmount: Number(params.order_amount ?? 0),
-      isReverse: params.isReverse === true || params.payment_type === 'reverse',
-    })
+    if (!hasProviderPricedFinalFreight) {
+      const resolvedCourierIdForRate = courierIdForRate as string | number
+      finalSlabbedFreight = await computeB2CFreightForOrder({
+        userId,
+        courierId: resolvedCourierIdForRate,
+        serviceProvider: params.integration_type ?? null,
+        mode: selectedDelhiveryShippingMode ?? null,
+        selectedRateCardId,
+        selectedMaxSlabWeight,
+        zoneIdOverride: params.zone_id ?? null,
+        originPincode: String(pickupPincode),
+        destinationPincode: String(destinationPincode),
+        weightG: normalizeServiceabilityWeightToGrams(params.package_weight ?? params.weight ?? 0),
+        lengthCm: Number(params.package_length ?? params.length ?? 0),
+        breadthCm: Number(params.package_breadth ?? params.breadth ?? 0),
+        heightCm: Number(params.package_height ?? params.height ?? 0),
+        orderAmount: Number(params.order_amount ?? 0),
+        isReverse: params.isReverse === true || params.payment_type === 'reverse',
+      })
+    }
     params.freight_charges = Number(finalSlabbedFreight.freight ?? 0)
     params.other_charges = Number(finalSlabbedFreight.other_charges ?? 0)
     if (isCodOrder) {
@@ -8585,6 +8786,9 @@ export const createB2CShipmentService = async (
             : null) ??
           (integrationType === 'shadowfax'
             ? resolveShadowfaxServiceMode() || resolveShadowfaxForwardMode()
+            : null) ??
+          (integrationType === 'innofulfill'
+            ? shipmentMeta.provider_mode || normalizeB2CShippingMode(params.shipping_mode) || 'surface'
             : null),
         selectedMaxSlabWeight,
       }
@@ -12229,7 +12433,8 @@ export const generateManifestService = async (params: {
         if (
           integrationType === 'xpressbees' ||
           integrationType === 'ekart' ||
-          integrationType === 'shadowfax'
+          integrationType === 'shadowfax' ||
+          integrationType === 'innofulfill'
         ) {
           if (params.type !== 'b2c') {
             throw new Error('This manifest flow is only supported for B2C orders')
@@ -12253,7 +12458,9 @@ export const generateManifestService = async (params: {
               ? 'Ekart'
               : integrationType === 'shadowfax'
                 ? 'Shadowfax'
-                : 'Xpressbees'
+                : integrationType === 'innofulfill'
+                  ? 'Innofulfill'
+                  : 'Xpressbees'
           const providerManifestIds =
             integrationType === 'ekart'
               ? fetchedOrders
@@ -12332,6 +12539,13 @@ export const generateManifestService = async (params: {
                 },
               )
             }
+          } else if (integrationType === 'innofulfill') {
+            console.log(
+              '[Innofulfill] Skipping provider manifest API during local manifest generation; orders are auto-manifested at create-order time.',
+              {
+                orders: fetchedOrders.map((order) => order.order_number || order.id),
+              },
+            )
           }
 
           const normalizeDetails = (value: any) => {
@@ -15149,6 +15363,86 @@ const mapAmazonTracking = (raw: any, order: OrderSummary): ProviderNormalizedTra
   }
 }
 
+const mapInnofulfillTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const history: TrackingHistoryItem[] = []
+  const payload = raw?.data || raw?.payload || raw || {}
+  const orderInformation =
+    payload?.orderInformation || payload?.order_information || payload?.order || {}
+  const rawEvents =
+    payload?.statuses ||
+    payload?.statusHistory ||
+    payload?.status_history ||
+    payload?.tracking ||
+    payload?.events ||
+    []
+  const events =
+    Array.isArray(rawEvents) || rawEvents == null
+      ? rawEvents
+      : typeof rawEvents === 'object'
+        ? [rawEvents]
+        : []
+
+  if (Array.isArray(events)) {
+    events.forEach((entry: any) => {
+      pushHistoryEvent(history, {
+        statusCode:
+          entry?.statusCode ||
+          entry?.status_code ||
+          entry?.code ||
+          entry?.status ||
+          entry?.shipmentStatus,
+        message:
+          entry?.message ||
+          entry?.remarks ||
+          entry?.description ||
+          entry?.status ||
+          entry?.shipmentStatus,
+        location:
+          entry?.location ||
+          entry?.currentLocation ||
+          entry?.hub ||
+          [entry?.city, entry?.state].filter(Boolean).join(', '),
+        time:
+          entry?.timestamp ||
+          entry?.eventTime ||
+          entry?.createdAt ||
+          entry?.created_at ||
+          entry?.updatedAt,
+      })
+    })
+  }
+
+  const status = sanitizeString(
+    orderInformation?.orderStatus ||
+      orderInformation?.shipmentStatus ||
+      payload?.status ||
+      history[0]?.message ||
+      order.order_status,
+    order.order_status || 'In Transit',
+  )
+
+  return {
+    history,
+    status,
+    courier_name: sanitizeString(
+      orderInformation?.carrierDisplayName ||
+        orderInformation?.carrierName ||
+        order.provider_meta?.innofulfill?.carrier_name,
+      'Innofulfill',
+    ),
+    edd:
+      sanitizeString(
+        orderInformation?.estimatedDeliveryDate ||
+          orderInformation?.edd ||
+          payload?.estimatedDeliveryDate ||
+          '',
+      ) || undefined,
+    shipment_info:
+      sanitizeString(payload?.message || orderInformation?.message || status || '', '') ||
+      undefined,
+  }
+}
+
 const mapXpressbeesTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
   const history: TrackingHistoryItem[] = []
   const payload = raw?.data || raw?.payload || raw || {}
@@ -16550,6 +16844,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
         amazonCredentials,
       )
       providerData = mapAmazonTracking(raw.data ?? raw, order)
+    } else if (providerKey === 'innofulfill') {
+      const innofulfill = new InnofulfillCourierService()
+      const raw = await innofulfill.trackByAwb(awb)
+      providerData = mapInnofulfillTracking(raw, order)
     } else if (providerKey === 'xpressbees') {
       const xpressbeesService = new XpressbeesService()
       const raw = await xpressbeesService.trackShipment(awb)

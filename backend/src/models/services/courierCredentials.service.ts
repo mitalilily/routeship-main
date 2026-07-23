@@ -3,7 +3,13 @@ import { db } from '../client'
 import { courierCredentials } from '../schema/courierCredentials'
 
 export type BusinessType = 'b2b' | 'b2c'
-export type ServiceProviderId = 'delhivery' | 'shipway' | 'xpressbees' | 'ekart' | 'shadowfax'
+export type ServiceProviderId =
+  | 'delhivery'
+  | 'shipway'
+  | 'xpressbees'
+  | 'ekart'
+  | 'shadowfax'
+  | 'innofulfill'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -73,6 +79,17 @@ export type ShadowfaxConfig = {
   webhookSecret?: string
 }
 
+export type InnofulfillConfig = {
+  apiBase?: string
+  apiKey?: string
+  username?: string
+  password?: string
+  tenantId?: string
+  userId?: string
+  signinType?: string
+  webhookSecret?: string
+}
+
 export type CourierConfig =
   | DelhiveryConfig
   | SmartshipConfig
@@ -81,6 +98,7 @@ export type CourierConfig =
   | XpressbeesConfig
   | EkartConfig
   | ShadowfaxConfig
+  | InnofulfillConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -114,6 +132,7 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = [
   'xpressbees',
   'ekart',
   'shadowfax',
+  'innofulfill',
 ]
 
 const normalize = (val?: string | null) => String(val || '').trim()
@@ -159,6 +178,11 @@ export const isCourierCredentialRowConfigured = (
     return Boolean(apiKey || bearer || (username && password))
   }
   if (normalizedProvider === 'shadowfax') return Boolean(apiKey)
+  if (normalizedProvider === 'innofulfill') {
+    const tenantId = metadataValue(row, 'tenantId', 'tenant_id')
+    const userId = metadataValue(row, 'userId', 'user_id')
+    return Boolean(apiKey || (username && password && tenantId && userId))
+  }
   if (normalizedProvider === 'amazon') {
     const accessToken = metadataValue(row, 'accessToken')
     const refreshToken = metadataValue(row, 'refreshToken') || apiKey
@@ -199,6 +223,13 @@ const configuredProvidersFromEnvironment = () => {
   if (normalize(process.env.SHIPWAY_USERNAME) && normalize(process.env.SHIPWAY_PASSWORD)) {
     providers.add('shipway')
   }
+  if (
+    normalize(process.env.INNOFULFILL_API_KEY) ||
+    (normalize(process.env.INNOFULFILL_USERNAME) &&
+      normalize(process.env.INNOFULFILL_PASSWORD) &&
+      normalize(process.env.INNOFULFILL_TENANT_ID) &&
+      normalize(process.env.INNOFULFILL_USER_ID))
+  ) providers.add('innofulfill')
   return providers
 }
 
@@ -268,6 +299,20 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       apiBase: normalize(row.apiBase),
       apiToken: normalize(row.apiKey),
       clientName: normalize(row.clientName),
+      webhookSecret: normalize(row.webhookSecret),
+    }
+    return cfg
+  }
+
+  if (provider === 'innofulfill') {
+    const cfg: InnofulfillConfig = {
+      apiBase: normalize(row.apiBase),
+      apiKey: normalize(row.apiKey),
+      username: normalize(row.username),
+      password: normalize(row.password),
+      tenantId: normalize((metadata.tenantId as string) || (metadata.tenant_id as string) || ''),
+      userId: normalize((metadata.userId as string) || (metadata.user_id as string) || ''),
+      signinType: normalize((metadata.signinType as string) || (metadata.signin_type as string) || 'EMAIL') || 'EMAIL',
       webhookSecret: normalize(row.webhookSecret),
     }
     return cfg

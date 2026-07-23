@@ -16,6 +16,17 @@ Recommended Railway variables:
 - Backend: `DATABASE_URL`, `API_URL`, `PUBLIC_API_URL`, `CORS_ALLOWED_ORIGINS`, auth secrets, courier/provider secrets
 - Client/admin/landing: `VITE_API_URL` or the framework-specific public API URL variable used by that package
 
+Innofulfill can be configured from the admin credentials card or these backend variables:
+
+- `INNOFULFILL_API_BASE`
+- `INNOFULFILL_API_KEY`
+- `INNOFULFILL_USERNAME`
+- `INNOFULFILL_PASSWORD`
+- `INNOFULFILL_TENANT_ID`
+- `INNOFULFILL_USER_ID`
+- `INNOFULFILL_SIGNIN_TYPE`
+- `INNOFULFILL_WEBHOOK_SIGNATURE_KEY`
+
 Shopify OAuth deployment needs these Railway/GitHub secrets:
 
 - `SHOPIFY_CLIENT_ID`
