@@ -27,6 +27,40 @@ import { useAllCouriers, useShippingRates } from '../../hooks/Integrations/useCo
 import { useZones } from '../../hooks/useZones'
 import { courierLogos, defaultLogo } from '../../utils/constants'
 
+const INR_SYMBOL = '\u20B9'
+const CANONICAL_B2C_ZONE_CODES = ['A', 'B', 'C', 'D', 'E', 'F']
+const LEGACY_ZONE_RATE_KEYS: Record<string, string[]> = {
+  A: ['Within City', 'Within city', 'Local', 'Within city and local shipments.'],
+  B: ['Metro to Metro', 'Metro city to metro city', 'Metro city to metro city.'],
+  C: ['Metro to Non Metro', 'Non Metro to Metro', 'Metro to non-metro and non-metro to metro.'],
+  D: ['Rest of India', 'ROI', 'Rest of India.'],
+  E: ['North East', 'Northeast', 'Jammu and Kashmir', 'Special Zone'],
+  F: ['Remote', 'ODA', 'Remote and ODA service locations.'],
+}
+
+const normalizeZoneCode = (zone: { code?: string }) => String(zone?.code || '').trim().toUpperCase()
+const isCanonicalZoneName = (zone: { code?: string; name?: string }) =>
+  new RegExp(`^zone\\s*${normalizeZoneCode(zone)}$`, 'i').test(String(zone?.name || '').trim())
+
+const getB2CDisplayZones = (zones: Array<{ code: string; description?: string; id?: string; name: string }>) => {
+  const byCode = zones.reduce<Record<string, { code: string; description?: string; id?: string; name: string }>>(
+    (acc, zone) => {
+      const code = normalizeZoneCode(zone)
+      if (!CANONICAL_B2C_ZONE_CODES.includes(code)) return acc
+      if (!acc[code] || isCanonicalZoneName(zone)) acc[code] = zone
+      return acc
+    },
+    {},
+  )
+
+  return CANONICAL_B2C_ZONE_CODES.map((code) => ({
+    id: byCode[code]?.id || code,
+    code,
+    name: `Zone ${code}`,
+    sourceName: byCode[code]?.name || `Zone ${code}`,
+  }))
+}
+
 interface ShippingRate {
   id: string | number
   courier_name: string
@@ -47,9 +81,26 @@ interface ShippingRate {
   }
 }
 
+const getZoneRates = (
+  rates: ShippingRate['rates'] | undefined,
+  zone: { code: string; name: string; sourceName: string },
+) => {
+  const candidates = [
+    zone.sourceName,
+    zone.name,
+    `ZONE ${zone.code}`,
+    `Zone ${zone.code}`,
+    zone.code,
+    ...(LEGACY_ZONE_RATE_KEYS[zone.code] || []),
+  ].filter(Boolean)
+
+  return candidates.map((key) => rates?.[key]).find(Boolean) || {}
+}
+
 // --- B2C Table ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] }) => {
+  const displayZones = getB2CDisplayZones(zones)
   const columns: Column<ShippingRate>[] = [
     {
       id: 'courier_name',
@@ -72,19 +123,19 @@ const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] })
       },
     },
     { id: 'min_weight', label: 'Min Weight (kg)' },
-    ...zones.map(
-      (zone: { code: string; description: string; name: string }) =>
+    ...displayZones.map(
+      (zone) =>
         ({
           id: zone.code,
           label: `${zone.name} (F | RTO)`,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           render: (_: any, row: any) => {
-            const rates = row.rates?.[zone.name] || {}
+            const rates = getZoneRates(row.rates, zone)
 
             const forward = rates.forward ?? 'NA'
             const rto = rates.rto ?? 'NA'
 
-            return `₹${forward} | ₹${rto}`
+            return `${INR_SYMBOL}${forward} | ${INR_SYMBOL}${rto}`
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }) as any,
@@ -93,12 +144,12 @@ const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] })
     {
       id: 'cod',
       label: 'COD (Charges | %)',
-      render: (_, row) => `₹${row.cod_charges ?? '0'} | ${row.cod_percent ?? '0'}%`,
+      render: (_, row) => `${INR_SYMBOL}${row.cod_charges ?? '0'} | ${row.cod_percent ?? '0'}%`,
     },
     {
       id: 'other',
       label: 'Other Charges',
-      render: (_, row) => `₹${row.other_charges ?? '0'}`,
+      render: (_, row) => `${INR_SYMBOL}${row.other_charges ?? '0'}`,
     },
   ]
 
@@ -133,9 +184,13 @@ const B2BClientTable = ({
               <Typography variant="h6">{courier.courier_name}</Typography>
               <Typography variant="body2">Min Weight: {courier.min_weight} kg</Typography>
               <Typography variant="body2">
-                COD: ₹{courier.cod_charges ?? '0'} | {courier.cod_percent ?? '0'}%
+                COD: {INR_SYMBOL}
+                {courier.cod_charges ?? '0'} | {courier.cod_percent ?? '0'}%
               </Typography>
-              <Typography variant="body2">Other: ₹{courier.other_charges ?? '0'}</Typography>
+              <Typography variant="body2">
+                Other: {INR_SYMBOL}
+                {courier.other_charges ?? '0'}
+              </Typography>
             </Stack>
 
             <Table size="small" sx={{ mt: 2 }}>
@@ -153,8 +208,14 @@ const B2BClientTable = ({
                   return (
                     <TableRow key={zone.code}>
                       <TableCell>{zone.name}</TableCell>
-                      <TableCell>₹{rates.forward_per_kg ?? 'NA'}</TableCell>
-                      <TableCell>₹{rates.rto_per_kg ?? 'NA'}</TableCell>
+                      <TableCell>
+                        {INR_SYMBOL}
+                        {rates.forward_per_kg ?? 'NA'}
+                      </TableCell>
+                      <TableCell>
+                        {INR_SYMBOL}
+                        {rates.rto_per_kg ?? 'NA'}
+                      </TableCell>
                       <TableCell>{rates.min_weight ?? courier.min_weight ?? 'NA'} kg</TableCell>
                     </TableRow>
                   )
@@ -182,6 +243,7 @@ const RateCard = () => {
   const { data, isLoading, isError } = useShippingRates({ ...filters, businessType: businessType })
 
   const rates: ShippingRate[] = data || []
+  const b2cDisplayZones = getB2CDisplayZones(zones)
 
   console.log('rates', rates)
 
@@ -196,16 +258,17 @@ const RateCard = () => {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      zones.forEach((zone: any) => {
+      const exportZones = businessType === 'b2c' ? b2cDisplayZones : zones
+      exportZones.forEach((zone: any) => {
         // NOTE: UI tables use `zone.name` as the key into `rates`, so CSV export
         // should use the same to avoid returning NA for all values.
-        const zoneRates = r.rates?.[zone.name] || {}
+        const zoneRates = businessType === 'b2c' ? getZoneRates(r.rates, zone) : r.rates?.[zone.name] || {}
         if (businessType === 'b2b') {
-          base[`${zone.name} (Per Kg)`] = `F: ₹${zoneRates.forward_per_kg ?? 'NA'} | RTO: ₹${
+          base[`${zone.name} (Per Kg)`] = `F: ${INR_SYMBOL}${zoneRates.forward_per_kg ?? 'NA'} | RTO: ${INR_SYMBOL}${
             zoneRates.rto_per_kg ?? 'NA'
           }`
         } else {
-          base[`${zone.name} (F | RTO)`] = `F: ₹${zoneRates.forward ?? 'NA'} | RTO: ₹${
+          base[`${zone.name} (F | RTO)`] = `F: ${INR_SYMBOL}${zoneRates.forward ?? 'NA'} | RTO: ${INR_SYMBOL}${
             zoneRates.rto ?? 'NA'
           }`
         }
