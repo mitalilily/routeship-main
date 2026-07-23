@@ -2,8 +2,8 @@
 
 Last updated: 2026-07-20
 
-This document is the release evidence for the landing site, merchant client, admin panel,
-and backend. A production build is not treated as proof that a workflow is correct.
+This document is the release evidence for the merchant client, admin panel, and backend. A
+production build is not treated as proof that a workflow is correct.
 
 ## Current decision
 
@@ -22,17 +22,15 @@ The rate-card feature CRUD checker and rollback-based before/after pricing check
 - Backend TypeScript production build
 - Merchant client TypeScript/Vite production build
 - Admin React production build
-- Landing Vite production build
 - Merchant client lint: zero errors (warnings remain documented in command output)
 - Admin source lint: zero error-level findings
-- Landing lint: zero findings
 - Authentication configuration regression checks
 - Demo OTP is displayed in the UI only; it is not written to backend or browser logs
 - COD collectable-amount guards
 - Prepaid and COD wallet debits, including GST and legacy stored-debit compatibility
 - Wallet transaction AWB/order linking proof
 - Order CSV columns and B2C action wiring proof
-- Client and landing production dependency audits: zero known vulnerabilities
+- Client production dependency audit: zero known vulnerabilities
 - Backend and admin production dependency audits: zero known vulnerabilities
 - New OTP users receive wallet, profile, preferences, and Basic B2C/B2B plans idempotently
 - Database rate-card/charge edits changed prepaid and COD/GST totals as expected, then rolled
@@ -83,7 +81,7 @@ and rollback/cleanup. `Pending` means it has not been claimed as passed.
 | Couriers | credentials, enable/disable, serviceability, priority, live rate, booking, cancel, tracking, POD | Pending provider sandboxes |
 | Support | create/list/detail/update ticket and admin response/status/filter | Pending |
 | Profile/KYC/bank/team | validation, upload, verification, permissions, suspend/reactivate | Pending |
-| Public tools | tracking, rate calculator, policies, contact, landing calculators and responsive layouts | Pending browser pass |
+| Public tools | tracking, rate calculator, policies, and responsive layouts | Pending browser pass |
 | Admin configuration | plans, zones/mappings, couriers, payment options, billing preferences, holidays, diesel, static content | Pending |
 | Developer operations | filters, assignment, resolve/reopen, retry, live logs, Shopify credentials | Pending |
 

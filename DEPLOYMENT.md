@@ -7,14 +7,13 @@ Use Railway services for:
 - `backend/` as the Node.js API service
 - `courier-cart-client/` as the app frontend service
 - `admin-dashboard/` as the admin frontend service
-- `landing/` as the public landing frontend service
 
 Keep all production values in Railway service variables, not committed env files.
 
 Recommended Railway variables:
 
 - Backend: `DATABASE_URL`, `API_URL`, `PUBLIC_API_URL`, `CORS_ALLOWED_ORIGINS`, auth secrets, courier/provider secrets
-- Client/admin/landing: `VITE_API_URL` or the framework-specific public API URL variable used by that package
+- Client/admin: `VITE_API_URL` or the framework-specific public API URL variable used by that package
 
 Innofulfill can be configured from the admin credentials card or these backend variables:
 
