@@ -211,17 +211,23 @@ export const requiredKycFieldMap: Record<
   },
 }
 
-export const courierLogos: Record<string, string> = {
-  Delhivery: '/logo/integrations/delhivery.png',
-  Bluedart: '/logo/integrations/bluedart.png',
-  Shadowfax: '/logo/integrations/shadowfax.png',
-  DTDC: '/logo/integrations/dtdc.png',
-  Gati: 'https://cdn.example.com/logos/gati.png',
-  EcomExpress: '/logo/integrations/ecomexpress.webp',
-  Amazon: '/logo/integrations/amazon.png',
-  Ekart: '/logo/integrations/ekart.png',
-  Xpressbees: '/logo/integrations/xpressbees.png',
-  Innofulfill: '/logo/integrations/default-courier.png',
-  smileEcomm: '/logo/integrations/default-courier.png',
+const publicAssetUrl = (path: string) => {
+  if (/^https?:\/\//i.test(path)) return path
+  const basePath = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+  return `${basePath}${path.startsWith('/') ? path : `/${path}`}`
 }
-export const defaultLogo = '/logo/integrations/default-courier.png'
+
+export const courierLogos: Record<string, string> = {
+  Delhivery: publicAssetUrl('/logo/integrations/delhivery.png'),
+  Bluedart: publicAssetUrl('/logo/integrations/bluedart.png'),
+  Shadowfax: publicAssetUrl('/logo/integrations/shadowfax.png'),
+  DTDC: publicAssetUrl('/logo/integrations/dtdc.png'),
+  Gati: 'https://cdn.example.com/logos/gati.png',
+  EcomExpress: publicAssetUrl('/logo/integrations/ecomexpress.webp'),
+  Amazon: publicAssetUrl('/logo/integrations/amazon.png'),
+  Ekart: publicAssetUrl('/logo/integrations/ekart.png'),
+  Xpressbees: publicAssetUrl('/logo/integrations/xpressbees.png'),
+  Innofulfill: publicAssetUrl('/logo/integrations/default-courier.png'),
+  smileEcomm: publicAssetUrl('/logo/integrations/default-courier.png'),
+}
+export const defaultLogo = publicAssetUrl('/logo/integrations/default-courier.png')
