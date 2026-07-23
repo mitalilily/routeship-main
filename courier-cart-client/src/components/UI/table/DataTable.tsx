@@ -392,9 +392,9 @@ export default function DataTable<T extends { id: string | number }>(props: Data
 
                       {column.sortable &&
                         (active && sortDir === 'asc' ? (
-                          <MdKeyboardArrowUp size={16} color="#0B3DBB" />
+                          <MdKeyboardArrowUp size={16} color="#310276" />
                         ) : (
-                          <MdKeyboardArrowDown size={16} color={active ? '#0B3DBB' : '#A4958D'} />
+                          <MdKeyboardArrowDown size={16} color={active ? '#310276' : '#A4958D'} />
                         ))}
                     </Stack>
                   </TableCell>

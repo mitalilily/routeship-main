@@ -18,7 +18,7 @@ import { toast } from '../../UI/Toast'
 import { useChangePassword } from '../../../hooks/Auth/useChangePassword'
 import { useUserInfo } from '../../../hooks/useUserInfo'
 
-const BRAND_NAVY = '#E85500'
+const BRAND_NAVY = '#FE6502'
 const BRAND_ORANGE = '#4B1196'
 
 interface PasswordFormValues {

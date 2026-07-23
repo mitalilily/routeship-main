@@ -1108,11 +1108,11 @@ const AllOrders = () => {
             textTransform: 'none',
             whiteSpace: 'nowrap',
             borderColor: 'rgba(232, 85, 0, 0.32)',
-            color: isMenuOpen ? '#FFFFFF' : '#E85500',
-            bgcolor: isMenuOpen ? '#E85500' : '#FFFFFF',
+            color: isMenuOpen ? '#FFFFFF' : '#FE6502',
+            bgcolor: isMenuOpen ? '#FE6502' : '#FFFFFF',
             boxShadow: isMenuOpen ? '0 10px 20px rgba(232, 85, 0, 0.16)' : 'none',
             '&:hover': {
-              borderColor: '#E85500',
+              borderColor: '#FE6502',
               bgcolor: isMenuOpen ? '#D34B00' : 'rgba(232, 85, 0, 0.06)',
             },
           }}
@@ -1338,7 +1338,7 @@ const AllOrders = () => {
             onClick={() => navigate(`/tools/order_tracking?awb=${value}`)}
             sx={{
               cursor: 'pointer',
-              color: '#E85500',
+              color: '#FE6502',
               fontWeight: 500,
               textDecoration: 'underline',
               '&:hover': { opacity: 0.8 },
@@ -1693,7 +1693,7 @@ const AllOrders = () => {
                       }}
                       disabled={downloadingByWarehouse}
                       sx={{
-                        bgcolor: '#E85500',
+                        bgcolor: '#FE6502',
                         textTransform: 'none',
                         '&:hover': { bgcolor: '#B40312' },
                       }}
@@ -1719,15 +1719,15 @@ const AllOrders = () => {
               fontWeight: 600,
               fontSize: '0.8rem',
               borderRadius: '8px',
-              borderColor: '#E85500',
-              color: '#E85500',
+              borderColor: '#FE6502',
+              color: '#FE6502',
               '&:hover': {
                 borderColor: '#B40312',
-                backgroundColor: alpha('#E85500', 0.06),
+                backgroundColor: alpha('#FE6502', 0.06),
               },
               '&:disabled': {
-                borderColor: alpha('#E85500', 0.4),
-                color: alpha('#E85500', 0.4),
+                borderColor: alpha('#FE6502', 0.4),
+                color: alpha('#FE6502', 0.4),
               },
             }}
           >
@@ -1743,20 +1743,20 @@ const AllOrders = () => {
               minHeight: 28,
               py: 0.75,
               px: 1.5,
-              bgcolor: '#E85500',
+              bgcolor: '#FE6502',
               color: '#FFFFFF',
               fontWeight: 700,
               fontSize: '0.8rem',
               textTransform: 'none',
               borderRadius: '8px',
-              boxShadow: '0 12px 24px rgba(11, 61, 187, 0.22)',
+              boxShadow: '0 12px 24px rgba(49, 2, 118, 0.22)',
               transition: 'all 200ms ease',
               '&:hover': {
                 bgcolor: '#B40312',
-                boxShadow: '0 14px 28px rgba(11, 61, 187, 0.28)',
+                boxShadow: '0 14px 28px rgba(49, 2, 118, 0.28)',
               },
               '&:disabled': {
-                bgcolor: alpha('#E85500', 0.4),
+                bgcolor: alpha('#FE6502', 0.4),
               },
             }}
           >
@@ -1808,9 +1808,9 @@ const AllOrders = () => {
               py: 1,
               borderRadius: '999px',
               '&:hover': {
-                borderColor: '#E85500',
-                backgroundColor: alpha('#E85500', 0.06),
-                color: '#E85500',
+                borderColor: '#FE6502',
+                backgroundColor: alpha('#FE6502', 0.06),
+                color: '#FE6502',
               },
             }}
           >
@@ -1941,14 +1941,14 @@ const AllOrders = () => {
               }}
               size={isMobile ? 'small' : 'medium'}
               sx={{
-                backgroundColor: alpha('#E85500', 0.08),
-                color: '#E85500',
+                backgroundColor: alpha('#FE6502', 0.08),
+                color: '#FE6502',
                 fontWeight: 500,
-                border: `1px solid ${alpha('#E85500', 0.2)}`,
+                border: `1px solid ${alpha('#FE6502', 0.2)}`,
                 '& .MuiChip-deleteIcon': {
-                  color: alpha('#E85500', 0.6),
+                  color: alpha('#FE6502', 0.6),
                   '&:hover': {
-                    color: '#E85500',
+                    color: '#FE6502',
                   },
                 },
               }}
@@ -2014,7 +2014,7 @@ const AllOrders = () => {
                 width: { xs: 60, md: 80 },
                 height: { xs: 60, md: 80 },
                 borderRadius: '50%',
-                backgroundColor: alpha('#E85500', 0.08),
+                backgroundColor: alpha('#FE6502', 0.08),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2108,7 +2108,7 @@ const AllOrders = () => {
               <Typography
                 sx={{
                   fontWeight: 700,
-                  color: '#E85500',
+                  color: '#FE6502',
                   fontSize: '0.85rem',
                 }}
               >
@@ -2204,7 +2204,7 @@ const AllOrders = () => {
                               transition: 'all 200ms ease',
                               backgroundColor: 'transparent',
                               '&:hover': {
-                                backgroundColor: alpha('#E85500', 0.06),
+                                backgroundColor: alpha('#FE6502', 0.06),
                                 transform: 'translateX(4px)',
                               },
                               borderBottom: index < 2 ? `1px solid ${alpha('#000', 0.06)}` : 'none',
@@ -2220,7 +2220,7 @@ const AllOrders = () => {
                                 fontSize: '0.9rem',
                                 fontWeight: 500,
                                 color:
-                                  downloadingDocumentType === item.type ? '#E85500' : '#111827',
+                                  downloadingDocumentType === item.type ? '#FE6502' : '#111827',
                               }}
                             >
                               {downloadingDocumentType === item.type
@@ -2246,12 +2246,12 @@ const AllOrders = () => {
                   px: 1.5,
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  color: '#E85500',
-                  borderColor: '#E85500',
+                  color: '#FE6502',
+                  borderColor: '#FE6502',
                   whiteSpace: 'nowrap',
                   '&:hover': {
-                    borderColor: '#E85500',
-                    backgroundColor: 'rgba(11, 61, 187, 0.04)',
+                    borderColor: '#FE6502',
+                    backgroundColor: 'rgba(49, 2, 118, 0.04)',
                   },
                 }}
               >
@@ -2274,8 +2274,8 @@ const AllOrders = () => {
                   color: '#6B7280',
                   whiteSpace: 'nowrap',
                   '&:hover': {
-                    color: '#E85500',
-                    backgroundColor: alpha('#E85500', 0.05),
+                    color: '#FE6502',
+                    backgroundColor: alpha('#FE6502', 0.05),
                   },
                 }}
               >

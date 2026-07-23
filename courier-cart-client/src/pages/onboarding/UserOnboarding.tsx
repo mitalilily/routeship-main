@@ -26,8 +26,8 @@ import type { UserInfoData } from '../../types/user.types'
 import { hasValidationErrors, validateOnboardingFields } from '../../utils/functions'
 import { initialFormData } from '../../utils/utility'
 
-const BRAND_ORANGE = '#E85500'
-const BRAND_ORANGE_DARK = '#C23E00'
+const BRAND_ORANGE = '#FE6502'
+const BRAND_ORANGE_DARK = '#C94F01'
 const BRAND_DARK = '#141414'
 
 export type FormErrors = {
@@ -182,7 +182,7 @@ export default function UserOnboarding() {
         px: { xs: 1, md: 1.75 },
         py: { xs: 1, md: 1.5 },
         background:
-          'radial-gradient(circle at top left, rgba(11, 61, 187,0.1) 0%, transparent 24%), radial-gradient(circle at bottom right, rgba(20,20,20,0.08) 0%, transparent 26%), linear-gradient(180deg, #f3ece7 0%, #ece4de 100%)',
+          'radial-gradient(circle at top left, rgba(49, 2, 118,0.1) 0%, transparent 24%), radial-gradient(circle at bottom right, rgba(20,20,20,0.08) 0%, transparent 26%), linear-gradient(180deg, #f3ece7 0%, #ece4de 100%)',
       }}
     >
       {fetchingUserData && <FullScreenLoader />}
@@ -214,7 +214,7 @@ export default function UserOnboarding() {
                 minWidth: 0,
                 p: { xs: 2.2, md: 3, lg: 3.4 },
                 background:
-                  'radial-gradient(circle at 16% 16%, rgba(255,255,255,0.12) 0%, transparent 24%), radial-gradient(circle at 80% 20%, rgba(11, 61, 187,0.22) 0%, transparent 26%), linear-gradient(180deg, #17171b 0%, #101012 100%)',
+                  'radial-gradient(circle at 16% 16%, rgba(255,255,255,0.12) 0%, transparent 24%), radial-gradient(circle at 80% 20%, rgba(49, 2, 118,0.22) 0%, transparent 26%), linear-gradient(180deg, #17171b 0%, #101012 100%)',
                 color: '#fff',
                 borderBottom: { xs: '1px solid rgba(255,255,255,0.08)', lg: 'none' },
               }}
@@ -362,7 +362,7 @@ export default function UserOnboarding() {
                     borderRadius: 2,
                     border: '1px solid rgba(17,17,19,0.08)',
                     background:
-                      'radial-gradient(circle at top right, rgba(11, 61, 187,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,244,241,0.98) 100%)',
+                      'radial-gradient(circle at top right, rgba(49, 2, 118,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,244,241,0.98) 100%)',
                   }}
                 >
                   <Stack

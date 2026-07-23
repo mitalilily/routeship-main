@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/auth/AuthContext'
 import { useMerchantDashboardStats } from '../../hooks/useDashboard'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 const BRAND_TEXT = '#111827'
 const TEXT_MUTED = '#6B7280'
 
@@ -279,7 +279,7 @@ const Home = () => {
           ...CARD_STYLE,
           p: { xs: 2, md: 2.5 },
           background:
-            'linear-gradient(135deg, rgba(11, 61, 187,0.05) 0%, rgba(255,255,255,0.94) 45%, rgba(59,130,246,0.05) 100%)',
+            'linear-gradient(135deg, rgba(49, 2, 118,0.05) 0%, rgba(255,255,255,0.94) 45%, rgba(254,101,2,0.05) 100%)',
         }}
       >
         <Stack
@@ -334,7 +334,7 @@ const Home = () => {
               sx={{
                 textTransform: 'none',
                 fontWeight: 700,
-                boxShadow: '0 12px 24px rgba(11, 61, 187,0.16)',
+                boxShadow: '0 12px 24px rgba(49, 2, 118,0.16)',
               }}
             >
               Create Shipment

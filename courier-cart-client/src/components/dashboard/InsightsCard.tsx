@@ -22,8 +22,8 @@ interface InsightsCardProps {
 
 type InsightType = 'good' | 'warning' | 'notice'
 
-const BRAND_PRIMARY = '#0B3DBB'
-const BRAND_ACCENT = '#E85500'
+const BRAND_PRIMARY = '#310276'
+const BRAND_ACCENT = '#FE6502'
 
 export default function InsightsCard({ operational, trends, actions }: InsightsCardProps) {
   const insights: Array<{

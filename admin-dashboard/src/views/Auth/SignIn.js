@@ -111,7 +111,7 @@ function SignIn() {
           />
           <Box mt={{ lg: 16, xl: 20 }} maxW="510px">
             <HStack spacing={3} mb={5}>
-              <Box w="36px" h="2px" bg="#FF4B0A" />
+              <Box w="36px" h="2px" bg="#FE6502" />
               <Text
                 color="brand.500"
                 fontSize="xs"
@@ -128,7 +128,7 @@ function SignIn() {
               letterSpacing="0"
             >
               Every shipment.
-              <Text as="span" display="block" color="#FF4B0A">
+              <Text as="span" display="block" color="#FE6502">
                 In clear view.
               </Text>
             </Heading>
@@ -196,7 +196,7 @@ function SignIn() {
                   _hover={{ borderColor: "brand.300" }}
                   _focus={{
                     borderColor: "brand.500",
-                    boxShadow: "0 0 0 3px rgba(11,61,187,0.12)",
+                    boxShadow: "0 0 0 3px rgba(49,2,118,0.12)",
                   }}
                 />
               </FormControl>
@@ -221,7 +221,7 @@ function SignIn() {
                     _hover={{ borderColor: "brand.300" }}
                     _focus={{
                       borderColor: "brand.500",
-                      boxShadow: "0 0 0 3px rgba(11,61,187,0.12)",
+                      boxShadow: "0 0 0 3px rgba(49,2,118,0.12)",
                     }}
                   />
                   <InputRightElement h="52px" pr={2}>

@@ -26,7 +26,7 @@ import FileUploader from '../../UI/uploader/FileUploader'
 import ProfileEmailVerificationModal from './ProfileEmailVerificationModal'
 import PhoneVerificationModal from './ProfilePhoneVerificationModal'
 
-export const BRAND_GREEN = '#E85500'
+export const BRAND_GREEN = '#FE6502'
 export const BRAND_ORANGE = '#4B1196'
 export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_GREEN} 0%, ${BRAND_ORANGE} 100%)`
 
@@ -213,7 +213,7 @@ export default function UserProfileForm() {
                   borderRadius: 0,
                   border: `1px solid ${alpha(BRAND_GREEN, 0.12)}`,
                   background:
-                    'linear-gradient(180deg, rgba(11, 61, 187,0.04) 0%, rgba(255,255,255,0.92) 100%)',
+                    'linear-gradient(180deg, rgba(49, 2, 118,0.04) 0%, rgba(255,255,255,0.92) 100%)',
                   height: '100%',
                 }}
               >

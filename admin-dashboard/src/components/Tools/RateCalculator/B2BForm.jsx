@@ -24,7 +24,7 @@ import {
 import { AiOutlineDelete } from 'react-icons/ai'
 import { FaBoxOpen } from 'react-icons/fa'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const BOX_TEMPLATE = {
   lengthCm: '',
   breadthCm: '',
@@ -251,7 +251,7 @@ export default function B2BForm({
                         placeholder={fieldDef.label}
                         bg={inputBg}
                         borderColor={borderColor}
-                        _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                        _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                       />
                       <Text fontSize="xs" color={mutedText} mt={1}>
                         {fieldDef.helper}
@@ -382,7 +382,7 @@ export default function B2BForm({
               onChange={(e) => onCourierChange?.(e.target.value)}
               bg={inputBg}
               borderColor={borderColor}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             >
               <option value="">Global / Default</option>
               {couriers.map((courier) => (
@@ -400,7 +400,7 @@ export default function B2BForm({
               onChange={(e) => onChange('freightMode', e.target.value)}
               bg={inputBg}
               borderColor={borderColor}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             >
               <option value="fop">Bill to Client (FOP)</option>
               <option value="fod">Freight on Delivery (FOD)</option>
@@ -414,7 +414,7 @@ export default function B2BForm({
               onChange={(e) => onChange('rovType', e.target.value)}
               bg={inputBg}
               borderColor={borderColor}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             >
               <option value="owner">Owner Risk / Insurance</option>
               <option value="courier">Courier Insurance</option>
@@ -467,7 +467,7 @@ export default function B2BForm({
                 rows={3}
                 bg={inputBg}
                 borderColor={borderColor}
-                _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
               />
             </FormControl>
 
@@ -492,7 +492,7 @@ export default function B2BForm({
                   placeholder="No time requirement"
                   bg={inputBg}
                   borderColor={borderColor}
-                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                 >
                   <option value="">No time requirement</option>
                   <option value="before">Before specific time</option>
@@ -513,7 +513,7 @@ export default function B2BForm({
                     onChange={(e) => onChange('deliveryTime', `before ${e.target.value}`)}
                     bg={inputBg}
                     borderColor={borderColor}
-                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                   />
                 )}
 
@@ -529,7 +529,7 @@ export default function B2BForm({
                     onChange={(e) => onChange('deliveryTime', `after ${e.target.value}`)}
                     bg={inputBg}
                     borderColor={borderColor}
-                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                   />
                 )}
 
@@ -541,7 +541,7 @@ export default function B2BForm({
                     onChange={(e) => onChange('deliveryTime', e.target.value)}
                     bg={inputBg}
                     borderColor={borderColor}
-                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                   />
                 )}
 
@@ -554,7 +554,7 @@ export default function B2BForm({
                       onChange={(e) => onChange('deliveryTime', e.target.value)}
                       bg={inputBg}
                       borderColor={borderColor}
-                      _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                      _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                     />
                     <Input
                       name="deliveryTimeEnd"
@@ -563,7 +563,7 @@ export default function B2BForm({
                       onChange={(e) => onChange('deliveryTimeEnd', e.target.value)}
                       bg={inputBg}
                       borderColor={borderColor}
-                      _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                      _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                     />
                   </SimpleGrid>
                 )}
@@ -580,7 +580,7 @@ export default function B2BForm({
                   onChange={(e) => onChange('pickupDate', e.target.value)}
                   bg={inputBg}
                   borderColor={borderColor}
-                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                 />
               </FormControl>
               <FormControl>
@@ -592,7 +592,7 @@ export default function B2BForm({
                   placeholder="Order ID"
                   bg={inputBg}
                   borderColor={borderColor}
-                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                 />
               </FormControl>
               <FormControl>
@@ -604,7 +604,7 @@ export default function B2BForm({
                   placeholder="AWB"
                   bg={inputBg}
                   borderColor={borderColor}
-                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
                 />
               </FormControl>
             </SimpleGrid>

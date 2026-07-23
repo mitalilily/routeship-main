@@ -21,7 +21,7 @@ import {
 } from '../../hooks/useWeightReconciliation'
 
 export default function WeightReconciliationSettings() {
-  const BRAND_PURPLE = '#E85500'
+  const BRAND_PURPLE = '#FE6502'
   const BRAND_ORANGE = '#4B1196'
   const sectionCardSx = {
     backgroundColor: '#FFFFFF',
@@ -83,7 +83,7 @@ export default function WeightReconciliationSettings() {
             borderRadius: 5,
             border: `1px solid ${alpha(BRAND_PURPLE, 0.12)}`,
             background:
-              'radial-gradient(circle at top right, rgba(11, 61, 187,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
+              'radial-gradient(circle at top right, rgba(49, 2, 118,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
             boxShadow: '0 18px 38px rgba(20, 20, 20, 0.08)',
           }}
         >
@@ -94,7 +94,7 @@ export default function WeightReconciliationSettings() {
               color: '#6B7280',
               textTransform: 'none',
               mb: 2,
-              '&:hover': { color: '#E85500' },
+              '&:hover': { color: '#FE6502' },
             }}
           >
             Back to Weight Reconciliation
@@ -142,7 +142,7 @@ export default function WeightReconciliationSettings() {
         <form onSubmit={handleSubmit}>
           <Stack gap={3}>
             <Box sx={sectionCardSx}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#E85500', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#FE6502', mb: 1 }}>
                 Auto-Acceptance
               </Typography>
               <Typography variant="body2" sx={{ color: '#6B7280', mb: 3, fontSize: '14px' }}>
@@ -155,13 +155,13 @@ export default function WeightReconciliationSettings() {
                   sx={{
                     mb: 3,
                     backgroundColor: '#E7F3FF',
-                    borderLeft: '4px solid #E85500',
+                    borderLeft: '4px solid #FE6502',
                     '& .MuiAlert-icon': {
-                      color: '#E85500',
+                      color: '#FE6502',
                     },
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#E85500', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#FE6502', mb: 1 }}>
                     What happens when auto-acceptance is enabled:
                   </Typography>
                   <Box component="ul" sx={{ m: 0, pl: 2.5, color: '#4B5563' }}>
@@ -217,7 +217,7 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#E85500', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#FE6502', mb: 0.5 }}>
                       Enable Auto-Accept
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
@@ -231,10 +231,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#E85500',
+                        color: '#FE6502',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#E85500',
+                        backgroundColor: '#FE6502',
                       },
                     }}
                   />
@@ -245,7 +245,7 @@ export default function WeightReconciliationSettings() {
                     <Divider />
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#E85500', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#FE6502', mb: 1.5, fontSize: '14px' }}
                       >
                         Weight Threshold (kg)
                       </Typography>
@@ -264,7 +264,7 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#E85500',
+                              borderColor: '#FE6502',
                             },
                           },
                         }}
@@ -280,7 +280,7 @@ export default function WeightReconciliationSettings() {
 
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#E85500', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#FE6502', mb: 1.5, fontSize: '14px' }}
                       >
                         Percentage Threshold (%)
                       </Typography>
@@ -299,7 +299,7 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#E85500',
+                              borderColor: '#FE6502',
                             },
                           },
                         }}
@@ -328,7 +328,7 @@ export default function WeightReconciliationSettings() {
 
             {/* Notification Settings */}
             <Box sx={sectionCardSx}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#E85500', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#FE6502', mb: 1 }}>
                 Notifications
               </Typography>
               <Typography variant="body2" sx={{ color: '#6B7280', mb: 2, fontSize: '14px' }}>
@@ -354,7 +354,7 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#E85500', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#FE6502', mb: 0.5 }}>
                       Notify on All Discrepancies
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
@@ -368,10 +368,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#E85500',
+                        color: '#FE6502',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#E85500',
+                        backgroundColor: '#FE6502',
                       },
                     }}
                   />
@@ -388,7 +388,7 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#E85500', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#FE6502', mb: 0.5 }}>
                       Notify on Large Discrepancies
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
@@ -402,10 +402,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#E85500',
+                        color: '#FE6502',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#E85500',
+                        backgroundColor: '#FE6502',
                       },
                     }}
                   />
@@ -416,7 +416,7 @@ export default function WeightReconciliationSettings() {
                     <Divider />
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#E85500', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#FE6502', mb: 1.5, fontSize: '14px' }}
                       >
                         Large Discrepancy Threshold (kg)
                       </Typography>
@@ -435,7 +435,7 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#E85500',
+                              borderColor: '#FE6502',
                             },
                           },
                         }}
@@ -448,7 +448,7 @@ export default function WeightReconciliationSettings() {
 
             {/* Email Reports */}
             <Box sx={sectionCardSx}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#E85500', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#FE6502', mb: 1 }}>
                 Email Reports
               </Typography>
               <Typography variant="body2" sx={{ color: '#6B7280', mb: 2, fontSize: '14px' }}>
@@ -481,7 +481,7 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#E85500', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#FE6502', mb: 0.5 }}>
                       Daily Summary
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
@@ -495,10 +495,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#E85500',
+                        color: '#FE6502',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#E85500',
+                        backgroundColor: '#FE6502',
                       },
                     }}
                   />
@@ -515,7 +515,7 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#E85500', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#FE6502', mb: 0.5 }}>
                       Weekly Report
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
@@ -529,10 +529,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#E85500',
+                        color: '#FE6502',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#E85500',
+                        backgroundColor: '#FE6502',
                       },
                     }}
                   />
@@ -552,7 +552,7 @@ export default function WeightReconciliationSettings() {
                   px: 3,
                   py: 1.2,
                   '&:hover': {
-                    borderColor: '#E85500',
+                    borderColor: '#FE6502',
                     backgroundColor: 'rgba(59, 74, 116, 0.04)',
                   },
                 }}
@@ -565,7 +565,7 @@ export default function WeightReconciliationSettings() {
                 disabled={updateSettings.isPending}
                 startIcon={<FiSave />}
                 sx={{
-                  bgcolor: '#E85500',
+                  bgcolor: '#FE6502',
                   color: '#FFFFFF',
                   textTransform: 'none',
                   px: 3,

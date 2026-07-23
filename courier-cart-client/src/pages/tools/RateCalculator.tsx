@@ -487,7 +487,7 @@ export function RateCalculator() {
                           },
                           '&:hover': {
                             borderColor: BRAND_GREEN,
-                            color: '#E85500',
+                            color: '#FE6502',
                           },
                         }}
                       >
@@ -516,7 +516,7 @@ export function RateCalculator() {
                           },
                           '&:hover': {
                             borderColor: BRAND_GREEN,
-                            color: '#E85500',
+                            color: '#FE6502',
                           },
                         }}
                       >
@@ -570,7 +570,7 @@ export function RateCalculator() {
         </CardContent>
       </FormProvider>
       {isPending && (
-        <Typography sx={{ color: '#E85500', textAlign: 'center', py: 2 }}>
+        <Typography sx={{ color: '#FE6502', textAlign: 'center', py: 2 }}>
           Loading available couriers...
         </Typography>
       )}
@@ -599,7 +599,7 @@ export function RateCalculator() {
           p: 3,
         }}
       >
-        <Typography variant="h6" gutterBottom sx={{ color: '#E85500', fontWeight: 700 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#FE6502', fontWeight: 700 }}>
           Terms & Conditions ({shipmentType.toUpperCase()})
         </Typography>
 
@@ -622,7 +622,7 @@ export function RateCalculator() {
               <Stack key={idx} spacing={0.5}>
                 <Typography
                   variant="body2"
-                  sx={{ color: '#E85500', fontSize: '0.85rem', lineHeight: 1.6, fontWeight: 600 }}
+                  sx={{ color: '#FE6502', fontSize: '0.85rem', lineHeight: 1.6, fontWeight: 600 }}
                 >
                   • {term.text}
                 </Typography>

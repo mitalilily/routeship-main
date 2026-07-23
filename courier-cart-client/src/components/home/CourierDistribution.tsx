@@ -2,11 +2,11 @@ import { Box, LinearProgress, Skeleton, Stack, Typography } from '@mui/material'
 import { FaTruck } from 'react-icons/fa6'
 import type { CourierDistribution as CourierDistributionType } from '../../api/dashboard.api'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 const INK = '#111827'
 const MUTED = '#6B7280'
 
-const barColors = ['#E85500', '#244f9e', '#4B1196', '#D95C00', '#6B7280', '#17171A']
+const barColors = ['#FE6502', '#244f9e', '#4B1196', '#D95C00', '#6B7280', '#17171A']
 
 type CourierDistributionProps = {
   data?: CourierDistributionType[]

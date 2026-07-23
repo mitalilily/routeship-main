@@ -7,7 +7,7 @@ interface DashboardHeaderProps {
   onCustomize?: () => void
 }
 
-const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_PRIMARY = '#310276'
 export default function DashboardHeader({
   isRefetching,
   onRefresh,

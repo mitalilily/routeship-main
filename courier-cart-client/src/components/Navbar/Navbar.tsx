@@ -17,7 +17,7 @@ interface NavbarProps {
 
 const BRAND_SURFACE = '#FFFFFF'
 const BRAND_TEXT = '#07132D'
-const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_PRIMARY = '#310276'
 const LOGO_WORDMARK_SRC = '/brand/routeship-logo.png'
 
 export default function Navbar({ handleDrawerToggle, pinned = false, onPinChange }: NavbarProps) {

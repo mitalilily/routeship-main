@@ -13,8 +13,8 @@ interface ActionItemsCardProps {
   formatCurrency: (amount: number) => string
 }
 
-const BRAND_PRIMARY = '#0B3DBB'
-const BRAND_ACCENT = '#E85500'
+const BRAND_PRIMARY = '#310276'
+const BRAND_ACCENT = '#FE6502'
 
 export default function ActionItemsCard({ actions, formatCurrency }: ActionItemsCardProps) {
   const navigate = useNavigate()

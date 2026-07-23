@@ -21,7 +21,7 @@ import type { GlobalSearchResult } from '../../api/globalSearch.api'
 import { useGlobalSearch } from '../../hooks/useGlobalSearch'
 import { getClientAwbTrackingPath, isValidAwb, normalizeAwb } from '../../utils/awb'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 const BRAND_INVOICE = '#4B1196'
 const BRAND_INK = '#17171A'
 const BRAND_MUTED = '#6E6763'
@@ -233,8 +233,8 @@ const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
                 borderColor: BRAND_PRIMARY,
 
                 boxShadow: `
-                    0 0 0 4px rgba(11, 61, 187,0.08),
-                    0 10px 26px rgba(11, 61, 187,0.08)
+                    0 0 0 4px rgba(49, 2, 118,0.08),
+                    0 10px 26px rgba(49, 2, 118,0.08)
                   `,
 
                 transform: 'translateY(-1px)',
@@ -288,7 +288,7 @@ const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
                     borderRadius: '10px',
                     display: 'grid',
                     placeItems: 'center',
-                    bgcolor: 'rgba(11, 61, 187,0.06)',
+                    bgcolor: 'rgba(49, 2, 118,0.06)',
                   }}
                 >
                   <CiSearch

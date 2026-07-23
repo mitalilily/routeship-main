@@ -46,7 +46,7 @@ const widgetComponents: Record<string, React.ComponentType<any>> = {
   topDestinations: TopDestinationsCard,
 }
 
-const BRAND_PRIMARY = '#0B3DBB'
+const BRAND_PRIMARY = '#310276'
 const BRAND_TEXT = '#07132D'
 const TEXT_MUTED = '#6B7280'
 const CARD_BORDER = '#EEE8E4'

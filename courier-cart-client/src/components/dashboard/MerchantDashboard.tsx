@@ -11,7 +11,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi'
 
-const BRAND_ORANGE = '#0B3DBB'
+const BRAND_ORANGE = '#310276'
 const BRAND_DARK = '#0f172a'
 const BG_LIGHT = '#f8fafc'
 

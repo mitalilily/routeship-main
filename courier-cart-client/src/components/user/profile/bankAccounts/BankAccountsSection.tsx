@@ -86,7 +86,7 @@ export const BankAccountsSection: React.FC = () => {
           flexDirection: { xs: 'column', md: 'row' },
           gap: 1.5,
           p: 2,
-          border: `1px solid ${alpha('#E85500', 0.12)}`,
+          border: `1px solid ${alpha('#FE6502', 0.12)}`,
           background:
             'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(251,245,242,0.98) 100%)',
         }}
@@ -133,7 +133,7 @@ export const BankAccountsSection: React.FC = () => {
                   borderRadius: 0,
                   bgcolor: '#F8FAFC',
                   '&::after': {
-                    background: 'linear-gradient(90deg, transparent, rgba(11, 61, 187, 0.08), transparent)',
+                    background: 'linear-gradient(90deg, transparent, rgba(49, 2, 118, 0.08), transparent)',
                   },
                 }}
               />
@@ -160,7 +160,7 @@ export const BankAccountsSection: React.FC = () => {
             gap: 3,
             bgcolor: '#FAF6F3',
             borderRadius: 0,
-            border: '1px solid rgba(11, 61, 187, 0.12)',
+            border: '1px solid rgba(49, 2, 118, 0.12)',
           }}
         >
           <Box

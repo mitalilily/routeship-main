@@ -27,7 +27,7 @@ const GlassCard = styled(Card)(() => ({
   boxShadow: 'none',
   transition: 'border-color 0.2s ease, background-color 0.2s ease',
   '&:hover': {
-    borderColor: 'rgba(11, 61, 187, 0.22)',
+    borderColor: 'rgba(49, 2, 118, 0.22)',
     backgroundColor: '#FBFCFE',
   },
 }))

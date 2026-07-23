@@ -22,7 +22,7 @@ import { useAuth } from '../../context/auth/AuthContext'
 import { usePresignedDownloadUrls } from '../../hooks/Uploads/usePresignedDownloadUrls'
 import WalletMenu from './WalletMenu'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 const BRAND_INK = '#17171A'
 const BRAND_MUTED = '#6E6763'
 
@@ -121,9 +121,9 @@ const UserMenu = () => {
           bgcolor: 'rgba(0, 0, 0, 0.02)',
           transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
-            bgcolor: `rgba(11, 61, 187, 0.08)`,
-            borderColor: `rgba(11, 61, 187, 0.2)`,
-            boxShadow: `0 4px 12px rgba(11, 61, 187, 0.12)`,
+            bgcolor: `rgba(49, 2, 118, 0.08)`,
+            borderColor: `rgba(49, 2, 118, 0.2)`,
+            boxShadow: `0 4px 12px rgba(49, 2, 118, 0.12)`,
             transform: 'translateY(-2px)',
           },
         }}

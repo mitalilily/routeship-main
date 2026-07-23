@@ -60,7 +60,7 @@ const formatTrackingEventTime = (value: string) =>
   })
 
 export default function OrderTrackingForm() {
-  const BRAND_PRIMARY = '#E85500'
+  const BRAND_PRIMARY = '#FE6502'
   const BRAND_ACCENT = '#4B1196'
   const shellCardStyles = {
     borderRadius: 2.5,
@@ -533,7 +533,7 @@ export default function OrderTrackingForm() {
                       <ListItem alignItems="flex-start" sx={{ px: 0 }}>
                         <ListItemIcon sx={{ minWidth: 36 }}>
                           {idx === 0 ? (
-                            <FaBoxOpen color="#E85500" size={20} />
+                            <FaBoxOpen color="#FE6502" size={20} />
                           ) : (
                             <MdLocationOn color="#6B7280" size={20} />
                           )}

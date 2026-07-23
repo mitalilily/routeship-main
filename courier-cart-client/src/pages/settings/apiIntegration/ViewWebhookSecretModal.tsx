@@ -67,10 +67,10 @@ This file contains sensitive credentials. Store it securely and never commit it 
             startIcon={<MdDownload />}
             fullWidth
             sx={{
-              borderColor: '#E85500',
-              color: '#E85500',
+              borderColor: '#FE6502',
+              color: '#FE6502',
               '&:hover': {
-                borderColor: '#E85500',
+                borderColor: '#FE6502',
                 bgcolor: 'rgba(51, 51, 105, 0.08)',
               },
             }}
@@ -105,7 +105,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
           <Typography
             sx={{
               fontSize: '13px',
-              color: '#E85500',
+              color: '#FE6502',
               fontWeight: 500,
               mb: 0.5,
             }}
@@ -121,7 +121,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
                 onClick={() => onCopy(webhook.secret, 'secret')}
                 size="small"
                 sx={{
-                  color: copiedSecret === 'secret' ? '#4CAF50' : '#E85500',
+                  color: copiedSecret === 'secret' ? '#4CAF50' : '#FE6502',
                   '&:hover': { bgcolor: 'rgba(51, 51, 105, 0.08)' },
                 }}
               >
@@ -134,7 +134,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
           <Typography
             sx={{
               fontSize: '13px',
-              color: '#E85500',
+              color: '#FE6502',
               fontWeight: 500,
               mb: 0.5,
             }}

@@ -17,7 +17,7 @@ import { useDebouncedEffect } from '../../../hooks/useDebounceEffect'
 import CustomInput from '../../UI/inputs/CustomInput'
 import type { B2BFormData, Box as B2BBox } from './B2BOrderForm'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const SUCCESS = '#3DD598'
 const TEXT_SECONDARY = '#4A5568'
 const BOX_TEMPLATE: B2BBox = {

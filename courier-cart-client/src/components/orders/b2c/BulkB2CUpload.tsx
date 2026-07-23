@@ -39,7 +39,7 @@ import AddPickupAddressForm from '../../pickups/AddPickupAddressForm'
 import CustomDrawer from '../../UI/drawer/CustomDrawer'
 import { toast } from '../../UI/Toast'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 const TEXT_MUTED = '#5B7094'
 

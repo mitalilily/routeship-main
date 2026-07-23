@@ -99,7 +99,7 @@ export default function AdminNavbar(props) {
             display={{ base: 'none', md: 'block' }}
             borderRadius="8px"
             p="3px"
-            bg={useColorModeValue('rgba(75, 17, 150, 0.08)', 'rgba(255, 255, 255, 0.08)')}
+            bg={useColorModeValue('rgba(49, 2, 118, 0.08)', 'rgba(255, 255, 255, 0.08)')}
           />
 
           <Box>

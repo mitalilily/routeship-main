@@ -250,7 +250,7 @@ const ShopifyInstallPage = () => {
               pt: 1,
             }}
           >
-            {status === 'error' ? null : <CircularProgress sx={{ color: '#E85500' }} />}
+            {status === 'error' ? null : <CircularProgress sx={{ color: '#FE6502' }} />}
           </Box>
         </Stack>
       </Card>

@@ -74,10 +74,10 @@ const CreateOrderWrapper = () => {
                   px: { xs: 0.85, sm: 1.1 },
                 },
                 '& .Mui-selected': {
-                  color: '#E85500',
+                  color: '#FE6502',
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#E85500',
+                  backgroundColor: '#FE6502',
                   height: 3,
                 },
               }}

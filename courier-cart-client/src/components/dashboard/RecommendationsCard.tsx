@@ -13,8 +13,8 @@ interface RecommendationsCardProps {
   recommendations: Recommendation[]
 }
 
-const BRAND_PRIMARY = '#0B3DBB'
-const BRAND_ACCENT = '#E85500'
+const BRAND_PRIMARY = '#310276'
+const BRAND_ACCENT = '#FE6502'
 
 export default function RecommendationsCard({ recommendations }: RecommendationsCardProps) {
   const navigate = useNavigate()

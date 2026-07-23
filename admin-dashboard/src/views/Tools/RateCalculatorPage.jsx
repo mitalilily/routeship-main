@@ -201,7 +201,7 @@ function CommonFields({
               placeholder="Enter pickup pincode"
               bg={inputBg}
               borderColor={panelBorder}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             />
           </FormControl>
           <FormControl>
@@ -228,7 +228,7 @@ function CommonFields({
               placeholder="Enter delivery pincode"
               bg={inputBg}
               borderColor={panelBorder}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             />
           </FormControl>
           <FormControl>
@@ -260,7 +260,7 @@ function CommonFields({
             onChange={(e) => handleChange('planId', e.target.value)}
             bg={inputBg}
             borderColor={panelBorder}
-            _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+            _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
           >
             {plans?.map((plan) => (
               <option key={plan.id} value={plan.id}>
@@ -312,7 +312,7 @@ function CommonFields({
               placeholder="Enter order amount"
               bg={inputBg}
               borderColor={panelBorder}
-              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(31,79,168,0.12)' }}
+              _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(49,2,118,0.12)' }}
             />
           </InputGroup>
           <FormHelperText color={useColorModeValue('gray.600', 'gray.400')}>

@@ -94,7 +94,7 @@ const AllChannelOptions = ({ fromChannelList = false }: IAllChannelOptions) => {
                 backdropFilter: "blur(12px)",
                 transition: "0.3s ease",
                 "&:hover": {
-                  boxShadow: "0 0 0 1px rgba(11, 61, 187, 0.16)",
+                  boxShadow: "0 0 0 1px rgba(49, 2, 118, 0.16)",
                 },
               }}
             >

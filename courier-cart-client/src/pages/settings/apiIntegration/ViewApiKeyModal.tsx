@@ -97,7 +97,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
           <Typography
             sx={{
               fontSize: '13px',
-              color: '#E85500',
+              color: '#FE6502',
               fontWeight: 500,
               mb: 0.5,
             }}
@@ -113,7 +113,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
                 onClick={() => onCopy(apiKey.api_key, 'key')}
                 size="small"
                 sx={{
-                  color: copiedKey === 'key' ? '#4CAF50' : '#E85500',
+                  color: copiedKey === 'key' ? '#4CAF50' : '#FE6502',
                   '&:hover': { bgcolor: 'rgba(51, 51, 105, 0.08)' },
                 }}
               >
@@ -126,7 +126,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
           <Typography
             sx={{
               fontSize: '13px',
-              color: '#E85500',
+              color: '#FE6502',
               fontWeight: 500,
               mb: 0.5,
             }}
@@ -142,7 +142,7 @@ This file contains sensitive credentials. Store it securely and never commit it 
                 onClick={() => onCopy(apiKey.api_secret, 'secret')}
                 size="small"
                 sx={{
-                  color: copiedKey === 'secret' ? '#4CAF50' : '#E85500',
+                  color: copiedKey === 'secret' ? '#4CAF50' : '#FE6502',
                   '&:hover': { bgcolor: 'rgba(51, 51, 105, 0.08)' },
                 }}
               >

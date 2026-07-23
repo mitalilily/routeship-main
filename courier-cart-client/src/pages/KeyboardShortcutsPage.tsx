@@ -22,13 +22,13 @@ import {
 } from 'react-icons/fi'
 import PageHeading from '../components/UI/heading/PageHeading'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 
 const Kbd = styled(Box)(({ theme }) => ({
   fontFamily: '"SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", monospace',
   padding: '8px 14px',
   borderRadius: '10px',
-  border: '1px solid rgba(11, 61, 187, 0.14)',
+  border: '1px solid rgba(49, 2, 118, 0.14)',
   background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF5F2 100%)',
   display: 'inline-flex',
   alignItems: 'center',

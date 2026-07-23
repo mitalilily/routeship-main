@@ -59,10 +59,10 @@ export default function LoginForm() {
 
           <Box sx={{ maxWidth: 520, mb: { lg: 12, xl: 16 } }}>
             <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
-              <Box sx={{ width: 36, height: 2, backgroundColor: '#FF4B0A' }} />
+              <Box sx={{ width: 36, height: 2, backgroundColor: '#FE6502' }} />
               <Typography
                 sx={{
-                  color: '#0B3DBB',
+                  color: '#310276',
                   fontSize: '0.75rem',
                   fontWeight: 900,
                   letterSpacing: '0.16em',
@@ -83,7 +83,7 @@ export default function LoginForm() {
               }}
             >
               Every shipment.
-              <Box component="span" sx={{ display: 'block', color: '#FF4B0A' }}>
+              <Box component="span" sx={{ display: 'block', color: '#FE6502' }}>
                 In clear view.
               </Box>
             </Typography>
@@ -136,7 +136,7 @@ export default function LoginForm() {
           />
           <Typography
             sx={{
-              color: '#0B3DBB',
+              color: '#310276',
               fontSize: '0.76rem',
               fontWeight: 900,
               textTransform: 'uppercase',

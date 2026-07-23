@@ -11,7 +11,7 @@ export default function MetricTile({
 }) {
   const bg = useColorModeValue('white', 'rgba(14, 23, 43, 0.9)')
   const activeBorderColor = useColorModeValue(
-    'rgba(11, 61, 187, 0.34)',
+    'rgba(49, 2, 118, 0.34)',
     'rgba(249, 115, 22, 0.36)',
   )
   const inactiveBorderColor = useColorModeValue(
@@ -26,14 +26,14 @@ export default function MetricTile({
     '0 16px 40px rgba(2, 8, 23, 0.32)',
   )
   const hoverBorderColor = useColorModeValue(
-    'rgba(11, 61, 187, 0.26)',
+    'rgba(49, 2, 118, 0.26)',
     'rgba(249, 115, 22, 0.28)',
   )
   const hoverShadow = useColorModeValue(
     '0 18px 40px rgba(67, 56, 202, 0.1)',
     '0 20px 48px rgba(2, 8, 23, 0.42)',
   )
-  const iconBg = useColorModeValue('rgba(11, 61, 187, 0.08)', 'rgba(255,255,255,0.06)')
+  const iconBg = useColorModeValue('rgba(49, 2, 118, 0.08)', 'rgba(255,255,255,0.06)')
 
   return (
     <Flex

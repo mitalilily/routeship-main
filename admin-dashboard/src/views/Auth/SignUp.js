@@ -20,7 +20,7 @@ function SignUp() {
   const pageBg = useColorModeValue('#F8F6FB', '#07132D')
   const shellBg = useColorModeValue('rgba(255,255,255,0.96)', 'rgba(24, 24, 27, 0.94)')
   const shellBorder = useColorModeValue('rgba(17, 17, 19, 0.12)', 'rgba(148, 163, 184, 0.14)')
-  const panelBg = useColorModeValue('#F3EDFF', '#061F61')
+  const panelBg = useColorModeValue('#F3EDFF', '#1A003F')
   const titleColor = useColorModeValue('#07132D', 'white')
   const textColor = useColorModeValue('#746A80', 'rgba(255,255,255,0.72)')
   const inputBg = useColorModeValue('white', 'rgba(255,255,255,0.04)')
@@ -41,8 +41,8 @@ function SignUp() {
         position="absolute"
         inset="0"
         bgImage={useColorModeValue(
-          'linear-gradient(135deg, rgba(11,61,187,0.08), transparent 42%), linear-gradient(180deg, #FAF8FC 0%, #F1ECF7 100%)',
-          'linear-gradient(145deg, #07132D 0%, #061F61 100%)',
+          'linear-gradient(135deg, rgba(49,2,118,0.08), transparent 42%), linear-gradient(180deg, #FAF8FC 0%, #F1ECF7 100%)',
+          'linear-gradient(145deg, #07132D 0%, #1A003F 100%)',
         )}
       />
 

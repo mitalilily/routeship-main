@@ -8,8 +8,8 @@ import CustomIconLoadingButton from '../UI/button/CustomLoadingButton'
 import CustomInput from '../UI/inputs/CustomInput'
 import { toast } from '../UI/Toast'
 
-const BRAND_NAVY = '#0B3DBB'
-const BRAND_ORANGE = '#E85500'
+const BRAND_NAVY = '#310276'
+const BRAND_ORANGE = '#FE6502'
 
 const primaryButtonStyles = {
   width: '100%',
@@ -18,7 +18,7 @@ const primaryButtonStyles = {
   boxShadow: 'none',
   minHeight: 52,
   '&:hover': {
-    background: '#09339E',
+    background: '#230154',
     transform: 'translateY(-1px)',
   },
 }
@@ -45,10 +45,10 @@ const authInputSx = {
       borderColor: '#E7D8C5',
     },
     '&:hover fieldset': {
-      borderColor: '#8EAAFF',
+      borderColor: '#A875F0',
     },
     '&.Mui-focused': {
-      boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
+      boxShadow: '0 0 0 3px rgba(49,2,118,0.12)',
     },
     '&.Mui-focused fieldset': {
       borderColor: BRAND_NAVY,

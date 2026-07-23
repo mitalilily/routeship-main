@@ -2,7 +2,7 @@ import { alpha, Grid, Paper, Stack, Typography } from '@mui/material'
 import { type FieldErrors } from 'react-hook-form'
 import { FaMoneyBillWave, FaRupeeSign, FaShoppingCart } from 'react-icons/fa'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 
 interface OrderSummaryProps {

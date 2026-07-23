@@ -104,7 +104,7 @@ const TableFilters = ({
     h: '46px',
     _focus: {
       borderColor: 'brand.500',
-      boxShadow: '0 0 0 3px rgba(11, 61, 187, 0.12)',
+      boxShadow: '0 0 0 3px rgba(49, 2, 118, 0.12)',
     },
   }
 

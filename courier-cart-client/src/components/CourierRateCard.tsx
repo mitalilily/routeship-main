@@ -89,7 +89,7 @@ type Props = {
   serviceType?: 'b2b' | 'b2c'
 }
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 const TEXT_MUTED = '#496189'
 const BORDER = '#E2E8F0'

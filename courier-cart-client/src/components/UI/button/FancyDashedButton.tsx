@@ -17,10 +17,10 @@ interface FancyDashedButtonProps {
 const FancyDashedButton: React.FC<FancyDashedButtonProps> = ({
   label,
   onClick,
-  borderColor = '#E85500',
-  backgroundColor = '#E85500',
+  borderColor = '#FE6502',
+  backgroundColor = '#FE6502',
   textColor = '#ffffff',
-  shadowColor = '#E85500',
+  shadowColor = '#FE6502',
   paddingX = '3em',
   paddingY = '1em',
   fontSize = '1rem',

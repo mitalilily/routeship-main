@@ -42,7 +42,7 @@ const KycSection = () => {
       <Box
         sx={{
           p: 2,
-          border: `1px solid ${alpha('#E85500', 0.12)}`,
+          border: `1px solid ${alpha('#FE6502', 0.12)}`,
           background:
             'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(251,245,242,0.98) 100%)',
         }}

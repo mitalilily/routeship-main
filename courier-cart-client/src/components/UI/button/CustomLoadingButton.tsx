@@ -30,7 +30,7 @@ export default function CustomIconLoadingButton({
   variant = 'solid',
   ...rest
 }: CustomIconLoadingButtonProps) {
-  const primary = '#E85500'
+  const primary = '#FE6502'
   const primaryDark = '#5519A8'
   const isDisabled = loading || disabled
   return (

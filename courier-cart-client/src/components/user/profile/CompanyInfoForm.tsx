@@ -250,7 +250,7 @@ export default function CompanyInfoForm() {
               p: 2,
               border: `1px solid ${alpha(BRAND_GREEN, 0.12)}`,
               background:
-                'linear-gradient(180deg, rgba(11, 61, 187,0.04) 0%, rgba(255,255,255,0.92) 100%)',
+                'linear-gradient(180deg, rgba(49, 2, 118,0.04) 0%, rgba(255,255,255,0.92) 100%)',
             }}
           >
             <Typography fontSize={'12px'} display={'flex'} alignItems={'center'} gap={1}>

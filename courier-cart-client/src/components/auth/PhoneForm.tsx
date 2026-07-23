@@ -19,8 +19,8 @@ import { toast } from '../UI/Toast'
 import OtpForm from './OtpForm'
 import PasswordLoginForm from './PasswordLoginForm'
 
-const BRAND_ORANGE = '#E85500'
-const BRAND_BLUE = '#0B3DBB'
+const BRAND_ORANGE = '#FE6502'
+const BRAND_BLUE = '#310276'
 
 const primaryButtonStyles = {
   width: '100%',
@@ -29,7 +29,7 @@ const primaryButtonStyles = {
   boxShadow: 'none',
   minHeight: 52,
   '&:hover': {
-    background: '#09339E',
+    background: '#230154',
     transform: 'translateY(-1px)',
   },
 }
@@ -57,10 +57,10 @@ const authInputSx = {
       borderColor: '#E7D8C5',
     },
     '&:hover fieldset': {
-      borderColor: '#8EAAFF',
+      borderColor: '#A875F0',
     },
     '&.Mui-focused': {
-      boxShadow: '0 0 0 3px rgba(11,61,187,0.12)',
+      boxShadow: '0 0 0 3px rgba(49,2,118,0.12)',
     },
     '&.Mui-focused fieldset': {
       borderColor: BRAND_BLUE,

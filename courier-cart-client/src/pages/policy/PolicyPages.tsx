@@ -5,7 +5,7 @@ import PageHeading from '../../components/UI/heading/PageHeading'
 import CompanyDetails from './CompanyDetails'
 
 const PolicyPages = () => {
-  const BRAND_PRIMARY = '#E85500'
+  const BRAND_PRIMARY = '#FE6502'
   const BRAND_WINE = '#4B1196'
 
   return (
@@ -17,7 +17,7 @@ const PolicyPages = () => {
           borderRadius: 5,
           border: `1px solid ${alpha(BRAND_PRIMARY, 0.12)}`,
           background:
-            'radial-gradient(circle at top right, rgba(11, 61, 187,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
+            'radial-gradient(circle at top right, rgba(49, 2, 118,0.12) 0%, transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,243,240,0.98) 100%)',
           boxShadow: '0 18px 38px rgba(20, 20, 20, 0.08)',
         }}
       >

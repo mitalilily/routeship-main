@@ -115,7 +115,7 @@ function SettingTile({ item, onOpen }: { item: SettingItem; onOpen: () => void }
         transition: 'transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease',
         '&:hover': {
           transform: 'translateY(-2px)',
-          borderColor: alpha('#E85500', 0.24),
+          borderColor: alpha('#FE6502', 0.24),
           boxShadow: '0 18px 34px rgba(17, 17, 19, 0.08)',
         },
       }}
@@ -128,9 +128,9 @@ function SettingTile({ item, onOpen }: { item: SettingItem; onOpen: () => void }
             borderRadius: 2,
             display: 'grid',
             placeItems: 'center',
-            color: '#E85500',
-            bgcolor: alpha('#E85500', 0.08),
-            border: `1px solid ${alpha('#E85500', 0.12)}`,
+            color: '#FE6502',
+            bgcolor: alpha('#FE6502', 0.08),
+            border: `1px solid ${alpha('#FE6502', 0.12)}`,
           }}
         >
           {item.icon}

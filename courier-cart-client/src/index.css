@@ -30,7 +30,7 @@ html {
 
 body {
   background:
-    linear-gradient(135deg, rgba(11, 61, 187, 0.06), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(135deg, rgba(49, 2, 118, 0.06), rgba(255, 255, 255, 0) 42%),
     linear-gradient(180deg, #f7f4f2 0%, #edf2ff 100%);
   background-attachment: fixed;
   color: var(--brand-ink);

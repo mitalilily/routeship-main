@@ -18,7 +18,7 @@ import { AiOutlineDelete } from 'react-icons/ai'
 import { FaBoxOpen } from 'react-icons/fa'
 import CustomInput from '../UI/inputs/CustomInput'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const TEXT_SECONDARY = '#4A5568'
 
 type RateCalculatorBox = {

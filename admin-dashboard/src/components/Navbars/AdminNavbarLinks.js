@@ -36,7 +36,7 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
   const placeholder = useColorModeValue('gray.400', 'gray.500')
 
   const styles = {
-    accent: '#0B3DBB',
+    accent: '#310276',
     inputBg,
     inputBorder,
     hoverBg,

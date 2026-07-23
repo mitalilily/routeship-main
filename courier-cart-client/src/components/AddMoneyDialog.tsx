@@ -19,8 +19,8 @@ import { toast } from './UI/Toast'
 import CustomIconLoadingButton from './UI/button/CustomLoadingButton'
 import CustomDialog from './UI/modal/CustomModal'
 
-const BRAND_ORANGE = '#E85500'
-const BRAND_ORANGE_DARK = '#C23E00'
+const BRAND_ORANGE = '#FE6502'
+const BRAND_ORANGE_DARK = '#C94F01'
 const BRAND_SURFACE = '#FCF8F7'
 
 interface AddMoneyDialogProps {

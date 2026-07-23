@@ -74,9 +74,9 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 
   '&.Mui-selected': {
-    color: '#E85500',
-    background: alpha('#E85500', 0.07),
-    border: `1px solid ${alpha('#E85500', 0.18)}`,
+    color: '#FE6502',
+    background: alpha('#FE6502', 0.07),
+    border: `1px solid ${alpha('#FE6502', 0.18)}`,
   },
   [theme.breakpoints.down('xl')]: {
     minHeight: 36,
@@ -160,7 +160,7 @@ export function SmartTabs<T extends string = string>({
               color: '#667085',
             },
             '& .Mui-selected': {
-              color: '#E85500',
+              color: '#FE6502',
             },
           }}
         >

@@ -29,7 +29,7 @@ import { SelectCourierForm } from '../SelectCourierForm'
 import PackageDetailsForm from './PackageDetailsForm'
 import PackageDimensionsForm from './PackageDimensionsForm'
 
-const ACCENT = '#E85500'
+const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 const TEXT_MUTED = '#496189'
 

@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useMerchantReadiness } from '../../../hooks/useMerchantReadiness'
 import FullScreenLoader from '../../UI/loader/FullScreenLoader'
 
-const BRAND_PRIMARY = '#E85500'
+const BRAND_PRIMARY = '#FE6502'
 const BRAND_ACCENT = '#4B1196'
 
 export default function RequireMerchantReady({ children }: { children: ReactNode }) {

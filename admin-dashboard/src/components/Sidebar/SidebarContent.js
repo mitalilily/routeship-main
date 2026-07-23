@@ -87,7 +87,7 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
       bg={sidebarBg}
       borderRight="1px solid"
       borderColor={borderColor}
-      boxShadow="6px 0 24px rgba(43, 10, 85, 0.05)"
+      boxShadow="6px 0 24px rgba(49, 2, 118, 0.06)"
       position="fixed"
       left="0"
       top="0"

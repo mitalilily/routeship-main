@@ -29,7 +29,7 @@ function SidebarResponsive(props) {
   const hoverBg = useColorModeValue('#FAF8FC', 'rgba(255,255,255,0.08)')
   const textColor = useColorModeValue('gray.700', 'gray.100')
   const iconColor = useColorModeValue('gray.500', 'gray.300')
-  const activeTextColor = useColorModeValue('#0B3DBB', '#FFFFFF')
+  const activeTextColor = useColorModeValue('#310276', '#FFFFFF')
   const dividerColor = useColorModeValue('rgba(148, 163, 184, 0.28)', 'rgba(148, 163, 184, 0.24)')
 
   const createLinks = (routes) => {

@@ -209,7 +209,7 @@ export default function WeightReconciliation() {
               p: 2.2,
               borderRadius: 4,
               bgcolor: '#fff',
-              border: '1px solid rgba(11, 61, 187, 0.12)',
+              border: '1px solid rgba(49, 2, 118, 0.12)',
               boxShadow: '0 14px 30px rgba(20, 20, 20, 0.06)',
             }}
           >
@@ -257,8 +257,8 @@ export default function WeightReconciliation() {
       sx={{
         p: 1.6,
         borderRadius: 4,
-        bgcolor: alpha('#E85500', 0.06),
-        border: '1px solid rgba(11, 61, 187, 0.12)',
+        bgcolor: alpha('#FE6502', 0.06),
+        border: '1px solid rgba(49, 2, 118, 0.12)',
       }}
     >
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={1.5}>

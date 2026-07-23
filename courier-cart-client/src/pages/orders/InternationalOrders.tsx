@@ -163,7 +163,7 @@ export default function InternationalOrders() {
           sx={{ p: 2, borderBottom: '1px solid #E2E8F0' }}
         >
           <Stack direction="row" alignItems="center" gap={1}>
-            <Box sx={{ color: '#E85500', display: 'flex' }}>
+            <Box sx={{ color: '#FE6502', display: 'flex' }}>
               <FiGlobe size={20} />
             </Box>
             <Typography sx={{ fontWeight: 800, color: '#111827' }}>
