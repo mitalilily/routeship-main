@@ -175,6 +175,9 @@ const parseXpressbeesAwbPool = (): string[] => {
 const isTruthyEnvValue = (value: unknown): boolean =>
   ['true', '1', 'yes', 'y'].includes(String(value || '').trim().toLowerCase())
 
+const isFalseyEnvValue = (value: unknown): boolean =>
+  ['false', '0', 'no', 'n'].includes(String(value || '').trim().toLowerCase())
+
 const isXpressbeesAwbCredentialError = (error: any): boolean => {
   const response = error?.response?.data || {}
   const code = String(response?.ReturnCode ?? response?.returnCode ?? response?.code ?? '').trim()
@@ -197,12 +200,21 @@ const isXpressbeesAwbCredentialError = (error: any): boolean => {
   )
 }
 
+const isXpressbeesManualAwbRangeError = (error: any): boolean => {
+  const message = String(error?.message || error || '').trim().toLowerCase()
+  return (
+    message.includes('xpressbees manual awb range is not configured') ||
+    message.includes('xpressbees manual awb range is exhausted')
+  )
+}
+
 const isXpressbeesAwbResolutionError = (error: any): boolean => {
   const message = String(error?.message || error || '').trim().toLowerCase()
   return (
     message.includes('xpressbees awb generation') ||
     message.includes('awb generation failed') ||
     message.includes('awb series') ||
+    isXpressbeesManualAwbRangeError(error) ||
     isXpressbeesAwbCredentialError(error)
   )
 }
@@ -759,34 +771,21 @@ const resolveXpressbeesAwbCandidates = async (
     return Array.from(new Set(explicitAwbs)).map((awb) => ({ awb, source: 'explicit' }))
   }
 
-  const manualReservation = await reserveNextXpressbeesManualAwb({
-    orderNumber: params.order_number,
-    userId,
-  })
-  if (manualReservation?.awb) {
-    return [
-      {
-        awb: manualReservation.awb,
-        source: 'manual_range',
-        manualReservation,
-      },
-    ]
-  }
+  const liveAwbEnabled =
+    Boolean(xpressbees) && !isFalseyEnvValue(process.env.XPRESSBEES_ALLOW_LIVE_AWB_GENERATION)
 
-  let fallbackPool: string[] = []
-
-  if (xpressbees && isTruthyEnvValue(process.env.XPRESSBEES_ALLOW_LIVE_AWB_GENERATION)) {
+  if (xpressbees && liveAwbEnabled) {
     try {
       const generated = await xpressbees.generateAwbNumber({
         deliveryType: params.payment_type,
       })
       const generatedAwbs = [
-        ...(Array.isArray(generated.awbs) ? generated.awbs : []),
         generated.awb,
+        ...(Array.isArray(generated.awbs) ? generated.awbs : []),
       ]
         .map(normalizeXpressbeesAwb)
         .filter(Boolean)
-      const availableGeneratedAwbs = await getUnusedXpressbeesAwbs(generatedAwbs)
+      const availableGeneratedAwbs = await getUnusedXpressbeesAwbs(generatedAwbs.slice(0, 1000))
       if (availableGeneratedAwbs.length) {
         return availableGeneratedAwbs.map((awb) => ({ awb, source: 'live_api' }))
       }
@@ -796,7 +795,6 @@ const resolveXpressbeesAwbCandidates = async (
         `Xpressbees generated AWB batch ${generated.batchId} but every returned AWB is already used locally.`,
       )
     } catch (err: any) {
-      fallbackPool = parseXpressbeesAwbPool()
       const allowConfiguredFallback = isTruthyEnvValue(
         process.env.XPRESSBEES_ALLOW_PREALLOCATED_AWB_FALLBACK,
       )
@@ -813,11 +811,31 @@ const resolveXpressbeesAwbCandidates = async (
     }
   }
 
+  const manualReservation = await reserveNextXpressbeesManualAwb({
+    orderNumber: params.order_number,
+    userId,
+  }).catch((err: any) => {
+    if (isXpressbeesManualAwbRangeError(err)) return null
+    throw err
+  })
+  if (manualReservation?.awb) {
+    return [
+      {
+        awb: manualReservation.awb,
+        source: 'manual_range',
+        manualReservation,
+      },
+    ]
+  }
+
+  let fallbackPool: string[] = []
   const pool = fallbackPool.length ? fallbackPool : parseXpressbeesAwbPool()
   if (!pool.length) {
     throw new HttpError(
       400,
-      'Xpressbees manual AWB range is not configured. Add the AWB starting and ending number in Admin > Couriers > Credentials before booking Xpressbees shipments.',
+      liveAwbEnabled
+        ? 'Xpressbees could not allocate an AWB from runtime generation, manual AWB ranges, or configured AWB pool.'
+        : 'Xpressbees manual AWB range is not configured. Add the AWB starting and ending number in Admin > Couriers > Credentials before booking Xpressbees shipments.',
     )
   }
 
