@@ -87,6 +87,13 @@ export default function OtpForm({ email, demoOtp, demoOtpExpiresAt, onDemoOtpUpd
     }
   }, [email])
 
+  useEffect(() => {
+    if (/^\d{6}$/.test(demoOtp || '')) {
+      setOtpDigits(demoOtp!.split(''))
+      setError('')
+    }
+  }, [demoOtp])
+
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return
 
