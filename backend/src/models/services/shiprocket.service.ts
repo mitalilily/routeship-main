@@ -5352,6 +5352,68 @@ export const fetchAvailableCouriersWithRates = async (
     })
 
     // 🔹 Sorting and tagging
+    const dedupeXpressbeesB2COptions = (couriers: any[]) => {
+      const bestByKey = new Map<string, any>()
+      const passthrough: any[] = []
+
+      for (const courier of couriers) {
+        const providerKey = normalizeProviderKey(
+          courier?.integration_type || courier?.serviceProvider || courier?.service_provider || null,
+        )
+        if (providerKey !== 'xpressbees') {
+          passthrough.push(courier)
+          continue
+        }
+
+        const mode =
+          normalizeB2CShippingMode(
+            courier?.shipping_mode ||
+              courier?.service_mode ||
+              courier?.provider_serviceability?.shipping_mode ||
+              courier?.provider_serviceability?.service_mode ||
+              courier?.provider_serviceability?.mode,
+          ) || 'surface'
+        const dedupeKey = `${String(courier?.id ?? '')}__xpressbees__${mode}`
+        const activeRate = getActiveLocalRate(courier)
+        const total = Number(
+          activeRate?.total_charges ??
+            courier?.total_charges ??
+            courier?.courier_cost_estimate ??
+            activeRate?.rate ??
+            courier?.rate ??
+            Infinity,
+        )
+        const existing = bestByKey.get(dedupeKey)
+        const existingRate = existing ? getActiveLocalRate(existing) : null
+        const existingTotal = Number(
+          existingRate?.total_charges ??
+            existing?.total_charges ??
+            existing?.courier_cost_estimate ??
+            existingRate?.rate ??
+            existing?.rate ??
+            Infinity,
+        )
+
+        if (!existing || total < existingTotal) {
+          bestByKey.set(dedupeKey, {
+            ...courier,
+            shipping_mode: mode,
+            service_mode: mode,
+            provider_serviceability: {
+              ...(courier?.provider_serviceability || {}),
+              mode,
+              shipping_mode: mode,
+              service_mode: mode,
+            },
+          })
+        }
+      }
+
+      return [...passthrough, ...bestByKey.values()]
+    }
+
+    combined = dedupeXpressbeesB2COptions(combined)
+
     if (userId && combined?.length) {
       const [profile] = await db
         .select()

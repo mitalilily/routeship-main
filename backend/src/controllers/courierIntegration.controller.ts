@@ -535,8 +535,51 @@ const buildLastResortB2CCouriersFromRateCards = async (
 }
 
 const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, any>, userId?: string) => {
-  const appendMissingXpressbeesFallback = async (couriers: any[]) => {
+  const dedupeXpressbeesFallbackCards = (couriers: any[]) => {
     const list = Array.isArray(couriers) ? couriers : []
+    const passthrough: any[] = []
+    const bestByKey = new Map<string, any>()
+
+    for (const courier of list) {
+      const provider = String(
+        courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '',
+      )
+        .trim()
+        .toLowerCase()
+      if (provider !== 'xpressbees') {
+        passthrough.push(courier)
+        continue
+      }
+
+      const mode = String(
+        courier?.shipping_mode ||
+          courier?.service_mode ||
+          courier?.provider_serviceability?.shipping_mode ||
+          courier?.provider_serviceability?.service_mode ||
+          courier?.provider_serviceability?.mode ||
+          'surface',
+      )
+        .trim()
+        .toLowerCase()
+      const key = `${String(courier?.id ?? '')}__xpressbees__${mode || 'surface'}`
+      const total = Number(
+        courier?.total_charges ?? courier?.courier_cost_estimate ?? courier?.rate ?? Infinity,
+      )
+      const existing = bestByKey.get(key)
+      const existingTotal = Number(
+        existing?.total_charges ?? existing?.courier_cost_estimate ?? existing?.rate ?? Infinity,
+      )
+
+      if (!existing || total < existingTotal) {
+        bestByKey.set(key, courier)
+      }
+    }
+
+    return [...passthrough, ...bestByKey.values()]
+  }
+
+  const appendMissingXpressbeesFallback = async (couriers: any[]) => {
+    const list = dedupeXpressbeesFallbackCards(couriers)
     const hasXpressbees = list.some(
       (courier) =>
         String(courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '')
@@ -568,7 +611,7 @@ const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, a
       destination: serviceParams?.destination,
       count: xpressbeesFallback.length,
     })
-    return [...list, ...xpressbeesFallback]
+    return dedupeXpressbeesFallbackCards([...list, ...xpressbeesFallback])
   }
 
   try {
@@ -615,7 +658,7 @@ const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, a
         destination: serviceParams?.destination,
         count: fallbackCouriers.length,
       })
-      return fallbackCouriers
+      return dedupeXpressbeesFallbackCards(fallbackCouriers)
     }
 
     console.warn('[Couriers] No strict or fallback B2C rate-card result available; returning no couriers')
