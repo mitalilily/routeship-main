@@ -34,6 +34,7 @@ const SUPPORTED_INVOICE_CONFIG_LEVELS = new Set(['shipping level', 'product leve
 const INNOFULFILL_PROVIDER = 'innofulfill'
 const INNOFULFILL_ECOMM_CARRIER_ID = '30d5f835-a63a-4125-b095-93b3098e4e3d'
 const INNOFULFILL_ECOMM_CARRIER_NAME = 'innofulfill_ecomm'
+const INNOFULFILL_HYPERLOCAL_CARRIER_NAME = 'innofulfillHyperlocal'
 const INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS = ['x-webhook-signature']
 const INNOFULFILL_WEBHOOK_SENSITIVE_HEADERS = new Set([
   ...INNOFULFILL_WEBHOOK_SIGNATURE_HEADERS,
@@ -243,6 +244,49 @@ const validateInnofulfillEcommOrderPayload = (payload: Record<string, unknown>) 
       `carrierId=${INNOFULFILL_ECOMM_CARRIER_ID}`,
       `carrierName=${INNOFULFILL_ECOMM_CARRIER_NAME}`,
       'addresses[] with valid PICKUP and DELIVERY entries',
+      'shipments[] with dimensions, shipmentStatus=CONFIRMED, physicalWeight, physicalWeightUnit=KG, and items[]',
+      'payment.type=PREPAID|COD, payment.currency=INR, payment.paymentMethod',
+    ]
+  }
+
+  return []
+}
+
+const normalizeInnofulfillHyperlocalPayload = (payload: Record<string, unknown>) => ({
+  ...payload,
+  orderType: normalizeString(payload.orderType).toUpperCase(),
+  orderStatus: normalizeString(payload.orderStatus).toUpperCase() || 'CONFIRMED',
+  parcelCategory: 'HYPERLOCAL',
+  deliveryPromise: 'HYPERLOCAL',
+  deliveryMode: '',
+  carrierName: normalizeString(payload.carrierName) || INNOFULFILL_HYPERLOCAL_CARRIER_NAME,
+})
+
+const validateInnofulfillHyperlocalOrderPayload = (payload: Record<string, unknown>) => {
+  const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
+  const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
+
+  if (
+    !SUPPORTED_ORDER_TYPES.has(normalizeString(payload.orderType).toUpperCase()) ||
+    normalizeString(payload.orderStatus).toUpperCase() !== 'CONFIRMED' ||
+    normalizeString(payload.parcelCategory).toUpperCase() !== 'HYPERLOCAL' ||
+    normalizeString(payload.deliveryPromise).toUpperCase() !== 'HYPERLOCAL' ||
+    normalizeString(payload.deliveryMode) !== '' ||
+    normalizeString(payload.carrierName) !== INNOFULFILL_HYPERLOCAL_CARRIER_NAME ||
+    !hasRequiredAddressFields(addresses, 'PICKUP') ||
+    !hasRequiredAddressFields(addresses, 'DELIVERY') ||
+    shipments.length === 0 ||
+    !shipments.every(hasValidEcommShipment) ||
+    !hasValidEcommPayment(payload.payment)
+  ) {
+    return [
+      'orderType=FORWARD|REVERSE',
+      'orderStatus=CONFIRMED',
+      'parcelCategory=HYPERLOCAL',
+      'deliveryPromise=HYPERLOCAL',
+      'deliveryMode empty string',
+      `carrierName=${INNOFULFILL_HYPERLOCAL_CARRIER_NAME}`,
+      'addresses[] with valid same-city PICKUP and DELIVERY entries',
       'shipments[] with dimensions, shipmentStatus=CONFIRMED, physicalWeight, physicalWeightUnit=KG, and items[]',
       'payment.type=PREPAID|COD, payment.currency=INR, payment.paymentMethod',
     ]
@@ -663,7 +707,9 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
     : normalizeString(payload.carrierId)
   const carrierName = isEcommOrder
     ? normalizeString(payload.carrierName) || INNOFULFILL_ECOMM_CARRIER_NAME
-    : normalizeString(payload.carrierName)
+    : isHyperlocalOrder
+      ? normalizeString(payload.carrierName) || INNOFULFILL_HYPERLOCAL_CARRIER_NAME
+      : normalizeString(payload.carrierName)
   const addresses = Array.isArray(payload.addresses) ? payload.addresses : []
   const shipments = Array.isArray(payload.shipments) ? payload.shipments : []
   const nextPayload = isEcommOrder
@@ -677,7 +723,17 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
         carrierName,
         deliveryMode,
       }
-    : payload
+    : isHyperlocalOrder
+      ? {
+          ...payload,
+          orderType,
+          orderStatus,
+          parcelCategory,
+          deliveryPromise,
+          carrierName,
+          deliveryMode: '',
+        }
+      : payload
 
   if (
     !SUPPORTED_ORDER_TYPES.has(orderType) ||
@@ -687,6 +743,7 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
     (isEcommOrder && !SUPPORTED_DELIVERY_MODES.has(deliveryMode)) ||
     (isEcommOrder && carrierId !== INNOFULFILL_ECOMM_CARRIER_ID) ||
     (isEcommOrder && carrierName !== INNOFULFILL_ECOMM_CARRIER_NAME) ||
+    (isHyperlocalOrder && carrierName !== INNOFULFILL_HYPERLOCAL_CARRIER_NAME) ||
     (isHyperlocalOrder && deliveryMode !== '') ||
     (isEcommOrder && !carrierId) ||
     !carrierName ||
@@ -708,6 +765,7 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
         'deliveryMode=SURFACE|AIR for ECOMM or empty for HYPERLOCAL',
         `carrierId=${INNOFULFILL_ECOMM_CARRIER_ID} for ECOMM`,
         `carrierName=${INNOFULFILL_ECOMM_CARRIER_NAME} for ECOMM`,
+        `carrierName=${INNOFULFILL_HYPERLOCAL_CARRIER_NAME} for HYPERLOCAL`,
         'addresses with PICKUP and DELIVERY',
         'shipments',
         'payment',
@@ -774,6 +832,51 @@ export const innofulfillCreateEcommOrderController = async (req: Request, res: R
     return res.status(502).json({
       success: false,
       message: 'Unable to reach Innofulfill ECOMM order service',
+    })
+  }
+}
+
+export const innofulfillCreateHyperlocalOrderController = async (req: Request, res: Response) => {
+  const authHeaders = getForwardableAuthHeaders(req)
+  const payload = isPlainObject(req.body) ? normalizeInnofulfillHyperlocalPayload(req.body) : null
+
+  if (!hasInnofulfillAuth(authHeaders)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide Api-Key or Authorization Bearer token with TenantId.',
+    })
+  }
+
+  if (!payload) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid request body',
+    })
+  }
+
+  const missingFields = validateInnofulfillHyperlocalOrderPayload(payload)
+  if (missingFields.length) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid HYPERLOCAL order fields',
+      required: missingFields,
+    })
+  }
+
+  try {
+    const result = await createInnofulfillOrder(payload, authHeaders)
+
+    return res.status(result.status).json(result.data)
+  } catch (error: any) {
+    console.error('Innofulfill create HYPERLOCAL order request failed', {
+      message: error?.message || String(error),
+      code: error?.code,
+      status: error?.response?.status,
+    })
+
+    return res.status(502).json({
+      success: false,
+      message: 'Unable to reach Innofulfill HYPERLOCAL order service',
     })
   }
 }
