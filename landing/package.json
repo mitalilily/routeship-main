@@ -10,6 +10,7 @@
     "seed:server": "npm --prefix server run seed",
     "build": "vite build",
     "lint": "eslint .",
+    "start": "node scripts/serve-dist.mjs",
     "test:smoke": "node scripts/smoke-test.mjs",
     "preview": "vite preview"
   },

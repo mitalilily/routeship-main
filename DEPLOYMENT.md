@@ -9,6 +9,10 @@ Use Railway services for:
 - `admin-dashboard/` as the admin frontend service
 - `landing/` as the public landing frontend service
 
+For monorepo deployments, set each Railway service root directory to the matching folder
+above. The landing service includes its own `railway.json`, `nixpacks.toml`, and `start`
+script so Railway can build the Vite app and serve `dist/` on the injected `PORT`.
+
 Keep all production values in Railway service variables, not committed env files.
 
 Recommended Railway variables:
