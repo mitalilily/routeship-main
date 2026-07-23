@@ -321,6 +321,7 @@ export default function SourceOrderCourierDrawer({
         transaction_fee: Number(data.transactionFee ?? 0),
         gift_wrap: Number(data.giftWrap ?? 0),
         integration_type: data.integrationType,
+        shipping_mode: data.shippingMode ?? undefined,
         courier_id: Number(data.courierPartnerId),
         courier_partner: data.courierPartner,
         courier_option_key: data.courierOptionKey,

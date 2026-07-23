@@ -7221,7 +7221,7 @@ export const createB2CShipmentService = async (
 
   let otherCharges = Number(params?.other_charges ?? 0)
   const shippingCharges = Number(params?.shipping_charges ?? 0)
-  const totalShippingCharges = shippingCharges + otherCharges
+  let totalShippingCharges = shippingCharges + otherCharges
   let freightCharges = Number(params?.freight_charges ?? 0)
   const isCodOrder = params.payment_type === 'cod'
   let codCharges = isCodOrder ? Number(params?.cod_charges ?? 0) : 0
@@ -7236,8 +7236,7 @@ export const createB2CShipmentService = async (
 
   const courierIdForRate =
     selectedDelhiveryCourierId ?? (params.courier_id ? Number(params.courier_id) : null)
-  const usesProviderPricedFreight =
-    String(params.integration_type || '').toLowerCase() === 'innofulfill' && freightCharges > 0
+  const isInnofulfillBooking = String(params.integration_type || '').toLowerCase() === 'innofulfill'
 
   let slabbedFreight: {
     freight: number
@@ -7256,6 +7255,57 @@ export const createB2CShipmentService = async (
     chargeable_weight: null,
     slabs: null,
   }
+
+  if (isInnofulfillBooking) {
+    try {
+      const innofulfill = new InnofulfillCourierService()
+      const hyperlocal =
+        normalizeB2CShippingMode(params.shipping_mode) === 'hyperlocal' ||
+        String((params as any).parcelCategory || '').toUpperCase() === 'HYPERLOCAL' ||
+        String((params as any).deliveryPromise || '').toUpperCase() === 'HYPERLOCAL'
+      const liveRateData = await innofulfill.calculateB2CRate(params, { hyperlocal })
+      const liveRateAmounts = innofulfill.getRateAmounts(liveRateData)
+      const liveTotal = Number(liveRateAmounts.total ?? 0)
+
+      if (!Number.isFinite(liveTotal) || liveTotal <= 0) {
+        throw new HttpError(400, 'Innofulfill did not return a valid live rate for the selected mode.')
+      }
+
+      freightCharges = Number(liveRateAmounts.freight ?? liveTotal)
+      otherCharges = Number(liveRateAmounts.otherCharges ?? Math.max(0, liveTotal - freightCharges))
+      totalShippingCharges = shippingCharges + otherCharges
+      params.freight_charges = freightCharges
+      params.other_charges = otherCharges
+      params.courier_cost = liveTotal
+
+      slabbedFreight = {
+        ...slabbedFreight,
+        freight: freightCharges,
+        other_charges: otherCharges,
+        chargeable_weight: Number(liveRateAmounts.chargeableWeightKg ?? 0) || null,
+        rate_card_mode: hyperlocal
+          ? 'hyperlocal'
+          : normalizeB2CShippingMode(params.shipping_mode) || 'surface',
+        rate_card_courier_name: 'Innofulfill',
+        rate_card_service_provider: 'innofulfill',
+      }
+    } catch (rateErr: any) {
+      console.error('Failed to refresh Innofulfill live rate before booking', {
+        order_number: params.order_number,
+        shipping_mode: params.shipping_mode,
+        error: rateErr?.message || rateErr,
+      })
+      if (rateErr instanceof HttpError) {
+        throw rateErr
+      }
+      throw new HttpError(
+        400,
+        rateErr?.message || 'Unable to fetch Innofulfill live rate for selected delivery mode.',
+      )
+    }
+  }
+
+  const usesProviderPricedFreight = isInnofulfillBooking && freightCharges > 0
 
   if (!usesProviderPricedFreight && courierIdForRate && freightOriginPincode && freightDestinationPincode) {
     try {
@@ -7280,6 +7330,7 @@ export const createB2CShipmentService = async (
         slabbedFreight = computedFreight
         freightCharges = Number(computedFreight.freight)
         otherCharges = Number(computedFreight.other_charges ?? 0)
+        totalShippingCharges = shippingCharges + otherCharges
         params.freight_charges = freightCharges
         params.other_charges = otherCharges
         if (isCodOrder) {

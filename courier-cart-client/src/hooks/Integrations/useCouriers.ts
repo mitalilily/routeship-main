@@ -63,6 +63,7 @@ export interface UseAvailableCouriersParams {
   isReverse?: boolean
   shadowfax_forward_mode?: 'marketplace' | 'warehouse'
   shadowfax_service_mode?: 'regular' | 'surface'
+  shipping_mode?: string | null
 }
 
 export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
@@ -132,6 +133,7 @@ export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
       params?.isReverse,
       params?.shadowfax_forward_mode,
       params?.shadowfax_service_mode,
+      params?.shipping_mode,
       params?.freight_mode,
       params?.rov_type,
     ],
@@ -163,6 +165,7 @@ export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
         isReverse: params.isReverse,
         shadowfax_forward_mode: params.shadowfax_forward_mode,
         shadowfax_service_mode: params.shadowfax_service_mode,
+        shipping_mode: params.shipping_mode,
         freight_mode: params.freight_mode,
         rov_type: params.rov_type,
         breadth,

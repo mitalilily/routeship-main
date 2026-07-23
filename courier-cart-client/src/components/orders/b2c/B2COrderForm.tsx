@@ -90,7 +90,8 @@ export type B2CFormData = {
   pickupLocationId?: string
   pickupLocationPincode?: string
   pickupLocationName?: string
-  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry'
+  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill'
+  shippingMode?: string | null
   pickupAddress?: string
   pickupLocationPOCName?: string
   courierPartnerId: string
@@ -351,6 +352,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
         is_rto_different: data?.isRtoSame ? 'no' : 'yes',
         discount: data.discount ?? 0,
         integration_type: data?.integrationType,
+        shipping_mode: data?.shippingMode ?? undefined,
         transaction_fee: data?.transactionFee,
         gift_wrap: data?.giftWrap,
         consignee: {

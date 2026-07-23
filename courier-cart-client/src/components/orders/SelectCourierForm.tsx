@@ -56,6 +56,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const orderType = watch('orderType') ?? 'prepaid'
   const selectedCourierId = watch('courierPartnerId') ?? ''
   const selectedCourierOptionKey = watch('courierOptionKey') ?? ''
+  const selectedShippingMode = String(watchFormValue('shippingMode') || '').trim().toLowerCase()
   const selectedShadowfaxForwardMode = watch('shadowfaxForwardMode') ?? undefined
   const selectedShadowfaxServiceMode = watch('shadowfaxServiceMode') ?? undefined
   const freightMode = String(watchFormValue('freightMode') || 'fod') as 'fop' | 'fod'
@@ -183,6 +184,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
       : {}),
     ...(preferredShadowfaxForwardMode ? { shadowfax_forward_mode: preferredShadowfaxForwardMode } : {}),
     shadowfax_service_mode: selectedShadowfaxServiceMode ?? undefined,
+    ...(shipment_type === 'b2c' && selectedShippingMode ? { shipping_mode: selectedShippingMode } : {}),
     ...(shipment_type === 'b2b'
       ? {
           length: b2bMaxLength,
@@ -206,6 +208,30 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
 
   const getCourierOptionKey = (courier: any) =>
     String(courier?.courier_option_key ?? courier?.id ?? courier?.courier_id ?? '')
+  const normalizeInnofulfillEcommMode = (value: unknown): 'surface' | 'air' =>
+    String(value || '').trim().toLowerCase() === 'air' ? 'air' : 'surface'
+  const getCourierProviderKey = (courier: any) =>
+    String(courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '')
+      .trim()
+      .toLowerCase()
+  const getCourierShippingMode = (courier: any) =>
+    courier?.provider_serviceability?.mode ??
+    courier?.provider_serviceability?.shipping_mode ??
+    courier?.shipping_mode ??
+    courier?.mode ??
+    null
+  const isInnofulfillEcommCourier = (courier: any) => {
+    if (getCourierProviderKey(courier) !== 'innofulfill') return false
+
+    const mode = String(getCourierShippingMode(courier) || '').trim().toLowerCase()
+    const carrierText = String(
+      `${courier?.name || ''} ${courier?.provider_serviceability?.carrierName || ''} ${
+        courier?.provider_serviceability?.carrierDisplayName || ''
+      }`,
+    ).toLowerCase()
+
+    return mode !== 'hyperlocal' && !carrierText.includes('hyperlocal')
+  }
   const isCourierBookingUnavailable = (courier: any) =>
     courier?.booking_available === false ||
     courier?.can_book === false ||
@@ -857,6 +883,11 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
               const courierGstPercent = getCourierGstPercent(courier)
               const courierGstAmount = getCourierGstAmount(courier)
               const taxInclusiveCharge = getCourierTaxInclusiveCharge(courier)
+              const showInnofulfillModeSelector =
+                shipment_type === 'b2c' && isSelected && isInnofulfillEcommCourier(courier)
+              const innofulfillEcommMode = normalizeInnofulfillEcommMode(
+                selectedShippingMode || getCourierShippingMode(courier),
+              )
 
               return (
                 <Paper
@@ -884,12 +915,17 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                     setFormValue('walletDebitAmount', taxInclusiveCharge)
                     setValue('courierCost', courier?.courier_cost_estimate ?? null) // Estimated courier cost from serviceability
                     setValue('integrationType', courier?.integration_type)
+                    setFormValue(
+                      'shippingMode',
+                      isInnofulfillEcommCourier(courier)
+                        ? normalizeInnofulfillEcommMode(
+                            selectedShippingMode || getCourierShippingMode(courier),
+                          )
+                        : getCourierShippingMode(courier),
+                    )
                     setValue(
                       'shadowfaxForwardMode',
-                      courier?.provider_serviceability?.mode ??
-                        courier?.provider_serviceability?.shipping_mode ??
-                        courier?.mode ??
-                        null,
+                      getCourierShippingMode(courier),
                     )
                     setValue(
                       'shadowfaxServiceMode',
@@ -1032,6 +1068,52 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                         </Typography>
                       </Stack>
                     </Stack>
+
+                    {showInnofulfillModeSelector && (
+                      <Box
+                        onClick={(event) => event.stopPropagation()}
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) 160px' },
+                          gap: 1,
+                          alignItems: 'center',
+                          p: 0.9,
+                          borderRadius: 1.5,
+                          bgcolor: alpha('#1A5DD1', 0.04),
+                          border: `1px solid ${alpha('#1A5DD1', 0.12)}`,
+                        }}
+                      >
+                        <Box>
+                          <Typography sx={{ fontSize: 12, fontWeight: 800, color: TEXT_PRIMARY }}>
+                            Innofulfill delivery mode
+                          </Typography>
+                          <Typography sx={{ mt: 0.2, fontSize: 11, color: TEXT_SECONDARY }}>
+                            Sent as Innofulfill ECOMM deliveryMode while booking this shipment.
+                          </Typography>
+                        </Box>
+                        <Select
+                          size="small"
+                          value={innofulfillEcommMode}
+                          onChange={(event) => {
+                            setFormValue('shippingMode', event.target.value)
+                          }}
+                          sx={{
+                            height: 34,
+                            bgcolor: '#fff',
+                            borderRadius: 1.25,
+                            '& .MuiSelect-select': {
+                              py: 0.75,
+                              fontSize: 13,
+                              fontWeight: 800,
+                              color: TEXT_PRIMARY,
+                            },
+                          }}
+                        >
+                          <MenuItem value="surface">Surface</MenuItem>
+                          <MenuItem value="air">Air</MenuItem>
+                        </Select>
+                      </Box>
+                    )}
 
                     <Grid container spacing={0.65}>
                       {[

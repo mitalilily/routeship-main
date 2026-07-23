@@ -10,7 +10,7 @@ export interface CreateShipmentParams {
   package_breadth?: number
   package_height?: number
   transaction_fee?: number
-  integration_type?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry'
+  integration_type?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill'
   isReverse?: boolean
   request_auto_pickup?: 'Yes' | 'No'
   gift_wrap?: number
@@ -18,6 +18,7 @@ export interface CreateShipmentParams {
   other_charges?: number
   freight_charges?: number // What platform charges seller (based on rate card)
   courier_cost?: number // Estimated courier cost from serviceability (what platform pays courier - can be updated via webhook)
+  shipping_mode?: string | null
   cod_charges?: number
   discount?: number
   order_date: string
