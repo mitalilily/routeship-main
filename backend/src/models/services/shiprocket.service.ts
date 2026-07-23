@@ -3125,7 +3125,7 @@ export const computeB2CFreightForOrder = async (params: {
         )[0]?.serviceProvider ?? null)
       : null)
 
-  const [rateCard] = await fetchResolvedB2CRateCards({
+  const resolvedRateCards = await fetchResolvedB2CRateCards({
     planId: activePlanId,
     zoneId: resolvedZoneRow.id,
     shippingRateId: params.selectedRateCardId ?? null,
@@ -3134,20 +3134,58 @@ export const computeB2CFreightForOrder = async (params: {
     mode: params.mode?.trim() || null,
     type: rateType,
   })
+  const [rateCard] = resolvedRateCards
 
   if (!rateCard) {
     throw new HttpError(400, 'No rate card found for selected courier/zone')
   }
-  const freightCalc = computeB2CRateCardCharge({
-    actual_weight_g: params.weightG,
-    length_cm: params.lengthCm,
-    width_cm: params.breadthCm,
-    height_cm: params.heightCm,
-    rateCard,
-    selected_max_slab_weight: params.selectedMaxSlabWeight ?? null,
-  })
 
-  if (rateCard.slabs.length && freightCalc.freight <= 0) {
+  const computeChargeForRateCard = (candidateRateCard: typeof rateCard) =>
+    computeB2CRateCardCharge({
+      actual_weight_g: params.weightG,
+      length_cm: params.lengthCm,
+      width_cm: params.breadthCm,
+      height_cm: params.heightCm,
+      rateCard: candidateRateCard,
+      selected_max_slab_weight: params.selectedMaxSlabWeight ?? null,
+    })
+  const isUsableFreight = (
+    candidateRateCard: typeof rateCard,
+    freightCalc: ReturnType<typeof computeB2CRateCardCharge>,
+  ) => !candidateRateCard.slabs.length || Number(freightCalc.freight ?? 0) > 0
+
+  let freightCalc = computeChargeForRateCard(rateCard)
+  let pricedRateCard = rateCard
+
+  if (params.selectedRateCardId && !isUsableFreight(rateCard, freightCalc)) {
+    const fallbackCards = await fetchResolvedB2CRateCards({
+      planId: activePlanId,
+      zoneId: resolvedZoneRow.id,
+      courierId: Number(params.courierId),
+      serviceProvider: resolvedServiceProvider,
+      mode: rateCard.mode ?? params.mode?.trim() ?? null,
+      type: rateType,
+    })
+
+    for (const fallbackRateCard of fallbackCards) {
+      const fallbackCalc = computeChargeForRateCard(fallbackRateCard)
+      if (!isUsableFreight(fallbackRateCard, fallbackCalc)) continue
+      pricedRateCard = fallbackRateCard
+      freightCalc = fallbackCalc
+      console.warn('[B2C Freight] Selected rate-card slab was not usable; used merged courier rate card', {
+        courier_id: params.courierId,
+        service_provider: resolvedServiceProvider,
+        selected_rate_card_id: params.selectedRateCardId,
+        fallback_rate_card_id: fallbackRateCard.shippingRateId,
+        mode: fallbackRateCard.mode,
+        zone_id: resolvedZoneRow.id,
+        chargeable_weight: fallbackCalc.chargeable_weight,
+      })
+      break
+    }
+  }
+
+  if (pricedRateCard.slabs.length && freightCalc.freight <= 0) {
     throw new HttpError(400, 'No slab configured for selected courier/zone/weight')
   }
 
@@ -3157,17 +3195,17 @@ export const computeB2CFreightForOrder = async (params: {
     base_price: freightCalc.base_price,
     zone_id: resolvedZoneRow.id,
     plan_id: activePlanId,
-    rate_card_mode: rateCard.mode,
-    rate_card_courier_name: rateCard.courier_name,
-    rate_card_service_provider: rateCard.service_provider,
+    rate_card_mode: pricedRateCard.mode,
+    rate_card_courier_name: pricedRateCard.courier_name,
+    rate_card_service_provider: pricedRateCard.service_provider,
     selected_slab: freightCalc.selected_slab,
     cod_charges: computeEffectiveB2CCodCharge({
-      cod_charges: rateCard.cod_charges,
-      cod_percent: rateCard.cod_percent,
+      cod_charges: pricedRateCard.cod_charges,
+      cod_percent: pricedRateCard.cod_percent,
       order_amount: params.orderAmount,
     }),
-    cod_percent: rateCard.cod_percent,
-    other_charges: rateCard.other_charges,
+    cod_percent: pricedRateCard.cod_percent,
+    other_charges: pricedRateCard.other_charges,
   }
 }
 
