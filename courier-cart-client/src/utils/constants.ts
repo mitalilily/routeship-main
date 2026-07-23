@@ -60,12 +60,6 @@ Banned Restricted Products and Services
   • Used cellular phone SIM Cards.
 • Furthermore, you agree to display and adhere to a terms of use or other user-type agreement, as well as a privacy policy, governing your operation of your store and your conduct with your store’s customers.
 
-📍 Company Details
-RouteShip
-Head Office: B-76 Shiv Shakti Nagar, Jagatpura Road, Malviya Nagar, Jaipur, Rajasthan, India 302017
-📧 Email: info@routeship.com
-🌐 Website: www.shiplifi.com
-
 Refund & Cancellation Policy
 • You may cancel your account at any time by emailing us at info@routeship.com.
 • Once your account is cancelled, all of your data and content will be permanently deleted from our Service. Since deletion is final and irreversible, please ensure you truly wish to cancel your account before proceeding.

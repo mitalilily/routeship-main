@@ -2,7 +2,6 @@ import { alpha, Box, Container, Divider, Link, Paper, Stack, Typography } from '
 import { FiCreditCard, FiFileText, FiShield } from 'react-icons/fi'
 import TermsOfService from '../../components/terms/TermsOfService'
 import PageHeading from '../../components/UI/heading/PageHeading'
-import CompanyDetails from './CompanyDetails'
 
 const PolicyPages = () => {
   const BRAND_PRIMARY = '#FE6502'
@@ -270,11 +269,6 @@ const PolicyPages = () => {
         {/* Paste your full Terms of Service text exactly as you provided */}
         <TermsOfService />
       </Box>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* Company Details - common for all */}
-      <CompanyDetails />
     </Container>
   )
 }
