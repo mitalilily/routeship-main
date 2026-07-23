@@ -43,6 +43,7 @@
     "seed:demo": "tsx src/scripts/setupDemoEnvironment.ts",
     "setup:demo": "npm run migrate && npm run seed:demo",
     "seed:delhivery-b2c": "ts-node src/scripts/seedDelhiveryB2CRatecard.ts",
+    "configure:delhivery-b2c": "tsx src/scripts/configureDelhiveryB2CCredentials.ts",
     "sync:delhivery-b2c-couriers": "tsx src/scripts/syncDelhiveryB2CCouriers.ts",
     "sync:delhivery-b2b-courier": "tsx src/scripts/syncDelhiveryB2BCourier.ts",
     "sync:ekart-couriers": "tsx src/scripts/syncEkartCouriers.ts",
