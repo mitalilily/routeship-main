@@ -45,9 +45,9 @@ export const b2b_orders = pgTable(
   state: varchar('state', { length: 100 }).notNull(),
   country: varchar('country', { length: 100 }).default('India'),
   pincode: varchar('pincode', { length: 20 }).notNull(),
-  label: varchar('label', { length: 100 }),
-  invoice_link: varchar('invoice_link', { length: 300 }),
-  manifest: varchar('manifest', { length: 100 }),
+  label: varchar('label', { length: 500 }),
+  invoice_link: varchar('invoice_link', { length: 500 }),
+  manifest: varchar('manifest', { length: 500 }),
 
   // 🔹 Products and packages
   products: jsonb('products').notNull(),
