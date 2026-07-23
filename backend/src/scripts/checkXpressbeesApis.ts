@@ -326,6 +326,9 @@ const startMockXpressbeesServer = async () => {
         requireVersionHeader(req)
         assert.equal(body?.ShippingID, 'XB1234567890')
         assert.equal(body?.DeferredDeliveryDate, '18-05-2026 12:00:00')
+        assert.equal(body?.PrimaryCustomerMobileNumber, '9876543210')
+        assert.equal(body?.PrimaryCustomerAddress, 'Flat 12, MG Road, Near Metro')
+        assert.equal(body?.CustomerPincode, '400001')
         return sendJson(res, 200, {
           ShippingID: 'XB1234567890',
           ReturnCode: 100,
@@ -561,6 +564,10 @@ const main = async () => {
         action: 're-attempt',
         action_data: {
           re_attempt_date: '2026-05-18',
+          phone: '9876543210',
+          address: 'Flat 12, MG Road',
+          address_2: 'Near Metro',
+          pincode: '400001',
         },
       },
     ])

@@ -1588,6 +1588,7 @@ export class XpressbeesService {
     const items = Array.isArray(payload) ? payload : [payload]
     const pathCandidates = this.getConfiguredPathCandidates('XPRESSBEES_NDR_ACTION_ENDPOINTS', [
       'https://clientshipupdatesapi.xbees.in/client/UpdateNDRDeferredDeliveryDate',
+      'http://stageclientshipupdatesapi.xbees.in/client/UpdateNDRDeferredDeliveryDate',
       '/api/ndr/create',
       '/ndr/create',
     ])
