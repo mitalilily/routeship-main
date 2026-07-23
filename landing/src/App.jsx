@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 const BLUE = 0x310276;
 const ORANGE = 0xFE6502;
+const CLIENT_AUTH_PATH = "/login";
 
 const features = [
   ["01", "One smart dashboard", "Orders, labels, NDR, tracking and analytics — finally speaking the same language.", "grid"],
@@ -237,8 +238,8 @@ function Header({ standalone = false }) {
           <a href="/tracking" onClick={() => setOpen(false)}>Tracking</a>
           <a href="/rate-calculator" onClick={() => setOpen(false)}>Calculator</a>
           <a href="/#pricing" onClick={() => setOpen(false)}>Pricing</a>
-          <a className="nav-login" href="/login">Log in</a>
-          <a className="button button-small" href="/rate-calculator">Start shipping <Icon name="arrow" /></a>
+          <a className="nav-login" href={CLIENT_AUTH_PATH}>Log in</a>
+          <a className="button button-small" href={CLIENT_AUTH_PATH}>Start shipping <Icon name="arrow" /></a>
         </div>
       </nav>
     </header>
@@ -259,7 +260,7 @@ function Hero() {
         <h1>Every order.<br/><em>In motion.</em></h1>
         <p className="hero-copy">RouteShip turns fragmented shipping into one fast, intelligent flow—so every parcel takes the best path from checkout to doorstep.</p>
         <div className="hero-actions">
-          <a className="button" href="#calculator">Ship your first order <Icon name="arrow" /></a>
+          <a className="button" href={CLIENT_AUTH_PATH}>Ship your first order <Icon name="arrow" /></a>
           <a className="text-link" href="#solution"><span className="play"><Icon name="play" /></span> See how it flows</a>
         </div>
         <div className="hero-proof"><strong>4.9/5</strong><span>★★★★★</span><p>Loved by 2,400+ growing brands</p></div>
@@ -397,7 +398,7 @@ function Calculator() {
           <div className="calc-field"><label>Delivery zone</label><div className="segments">{[["local","Local"],["regional","Regional"],["national","National"]].map(([value,label]) => <button className={zone === value ? "active" : ""} key={value} onClick={() => setZone(value)}>{label}</button>)}</div></div>
           <label className="toggle-row"><span><strong>Cash on delivery</strong><small>Add COD handling</small></span><input type="checkbox" checked={cod} onChange={(e) => setCod(e.target.checked)}/><i /></label>
           <div className="estimate"><span>ESTIMATED RATE</span><strong><small>₹</small>{price}<small>/ shipment</small></strong><p>Includes fuel surcharge and GST estimate</p></div>
-          <a className="button button-full" href="mailto:hello@routeship.in?subject=Start shipping with RouteShip">Unlock this rate <Icon name="arrow" /></a>
+          <a className="button button-full" href={CLIENT_AUTH_PATH}>Unlock this rate <Icon name="arrow" /></a>
         </Reveal>
       </div>
     </section>
@@ -437,7 +438,7 @@ function Pricing() {
     <section className="pricing section editorial-dark" id="pricing">
       <div className="shell">
         <Reveal className="section-head center"><div className="section-kicker"><span>08</span> SIMPLE PRICING</div><h2>Start light.<br/><em>Scale without friction.</em></h2><p>No setup fees. No long contracts. Just the plan that matches your momentum.</p></Reveal>
-        <div className="pricing-grid">{plans.map(([name, price, copy, items, cta, featured]) => <Reveal className={`price-card ${featured ? "featured" : ""}`} key={name}>{featured && <span className="popular">MOST POPULAR</span>}<p className="plan-name">{name}</p><h3>{price}<small>{price.includes("₹") ? "/ month" : ""}</small></h3><p className="plan-copy">{copy}</p><ul>{items.map(item => <li key={item}><Icon name="check"/>{item}</li>)}</ul><a className={featured ? "button button-full" : "price-link"} href="mailto:hello@routeship.in">{cta} <Icon name="arrow"/></a></Reveal>)}</div>
+        <div className="pricing-grid">{plans.map(([name, price, copy, items, cta, featured]) => <Reveal className={`price-card ${featured ? "featured" : ""}`} key={name}>{featured && <span className="popular">MOST POPULAR</span>}<p className="plan-name">{name}</p><h3>{price}<small>{price.includes("₹") ? "/ month" : ""}</small></h3><p className="plan-copy">{copy}</p><ul>{items.map(item => <li key={item}><Icon name="check"/>{item}</li>)}</ul><a className={featured ? "button button-full" : "price-link"} href={CLIENT_AUTH_PATH}>{cta} <Icon name="arrow"/></a></Reveal>)}</div>
       </div>
     </section>
   );
@@ -452,7 +453,7 @@ function FAQ() {
 
 function FinalCTA() {
   return (
-    <section className="final-cta"><div className="cta-orbit one"/><div className="cta-orbit two"/><div className="shell"><Reveal><div className="eyebrow light"><span/> YOUR NEXT ORDER IS WAITING</div><h2>Move with<br/><em>momentum.</em></h2><p>Join the brands making shipping their quiet advantage.</p><a className="button button-white" href="/rate-calculator">Start shipping free <Icon name="arrow"/></a><small>No credit card · Setup in minutes · Cancel anytime</small></Reveal></div></section>
+    <section className="final-cta"><div className="cta-orbit one"/><div className="cta-orbit two"/><div className="shell"><Reveal><div className="eyebrow light"><span/> YOUR NEXT ORDER IS WAITING</div><h2>Move with<br/><em>momentum.</em></h2><p>Join the brands making shipping their quiet advantage.</p><a className="button button-white" href={CLIENT_AUTH_PATH}>Start shipping free <Icon name="arrow"/></a><small>No credit card · Setup in minutes · Cancel anytime</small></Reveal></div></section>
   );
 }
 
@@ -514,7 +515,7 @@ function WeightCalculatorPage() {
 
 function LoginPage() {
   const [status, setStatus] = useState("");
-  return <PageFrame eyebrow="OPERATIONS PORTAL" title="Welcome back." accent="Keep moving." copy="Your shipping command centre is one secure sign-in away."><section className="page-section auth-section"><div className="shell auth-layout"><aside><span>YOUR DAY, AT A GLANCE</span><h3>418</h3><p>orders moving across the RouteShip network</p><div className="mini-chart">{[45,70,52,88,64,94,78,105].map((height,index)=><i style={{height}} key={index}/>)}</div></aside><form className="page-form auth-form" onSubmit={(e)=>{e.preventDefault();setStatus("Demo access confirmed. Your dashboard is ready.");}}><h3>Sign in to RouteShip</h3><label>Work email<input required type="email" placeholder="you@company.com"/></label><label>Password<input required type="password" placeholder="••••••••"/></label><div className="form-meta"><label><input type="checkbox"/> Remember me</label><a href="mailto:hello@routeship.in">Forgot password?</a></div><button className="button button-full" type="submit">Sign in securely <Icon name="arrow"/></button>{status && <p className="form-success">{status}</p>}<p className="auth-note">New to RouteShip? <a href="/contact">Create an account</a></p></form></div></section></PageFrame>;
+  return <PageFrame eyebrow="OPERATIONS PORTAL" title="Welcome back." accent="Keep moving." copy="Your shipping command centre is one secure sign-in away."><section className="page-section auth-section"><div className="shell auth-layout"><aside><span>YOUR DAY, AT A GLANCE</span><h3>418</h3><p>orders moving across the RouteShip network</p><div className="mini-chart">{[45,70,52,88,64,94,78,105].map((height,index)=><i style={{height}} key={index}/>)}</div></aside><form className="page-form auth-form" onSubmit={(e)=>{e.preventDefault();setStatus("Demo access confirmed. Your dashboard is ready.");}}><h3>Sign in to RouteShip</h3><label>Work email<input required type="email" placeholder="you@company.com"/></label><label>Password<input required type="password" placeholder="••••••••"/></label><div className="form-meta"><label><input type="checkbox"/> Remember me</label><a href="mailto:hello@routeship.in">Forgot password?</a></div><button className="button button-full" type="submit">Sign in securely <Icon name="arrow"/></button>{status && <p className="form-success">{status}</p>}<p className="auth-note">New to RouteShip? <a href={CLIENT_AUTH_PATH}>Create an account</a></p></form></div></section></PageFrame>;
 }
 
 function ContactPage() {
