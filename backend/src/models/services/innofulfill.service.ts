@@ -70,6 +70,27 @@ const DEFAULT_INNOFULFILL_API_BASE = 'https://apis.innofulfill.com'
 const normalizeBaseUrl = (value?: string) =>
   String(value || DEFAULT_INNOFULFILL_API_BASE).trim().replace(/\/+$/, '')
 
+export const normalizeInnofulfillOrderDate = (value: unknown) => {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date().toISOString() : value.toISOString()
+  }
+
+  const raw = String(value ?? '').trim()
+  if (!raw) return new Date().toISOString()
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return new Date(`${raw}T00:00:00.000Z`).toISOString()
+  }
+
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
+}
+
+const normalizeInnofulfillOrderPayload = (payload: InnofulfillOrderPayload) => ({
+  ...payload,
+  orderDate: normalizeInnofulfillOrderDate((payload as any).orderDate),
+})
+
 export const loginToInnofulfill = async (
   input: InnofulfillLoginInput,
   tenantHeaders: InnofulfillTenantHeaders = {},
@@ -184,8 +205,9 @@ export const createInnofulfillOrder = async (
   authHeaders: InnofulfillAuthHeaders,
 ) => {
   const apiBase = normalizeBaseUrl(process.env.INNOFULFILL_API_BASE)
+  const normalizedPayload = normalizeInnofulfillOrderPayload(payload)
 
-  const response = await axios.post(`${apiBase}/gateway/booking-service/orders`, payload, {
+  const response = await axios.post(`${apiBase}/gateway/booking-service/orders`, normalizedPayload, {
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders,

@@ -4,6 +4,7 @@ import {
   calculateInnofulfillEcommRates,
   createInnofulfillOrder,
   getInnofulfillOrder,
+  normalizeInnofulfillOrderDate,
   trackInnofulfillShipmentByAwb,
 } from '../innofulfill.service'
 import {
@@ -108,7 +109,7 @@ export class InnofulfillCourierService {
     const amount = numberValue(params.order_amount)
     const payload = {
       referenceId: trim(params.order_number),
-      orderDate: params.order_date instanceof Date ? params.order_date.toISOString() : trim(params.order_date) || new Date().toISOString(),
+      orderDate: normalizeInnofulfillOrderDate(params.order_date),
       orderType: params.isReverse === true || trim(params.payment_type).toLowerCase() === 'reverse' ? 'REVERSE' : 'FORWARD',
       orderStatus: 'CONFIRMED',
       parcelCategory: hyperlocal ? 'HYPERLOCAL' : 'ECOMM',
