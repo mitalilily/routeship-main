@@ -245,12 +245,7 @@ const isSupportedB2CFallbackRate = (
 
   if (!SUPPORTED_B2C_FALLBACK_PROVIDERS.includes(provider)) return false
   if (provider === 'xpressbees') {
-    return (
-      mode !== 'air' &&
-      !name.includes('air') &&
-      !name.includes('reverse') &&
-      /\b2\s*(?:k\.?\s*g\.?|kg|kgs)\b/i.test(name)
-    )
+    return !name.includes('reverse') && !name.includes('rto')
   }
 
   return true
@@ -540,8 +535,45 @@ const buildLastResortB2CCouriersFromRateCards = async (
 }
 
 const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, any>, userId?: string) => {
+  const appendMissingXpressbeesFallback = async (couriers: any[]) => {
+    const list = Array.isArray(couriers) ? couriers : []
+    const hasXpressbees = list.some(
+      (courier) =>
+        String(courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '')
+          .trim()
+          .toLowerCase() === 'xpressbees',
+    )
+    if (hasXpressbees) return list
+
+    let fallbackCouriers: any[] = []
+    try {
+      fallbackCouriers = await buildLastResortB2CCouriersFromRateCards(serviceParams, userId)
+    } catch (fallbackErr: any) {
+      console.warn('[Couriers] Xpressbees append fallback unavailable', {
+        message: fallbackErr?.message || fallbackErr,
+      })
+      return list
+    }
+    const xpressbeesFallback = fallbackCouriers.filter(
+      (courier) =>
+        String(courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '')
+          .trim()
+          .toLowerCase() === 'xpressbees',
+    )
+
+    if (!xpressbeesFallback.length) return list
+
+    console.warn('[Couriers] Appending Xpressbees from local B2C rate-card fallback', {
+      origin: serviceParams?.origin,
+      destination: serviceParams?.destination,
+      count: xpressbeesFallback.length,
+    })
+    return [...list, ...xpressbeesFallback]
+  }
+
   try {
-    return await fetchAvailableCouriersWithRates(serviceParams as any, userId)
+    const couriers = await fetchAvailableCouriersWithRates(serviceParams as any, userId)
+    return await appendMissingXpressbeesFallback(couriers)
   } catch (err: any) {
     console.warn('[Couriers] B2C courier fetch failed, retrying fallback paths', {
       message: err?.message || err,
@@ -553,13 +585,14 @@ const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, a
 
     if (serviceParams?.isCalculator !== true) {
       try {
-        return await fetchAvailableCouriersWithRates(
+        const couriers = await fetchAvailableCouriersWithRates(
           {
             ...serviceParams,
             isCalculator: true,
           } as any,
           userId,
         )
+        return await appendMissingXpressbeesFallback(couriers)
       } catch (fallbackErr: any) {
         console.warn('[Couriers] Local rate-card pipeline failed, using direct rate-card fallback', {
           message: fallbackErr?.message || fallbackErr,
@@ -567,7 +600,25 @@ const fetchB2CCouriersWithLocalFallback = async (serviceParams: Record<string, a
       }
     }
 
-    console.warn('[Couriers] No strict B2C rate-card result available; returning no couriers')
+    let fallbackCouriers: any[] = []
+    try {
+      fallbackCouriers = await buildLastResortB2CCouriersFromRateCards(serviceParams, userId)
+    } catch (fallbackErr: any) {
+      console.warn('[Couriers] Direct B2C rate-card fallback unavailable', {
+        message: fallbackErr?.message || fallbackErr,
+      })
+      fallbackCouriers = []
+    }
+    if (fallbackCouriers.length) {
+      console.warn('[Couriers] Using direct B2C rate-card fallback', {
+        origin: serviceParams?.origin,
+        destination: serviceParams?.destination,
+        count: fallbackCouriers.length,
+      })
+      return fallbackCouriers
+    }
+
+    console.warn('[Couriers] No strict or fallback B2C rate-card result available; returning no couriers')
     return []
   }
 }
