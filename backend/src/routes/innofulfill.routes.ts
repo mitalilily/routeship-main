@@ -44,6 +44,7 @@ router.post('/gateway/pdf-generator/invoice-configs', innofulfillCreateInvoiceCo
 router.post('/gateway/pdf-generator/shipping-label', innofulfillDownloadShippingLabelController)
 router.get('/gateway/pdf-generator/invoice/:orderId', innofulfillDownloadInvoiceController)
 router.get('/gateway/tracking-v2/api/tracking/awb/:awbNumber', innofulfillTrackShipmentByAwbController)
+router.get('/gateway/booking-service/orders/details/:orderId', innofulfillGetOrderController)
 router.get('/gateway/booking-service/orders/:orderId', innofulfillGetOrderController)
 
 export default router

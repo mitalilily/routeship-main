@@ -119,16 +119,22 @@ const getForwardableAuthHeaders = (req: Request) => {
   }
   if (typeof tenantId === 'string' && tenantId.trim()) {
     headers.TenantId = tenantId.trim()
+    headers.tenantid = tenantId.trim()
   }
   if (typeof apiKey === 'string' && apiKey.trim()) {
     headers['Api-Key'] = apiKey.trim()
+    headers['api-key'] = apiKey.trim()
   }
 
   return headers
 }
 
 const hasInnofulfillAuth = (headers: Record<string, string>) =>
-  Boolean(headers['Api-Key'] || (headers.Authorization && headers.TenantId))
+  Boolean(
+    headers['Api-Key'] ||
+      headers['api-key'] ||
+      (headers.Authorization && (headers.TenantId || headers.tenantid)),
+  )
 
 const getForwardableQueryParams = (
   query: Request['query'],
