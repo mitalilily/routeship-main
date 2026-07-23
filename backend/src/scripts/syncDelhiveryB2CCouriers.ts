@@ -241,6 +241,15 @@ const main = async () => {
         savedRates += 2
       }
     }
+    await client.query(
+      `delete from routeship_b2c_courier_rate_configs
+       where lower(coalesce(service_provider, '')) = 'delhivery'
+         and (
+           (courier_id = $1 and lower(mode) <> 'air') or
+           (courier_id = $2 and lower(mode) <> 'surface')
+         )`,
+      [DELHIVERY_COURIER_IDS.EXPRESS, DELHIVERY_COURIER_IDS.SURFACE],
+    )
     await client.query('commit')
   } catch (error) {
     await client.query('rollback').catch(() => undefined)
