@@ -5253,6 +5253,126 @@ export const fetchAvailableCouriersWithRates = async (
             .toLowerCase() === provider,
       )
 
+    if (effectiveShipmentType === 'b2c' && !hasProviderInCombined('delhivery')) {
+      const delhiveryBucketRows = providerCourierBuckets.get('delhivery')?.rows ?? []
+      const delhiveryFallbackCards = localRates.flatMap((rate) => {
+        if (inferProviderFromRateCard(rate) !== 'delhivery') return []
+        if (rate.type !== requiredRateType) return []
+
+        const canonical = getCanonicalDelhiveryRateCardMeta({
+          id: rate.courier_id,
+          name: rate.courier_name,
+          mode: rate.mode,
+        })
+        if (!canonical) return []
+
+        if (
+          isCourierDisabledForProvider('delhivery', {
+            id: canonical.id,
+            name: canonical.name,
+            mode: canonical.shippingMode,
+          })
+        ) {
+          return []
+        }
+        if (!isCourierInSystem('delhivery', canonical.id)) return []
+
+        const courierRow = delhiveryBucketRows.find(
+          (courier) => Number(courier.id) === canonical.id,
+        )
+        if (!courierRow) return []
+
+        return buildServiceabilityRateOptions(rate).map((applicableRate: any) => {
+          const rateCardFreight = Number(applicableRate.rate ?? 0)
+          const rateCardCod = shouldIncludeCodCharges
+            ? Number(applicableRate.cod_charges ?? 0)
+            : 0
+          const rateCardOther = Number(applicableRate.other_charges ?? 0)
+          const rateCardTotal = rateCardFreight + rateCardCod + rateCardOther
+          const courierOptionName =
+            applicableRate.matched_by !== 'legacy'
+              ? formatCourierOptionName(canonical.name, applicableRate.max_slab_weight)
+              : canonical.name
+          const mode = normalizeB2CShippingMode(applicableRate.mode || canonical.rateMode) || canonical.rateMode
+
+          const responseRate = {
+            ...applicableRate,
+            rate: rateCardFreight,
+            cod_charges: rateCardCod,
+            other_charges: rateCardOther,
+            total_charges: rateCardTotal,
+          }
+
+          return {
+            id: canonical.id,
+            name: courierOptionName,
+            displayName: courierOptionName,
+            courier_option_key: makeCourierIdentityKey({
+              id: canonical.id,
+              integration_type: 'delhivery',
+              serviceProvider: 'delhivery',
+              rate_card_id: applicableRate.shipping_rate_id ?? null,
+              max_slab_weight: applicableRate.max_slab_weight ?? null,
+            }),
+            rate_card_id: applicableRate.shipping_rate_id ?? null,
+            integration_type: 'delhivery',
+            serviceProvider: courierRow.serviceProvider ?? 'delhivery',
+            isVirtualProvider: courierRow.isVirtualProvider === true,
+            isRateCardBackedB2C: true,
+            cod: delhiveryRequiresCOD ? delhiveryDestinationServiceable : true,
+            prepaid: true,
+            edd: delhiveryEDD,
+            approxZone,
+            zone: approxZone?.name || approxZone?.code || null,
+            zone_id: approxZone?.id || null,
+            zone_code: approxZone?.code || null,
+            zone_name: approxZone?.name || null,
+            booking_available: true,
+            can_book: true,
+            booking_blocked_reason: null,
+            createdAt: courierRow.createdAt,
+            shipping_mode: canonical.shippingMode,
+            service_mode: canonical.shippingMode,
+            provider_serviceability: {
+              fallback: true,
+              reason: delhiveryAvailable
+                ? 'local_rate_card_delhivery'
+                : 'local_rate_card_delhivery_live_serviceability_unavailable',
+              serviceability_mode: 'local_rate_card_fallback',
+              mode,
+              shipping_mode: canonical.shippingMode,
+              service_mode: canonical.shippingMode,
+              origin_pickup: delhiveryOriginServiceable,
+              destination_serviceable: delhiveryDestinationServiceable,
+            },
+            localRates: { [requiredRateType]: responseRate },
+            courier_cost_estimate: rateCardTotal,
+            freight_charges: rateCardFreight,
+            cod_charges: rateCardCod,
+            other_charges: rateCardOther,
+            total_charges: rateCardTotal,
+            chargeable_weight: applicableRate.chargeable_weight ?? chargeableWeight,
+            volumetric_weight: applicableRate.volumetric_weight,
+            slabs: applicableRate.slab_count,
+            rate: rateCardFreight,
+            max_slab_weight: applicableRate.max_slab_weight ?? null,
+            rate_card_fallback: 'delhivery_local_rate_card',
+          }
+        })
+      })
+
+      if (delhiveryFallbackCards.length) {
+        console.warn('[Serviceability] Appending Delhivery B2C local rate-card fallback', {
+          mode: isCalculator ? 'calculator' : 'standard',
+          origin: params.origin ?? params.source_pincode ?? null,
+          destination: params.destination ?? params.destination_pincode ?? null,
+          count: delhiveryFallbackCards.length,
+          liveAvailable: delhiveryAvailable,
+        })
+        combined = [...combined, ...delhiveryFallbackCards]
+      }
+    }
+
     if (effectiveShipmentType === 'b2c' && !hasProviderInCombined('xpressbees')) {
       const xpressbeesBucketRows = providerCourierBuckets.get('xpressbees')?.rows ?? []
       const xpressbeesFallbackCards = localRates.flatMap((rate) => {
