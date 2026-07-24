@@ -3,6 +3,9 @@ import { Client } from 'pg'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
+const shouldSeedLegacyInternationalRates =
+  process.env.SEED_LEGACY_INTERNATIONAL_PLACEHOLDER_RATES === 'true' ||
+  process.argv.includes('--with-legacy-international-rates')
 
 const sync = async () => {
   const client = new Client({ connectionString: databaseUrl, ssl: databaseUrl.includes('localhost') ? undefined : { rejectUnauthorized: false } })
@@ -92,7 +95,7 @@ const sync = async () => {
       await client.query(`INSERT INTO routeship_international_rate_cards (id, name, origin_zone) VALUES ($1, $2, $3)`, [cardId, 'INTERNATIONAL PURCHASE RATES', 'AU'])
     }
     const rateCount = await client.query(`SELECT COUNT(*)::int AS count FROM routeship_international_rates WHERE rate_card_id = $1`, [cardId])
-    if (!rateCount.rows[0].count) {
+    if (!rateCount.rows[0].count && shouldSeedLegacyInternationalRates) {
       const bands = [
         ['RouteShip Global Express', '0', '5', '450', '320', '4-7 business days'],
         ['RouteShip Global Express', '5', '20', '350', '285', '4-7 business days'],
@@ -102,6 +105,9 @@ const sync = async () => {
       for (const [partner, minWeight, maxWeight, baseRate, ratePerKg, estimatedDays] of bands) {
         await client.query(`INSERT INTO routeship_international_rates (id, rate_card_id, delivery_partner, destination_country, min_weight, max_weight, base_rate, rate_per_kg, fuel_surcharge_mode, fuel_surcharge_value, estimated_days) VALUES ($1,$2,$3,'*',$4,$5,$6,$7,'percentage',0,$8)`, [randomUUID(), cardId, partner, minWeight, maxWeight, baseRate, ratePerKg, estimatedDays])
       }
+    }
+    if (!shouldSeedLegacyInternationalRates) {
+      console.log('Skipped legacy international placeholder rate rows')
     }
     await client.query('COMMIT')
     console.log('Rate Card feature tables synchronized')

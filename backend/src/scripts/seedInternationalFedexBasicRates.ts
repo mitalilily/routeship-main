@@ -6,6 +6,9 @@ const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 const RETIRED_CARD_NAMES = ['RouteShip International Package Basic']
+const shouldSeedPlaceholderRates =
+  process.env.SEED_INTERNATIONAL_PLACEHOLDER_RATES === 'true' ||
+  process.argv.includes('--with-placeholder-rates')
 
 type RateRow = {
   weight: number
@@ -152,25 +155,31 @@ const seed = async () => {
     await client.query('BEGIN')
     await ensureSchema()
     const activeCardNames = (rateData.sections as RateSection[]).map((section) => getCardName(section))
-    await client.query(
-      `DELETE FROM routeship_international_rate_cards
-       WHERE name = ANY($1::text[])`,
-      [RETIRED_CARD_NAMES],
-    )
-    await client.query(
-      `UPDATE routeship_international_rate_cards
-       SET is_active = false, updated_at = now()
-       WHERE name <> ALL($1::text[])`,
-      [activeCardNames],
-    )
+    if (shouldSeedPlaceholderRates) {
+      await client.query(
+        `DELETE FROM routeship_international_rate_cards
+         WHERE name = ANY($1::text[])`,
+        [RETIRED_CARD_NAMES],
+      )
+      await client.query(
+        `UPDATE routeship_international_rate_cards
+         SET is_active = false, updated_at = now()
+         WHERE name <> ALL($1::text[])`,
+        [activeCardNames],
+      )
+    }
     await seedCountryZones()
     for (const section of rateData.sections as RateSection[]) {
       const cardId = await upsertRateCard(section)
-      await seedRatesForCard(cardId, section)
+      if (shouldSeedPlaceholderRates) {
+        await seedRatesForCard(cardId, section)
+      }
     }
     await client.query('COMMIT')
     console.log(
-      `Seeded ${rateData.countries.length} international destinations and ${rateData.sections.length} manual rate cards.`,
+      shouldSeedPlaceholderRates
+        ? `Seeded ${rateData.countries.length} international destinations and ${rateData.sections.length} placeholder rate cards.`
+        : `Synced ${rateData.countries.length} international destinations. Placeholder rate rows were not seeded.`,
     )
   } catch (error) {
     await client.query('ROLLBACK')
