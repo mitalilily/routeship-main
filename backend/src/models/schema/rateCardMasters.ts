@@ -41,6 +41,8 @@ export const internationalRates = pgTable('routeship_international_rates', {
   maxWeight: numeric('max_weight', { precision: 10, scale: 3 }).notNull(),
   baseRate: numeric('base_rate', { precision: 12, scale: 2 }).notNull().default('0'),
   ratePerKg: numeric('rate_per_kg', { precision: 12, scale: 2 }).notNull(),
+  fuelSurchargeMode: varchar('fuel_surcharge_mode', { length: 20 }).notNull().default('percentage'),
+  fuelSurchargeValue: numeric('fuel_surcharge_value', { precision: 12, scale: 2 }).notNull().default('0'),
   currency: varchar('currency', { length: 3 }).notNull().default('INR'),
   estimatedDays: varchar('estimated_days', { length: 40 }),
   isActive: boolean('is_active').notNull().default(true),

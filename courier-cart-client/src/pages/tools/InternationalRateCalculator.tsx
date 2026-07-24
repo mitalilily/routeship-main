@@ -118,7 +118,7 @@ export default function InternationalRateCalculator() {
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Rate Results</Typography>
             <TableContainer>
               <Table size="small">
-                <TableHead><TableRow><TableCell>Partner</TableCell><TableCell>Rate Card</TableCell><TableCell>Zone</TableCell><TableCell>Weight</TableCell><TableCell>Rate/kg</TableCell><TableCell>Total</TableCell><TableCell>ETA</TableCell></TableRow></TableHead>
+                <TableHead><TableRow><TableCell>Partner</TableCell><TableCell>Rate Card</TableCell><TableCell>Zone</TableCell><TableCell>Weight</TableCell><TableCell>Rate/kg</TableCell><TableCell>Fuel Surcharge</TableCell><TableCell>Total</TableCell><TableCell>ETA</TableCell></TableRow></TableHead>
                 <TableBody>
                   {results.length ? results.map((result) => (
                     <TableRow key={result.id}>
@@ -127,10 +127,18 @@ export default function InternationalRateCalculator() {
                       <TableCell>{result.destinationZone || '-'}</TableCell>
                       <TableCell>{Number(result.weight).toFixed(3)} kg</TableCell>
                       <TableCell>{result.currency} {Number(result.ratePerKg).toFixed(2)}</TableCell>
+                      <TableCell>
+                        {result.currency} {Number(result.fuelSurcharge || 0).toFixed(2)}
+                        <Typography sx={{ color: 'text.secondary', fontSize: '0.72rem' }}>
+                          {result.fuelSurchargeMode === 'flat'
+                            ? 'Flat'
+                            : `${Number(result.fuelSurchargeValue || 0).toFixed(2)}%`}
+                        </Typography>
+                      </TableCell>
                       <TableCell>{result.currency} {Number(result.total).toFixed(2)}</TableCell>
                       <TableCell>{result.estimatedDays || '—'}</TableCell>
                     </TableRow>
-                  )) : <TableRow><TableCell colSpan={7} align="center">Calculate to see rates</TableCell></TableRow>}
+                  )) : <TableRow><TableCell colSpan={8} align="center">Calculate to see rates</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </TableContainer>

@@ -36,6 +36,8 @@ export const listInternationalRateCards = async () => {
       maxWeight: internationalRates.maxWeight,
       baseRate: internationalRates.baseRate,
       ratePerKg: internationalRates.ratePerKg,
+      fuelSurchargeMode: internationalRates.fuelSurchargeMode,
+      fuelSurchargeValue: internationalRates.fuelSurchargeValue,
       currency: internationalRates.currency,
       estimatedDays: internationalRates.estimatedDays,
     })
@@ -69,12 +71,22 @@ const parsePositiveNumber = (value: unknown, field: string, allowZero = false) =
 }
 
 const normalizeZoneCode = (value: unknown) => String(value ?? '').trim().toUpperCase()
+const normalizeFuelSurchargeMode = (value: unknown) => {
+  const mode = String(value || 'percentage').trim().toLowerCase()
+  return mode === 'flat' ? 'flat' : 'percentage'
+}
 
 export const updateInternationalCourierRates = async (rateCardId: string, input: any) => {
   const deliveryPartner = String(input?.deliveryPartner || '').trim()
   const slabs = Array.isArray(input?.slabs) ? input.slabs : []
   const currency = String(input?.currency || 'INR').trim().toUpperCase() || 'INR'
   const estimatedDays = String(input?.estimatedDays || 'Manual quote').trim() || 'Manual quote'
+  const fuelSurchargeMode = normalizeFuelSurchargeMode(input?.fuelSurchargeMode ?? input?.fuel_surcharge_mode)
+  const fuelSurchargeValue = parsePositiveNumber(
+    input?.fuelSurchargeValue ?? input?.fuel_surcharge_value ?? 0,
+    'Fuel surcharge',
+    true,
+  )
 
   if (!rateCardId) throw new Error('Rate card is required')
   if (!deliveryPartner) throw new Error('Courier is required')
@@ -106,6 +118,8 @@ export const updateInternationalCourierRates = async (rateCardId: string, input:
         maxWeight: maxWeight.toFixed(3),
         baseRate: amount.toFixed(2),
         ratePerKg: '0.00',
+        fuelSurchargeMode,
+        fuelSurchargeValue: fuelSurchargeValue.toFixed(2),
         currency,
         estimatedDays,
         isActive: true,
@@ -206,6 +220,13 @@ export const calculateInternationalRate = async (input: any) => {
   return matches.map((rate) => {
     const baseRate = Number(rate.baseRate)
     const weightCharge = Number(rate.ratePerKg) * weight
+    const subtotal = baseRate + weightCharge
+    const fuelSurchargeMode = normalizeFuelSurchargeMode(rate.fuelSurchargeMode)
+    const fuelSurchargeValue = Number(rate.fuelSurchargeValue) || 0
+    const fuelSurcharge = fuelSurchargeMode === 'flat'
+      ? fuelSurchargeValue
+      : subtotal * (fuelSurchargeValue / 100)
+    const total = subtotal + fuelSurcharge
     return {
       id: rate.id,
       rateCard: card.name,
@@ -220,7 +241,11 @@ export const calculateInternationalRate = async (input: any) => {
       baseRate,
       ratePerKg: Number(rate.ratePerKg),
       weightCharge,
-      total: Number((baseRate + weightCharge).toFixed(2)),
+      subtotal: Number(subtotal.toFixed(2)),
+      fuelSurchargeMode,
+      fuelSurchargeValue,
+      fuelSurcharge: Number(fuelSurcharge.toFixed(2)),
+      total: Number(total.toFixed(2)),
       currency: rate.currency,
       estimatedDays: rate.estimatedDays,
     }

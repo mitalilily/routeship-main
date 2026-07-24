@@ -33,6 +33,8 @@ const sync = async () => {
         destination_zone varchar(20),
         min_weight numeric(10,3) NOT NULL DEFAULT 0, max_weight numeric(10,3) NOT NULL,
         base_rate numeric(12,2) NOT NULL DEFAULT 0, rate_per_kg numeric(12,2) NOT NULL,
+        fuel_surcharge_mode varchar(20) NOT NULL DEFAULT 'percentage',
+        fuel_surcharge_value numeric(12,2) NOT NULL DEFAULT 0,
         currency varchar(3) NOT NULL DEFAULT 'INR', estimated_days varchar(40), is_active boolean NOT NULL DEFAULT true,
         created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
       );
@@ -67,6 +69,8 @@ const sync = async () => {
       ALTER TABLE routeship_international_rates ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_international_rates ALTER COLUMN destination_country TYPE varchar(120);
       ALTER TABLE routeship_international_rates ADD COLUMN IF NOT EXISTS destination_zone varchar(20);
+      ALTER TABLE routeship_international_rates ADD COLUMN IF NOT EXISTS fuel_surcharge_mode varchar(20) NOT NULL DEFAULT 'percentage';
+      ALTER TABLE routeship_international_rates ADD COLUMN IF NOT EXISTS fuel_surcharge_value numeric(12,2) NOT NULL DEFAULT 0;
       ALTER TABLE routeship_international_country_zones ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE shiplifi_holidays ALTER COLUMN id SET DEFAULT gen_random_uuid();
       ALTER TABLE routeship_b2c_courier_rate_configs ALTER COLUMN id SET DEFAULT gen_random_uuid();
@@ -96,7 +100,7 @@ const sync = async () => {
         ['RouteShip Economy', '5', '20', '250', '210', '8-12 business days'],
       ]
       for (const [partner, minWeight, maxWeight, baseRate, ratePerKg, estimatedDays] of bands) {
-        await client.query(`INSERT INTO routeship_international_rates (id, rate_card_id, delivery_partner, destination_country, min_weight, max_weight, base_rate, rate_per_kg, estimated_days) VALUES ($1,$2,$3,'*',$4,$5,$6,$7,$8)`, [randomUUID(), cardId, partner, minWeight, maxWeight, baseRate, ratePerKg, estimatedDays])
+        await client.query(`INSERT INTO routeship_international_rates (id, rate_card_id, delivery_partner, destination_country, min_weight, max_weight, base_rate, rate_per_kg, fuel_surcharge_mode, fuel_surcharge_value, estimated_days) VALUES ($1,$2,$3,'*',$4,$5,$6,$7,'percentage',0,$8)`, [randomUUID(), cardId, partner, minWeight, maxWeight, baseRate, ratePerKg, estimatedDays])
       }
     }
     await client.query('COMMIT')

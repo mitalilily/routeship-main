@@ -205,6 +205,7 @@ const InternationalRateCalculator = () => {
                   <Th>Weight</Th>
                   <Th>Rate / Kg</Th>
                   <Th>Base Rate</Th>
+                  <Th>Fuel Surcharge</Th>
                   <Th>Total</Th>
                   <Th>Estimated Delivery</Th>
                 </Tr>
@@ -221,6 +222,14 @@ const InternationalRateCalculator = () => {
                     </Td>
                     <Td>
                       {result.currency} {result.baseRate.toFixed(2)}
+                    </Td>
+                    <Td>
+                      {result.currency} {(result.fuelSurcharge || 0).toFixed(2)}
+                      <Text fontSize="xs" color="gray.400">
+                        {result.fuelSurchargeMode === 'flat'
+                          ? 'Flat'
+                          : `${Number(result.fuelSurchargeValue || 0).toFixed(2)}%`}
+                      </Text>
                     </Td>
                     <Td fontWeight="800" color="brand.500">
                       {result.currency} {result.total.toFixed(2)}

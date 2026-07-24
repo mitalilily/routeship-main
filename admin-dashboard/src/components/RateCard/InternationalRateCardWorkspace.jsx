@@ -9,6 +9,8 @@ import {
   Box,
   Button,
   Flex,
+  FormControl,
+  FormLabel,
   HStack,
   Input,
   Select,
@@ -57,6 +59,7 @@ const ZoneHeading = ({ zone }) => (
 const buildInitialState = (zones, rates, courier) => {
   const courierRates = rates.filter((rate) => normalize(rate.deliveryPartner) === normalize(courier))
   const bySlab = new Map()
+  const firstRate = courierRates[0] || {}
 
   courierRates.forEach((rate) => {
     const minWeight = rate.minWeight ?? rate.min_weight ?? '0'
@@ -78,7 +81,11 @@ const buildInitialState = (zones, rates, courier) => {
   })
 
   const slabs = [...bySlab.values()].sort((a, b) => Number(a.maxWeight) - Number(b.maxWeight))
-  return { slabs: slabs.length ? slabs : [blankSlab(zones)] }
+  return {
+    fuelSurchargeMode: firstRate.fuelSurchargeMode || firstRate.fuel_surcharge_mode || 'percentage',
+    fuelSurchargeValue: firstRate.fuelSurchargeValue ?? firstRate.fuel_surcharge_value ?? '',
+    slabs: slabs.length ? slabs : [blankSlab(zones)],
+  }
 }
 
 const InternationalCourierRateForm = ({ courier, card, zones }) => {
@@ -121,6 +128,11 @@ const InternationalCourierRateForm = ({ courier, card, zones }) => {
           : slab,
       ),
     }))
+  const updateFuelSurcharge = (field, value) =>
+    setState((current) => ({
+      ...current,
+      [field]: value,
+    }))
 
   const save = () => {
     const slabs = state.slabs
@@ -144,12 +156,16 @@ const InternationalCourierRateForm = ({ courier, card, zones }) => {
       deliveryPartner: courier,
       currency: 'INR',
       estimatedDays: 'Manual quote',
+      fuelSurchargeMode: state.fuelSurchargeMode || 'percentage',
+      fuelSurchargeValue: state.fuelSurchargeValue || 0,
       slabs,
     })
   }
 
   const exportCsv = () => {
     const rows = state.slabs.map((slab) => ({
+      fuel_surcharge_mode: state.fuelSurchargeMode || 'percentage',
+      fuel_surcharge_value: state.fuelSurchargeValue || 0,
       min_weight: slab.minWeight,
       max_weight: slab.maxWeight,
       ...Object.fromEntries(zones.map((zone) => [`zone_${zone.code.toLowerCase()}`, slab.rates[zone.code]])),
@@ -167,7 +183,10 @@ const InternationalCourierRateForm = ({ courier, card, zones }) => {
       header: true,
       skipEmptyLines: true,
       complete: ({ data }) => {
+        const firstRow = data[0] || {}
         setState({
+          fuelSurchargeMode: firstRow.fuel_surcharge_mode || firstRow.fuelSurchargeMode || 'percentage',
+          fuelSurchargeValue: firstRow.fuel_surcharge_value ?? firstRow.fuelSurchargeValue ?? '',
           slabs: data.map((row) => ({
             minWeight: row.min_weight || '',
             maxWeight: row.max_weight || '',
@@ -220,6 +239,38 @@ const InternationalCourierRateForm = ({ courier, card, zones }) => {
           />
         </HStack>
       </Flex>
+
+      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
+        <FormControl>
+          <FormLabel fontSize="sm">Fuel Surcharge Type</FormLabel>
+          <Select
+            size="sm"
+            value={state.fuelSurchargeMode || 'percentage'}
+            onChange={(event) => updateFuelSurcharge('fuelSurchargeMode', event.target.value)}
+          >
+            <option value="percentage">Percentage (%)</option>
+            <option value="flat">Flat Amount</option>
+          </Select>
+          <Text fontSize="xs" color="gray.500" mt={1}>
+            Percentage is calculated on base plus weight charge. Flat adds a fixed amount.
+          </Text>
+        </FormControl>
+        <FormControl>
+          <FormLabel fontSize="sm">Fuel Surcharge Value</FormLabel>
+          <Input
+            size="sm"
+            type="number"
+            min="0"
+            step="0.01"
+            value={state.fuelSurchargeValue ?? ''}
+            onChange={(event) => updateFuelSurcharge('fuelSurchargeValue', event.target.value)}
+            placeholder={state.fuelSurchargeMode === 'flat' ? 'e.g. 250' : 'e.g. 12.5'}
+          />
+          <Text fontSize="xs" color="gray.500" mt={1}>
+            Saved separately for {displayCourierName(courier)}.
+          </Text>
+        </FormControl>
+      </SimpleGrid>
 
       <TableContainer border="1px solid" borderColor="gray.100">
         <Table size="sm">
