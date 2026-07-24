@@ -4513,7 +4513,7 @@ export const fetchAvailableCouriersWithRates = async (
             providerId: requestedInnofulfillHyperlocal
               ? 'innofulfillHyperlocal'
               : 'innofulfill_ecomm',
-            providerName: 'Innofulfill',
+            providerName: 'Shreemaruti',
             codAvailable: true,
             prepaidAvailable: true,
             edd: '3-5 Days',
@@ -4525,7 +4525,7 @@ export const fetchAvailableCouriersWithRates = async (
                 ? 'innofulfillHyperlocal'
                 : 'innofulfill_ecomm',
               carrierDisplayName: requestedInnofulfillHyperlocal
-                ? 'Innofulfill Hyperlocal'
+                ? 'Shreemaruti Hyperlocal'
                 : 'smileEcomm',
               mode: requestedInnofulfillHyperlocal
                 ? 'hyperlocal'
@@ -4545,7 +4545,7 @@ export const fetchAvailableCouriersWithRates = async (
       } catch (err: any) {
         innofulfillRateUnavailableReason =
           err?.response?.data?.message || err?.message || 'rate_fetch_failed'
-        console.warn('[Serviceability] Innofulfill live rate unavailable', {
+        console.warn('[Serviceability] Shreemaruti live rate unavailable', {
           message: innofulfillRateUnavailableReason,
         })
       }
@@ -4576,7 +4576,7 @@ export const fetchAvailableCouriersWithRates = async (
       xpressbees: 'Xpressbees',
       shadowfax: 'Shadowfax',
       amazon: 'Amazon Shipping',
-      innofulfill: 'Innofulfill',
+      innofulfill: 'Shreemaruti',
     }
 
     const fallbackProviderDetails: Array<{
@@ -4742,7 +4742,7 @@ export const fetchAvailableCouriersWithRates = async (
                 carrierDisplayName:
                   providerMeta.raw?.carrierDisplayName ||
                   providerMeta.providerName ||
-                  'Innofulfill',
+                  'Shreemaruti',
                 mode:
                   normalizeB2CShippingMode(providerMeta.raw?.mode || (params as any).shipping_mode) ||
                   'surface',
@@ -7689,7 +7689,7 @@ export const createB2CShipmentService = async (
       const liveTotal = Number(liveRateAmounts.total ?? 0)
 
       if (!Number.isFinite(liveTotal) || liveTotal <= 0) {
-        throw new HttpError(400, 'Innofulfill did not return a valid live rate for the selected mode.')
+        throw new HttpError(400, 'Shreemaruti did not return a valid live rate for the selected mode.')
       }
 
       freightCharges = Number(liveRateAmounts.freight ?? liveTotal)
@@ -7707,11 +7707,11 @@ export const createB2CShipmentService = async (
         rate_card_mode: hyperlocal
           ? 'hyperlocal'
           : normalizeB2CShippingMode(params.shipping_mode) || 'surface',
-        rate_card_courier_name: 'Innofulfill',
+        rate_card_courier_name: 'Shreemaruti',
         rate_card_service_provider: 'innofulfill',
       }
     } catch (rateErr: any) {
-      console.error('Failed to refresh Innofulfill live rate before booking', {
+      console.error('Failed to refresh Shreemaruti live rate before booking', {
         order_number: params.order_number,
         shipping_mode: params.shipping_mode,
         error: rateErr?.message || rateErr,
@@ -7721,7 +7721,7 @@ export const createB2CShipmentService = async (
       }
       throw new HttpError(
         400,
-        rateErr?.message || 'Unable to fetch Innofulfill live rate for selected delivery mode.',
+        rateErr?.message || 'Unable to fetch Shreemaruti live rate for selected delivery mode.',
       )
     }
   }
@@ -7988,7 +7988,7 @@ export const createB2CShipmentService = async (
               ? 'Shadowfax'
               : integrationType === 'amazon'
                 ? 'Amazon Shipping'
-                : 'Innofulfill'
+                : 'Shreemaruti'
 
     if (!isReverseShipment) {
       const orderDateRaw =
@@ -8636,7 +8636,7 @@ export const createB2CShipmentService = async (
         ;(shipmentMeta as any).provider_service = resolvedShadowfaxService
       }
     } else if (integrationType === 'innofulfill') {
-      console.log('Using Innofulfill API...')
+      console.log('Using Shreemaruti API...')
       const innofulfill = new InnofulfillCourierService()
       const hyperlocal =
         normalizeB2CShippingMode(params.shipping_mode) === 'hyperlocal' ||
@@ -8647,14 +8647,14 @@ export const createB2CShipmentService = async (
       const innofulfillMeta = innofulfill.extractShipmentMeta(shipmentData)
 
       if (!innofulfillMeta.orderId || !innofulfillMeta.awb) {
-        console.error('Invalid Innofulfill shipment:', {
+        console.error('Invalid Shreemaruti shipment:', {
           order_number: params.order_number,
           response_keys:
             shipmentData && typeof shipmentData === 'object' ? Object.keys(shipmentData) : [],
         })
         throw new HttpError(
           502,
-          'Innofulfill order creation succeeded but did not return an order ID/AWB.',
+          'Shreemaruti order creation succeeded but did not return an order ID/AWB.',
         )
       }
 
@@ -8662,7 +8662,7 @@ export const createB2CShipmentService = async (
       shipmentMeta = {
         shipment_id: innofulfillMeta.orderId,
         awb_number: innofulfillMeta.awb,
-        courier_name: innofulfillMeta.carrierName || 'Innofulfill',
+        courier_name: innofulfillMeta.carrierName || 'Shreemaruti',
         courier_id: params.courier_id ? Number(params.courier_id) : null,
         label: undefined,
         manifest: undefined,
@@ -12931,7 +12931,7 @@ export const generateManifestService = async (params: {
               : integrationType === 'shadowfax'
                 ? 'Shadowfax'
                 : integrationType === 'innofulfill'
-                  ? 'Innofulfill'
+                  ? 'Shreemaruti'
                   : 'Xpressbees'
           const providerManifestIds =
             integrationType === 'ekart'
@@ -13013,7 +13013,7 @@ export const generateManifestService = async (params: {
             }
           } else if (integrationType === 'innofulfill') {
             console.log(
-              '[Innofulfill] Skipping provider manifest API during local manifest generation; orders are auto-manifested at create-order time.',
+              '[Shreemaruti] Skipping provider manifest API during local manifest generation; orders are auto-manifested at create-order time.',
               {
                 orders: fetchedOrders.map((order) => order.order_number || order.id),
               },
@@ -15900,7 +15900,7 @@ const mapInnofulfillTracking = (raw: any, order: OrderSummary): ProviderNormaliz
       orderInformation?.carrierDisplayName ||
         orderInformation?.carrierName ||
         order.provider_meta?.innofulfill?.carrier_name,
-      'Innofulfill',
+      'Shreemaruti',
     ),
     edd:
       sanitizeString(

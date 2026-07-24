@@ -15,7 +15,7 @@ const COURIER_PROVIDER_DISPLAY_NAMES: Record<CourierProviderKey, string> = {
   amazon: 'Amazon Shipping',
   xpressbees: 'Xpressbees',
   ekart: 'Ekart Logistics',
-  innofulfill: 'Innofulfill',
+  innofulfill: 'Shreemaruti',
 }
 
 const normalizeText = (value: unknown) => String(value ?? '').trim()

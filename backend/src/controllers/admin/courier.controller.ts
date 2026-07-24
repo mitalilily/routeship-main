@@ -2113,7 +2113,7 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
 
     res.json({
       success: true,
-      message: 'Innofulfill credentials updated successfully',
+      message: 'Shreemaruti credentials updated successfully',
       data: {
         provider: 'innofulfill',
         apiBase: saved?.apiBase || 'https://apis.innofulfill.com',
@@ -2129,7 +2129,7 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
     })
   } catch (err) {
     console.error(err)
-    res.status(500).json({ success: false, message: 'Failed to update Innofulfill credentials' })
+    res.status(500).json({ success: false, message: 'Failed to update Shreemaruti credentials' })
   }
 }
 

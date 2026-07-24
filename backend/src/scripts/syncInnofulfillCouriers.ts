@@ -17,21 +17,21 @@ const DEFAULT_COD_PERCENT = 2
 const INNOFULFILL_COURIERS = [
   {
     id: 6101,
-    name: 'Innofulfill ECOMM Surface',
+    name: 'Shreemaruti ECOMM Surface',
     mode: 'surface',
     carrierName: 'innofulfill_ecomm',
     carrierId: '30d5f835-a63a-4125-b095-93b3098e4e3d',
   },
   {
     id: 6102,
-    name: 'Innofulfill ECOMM Air',
+    name: 'Shreemaruti ECOMM Air',
     mode: 'air',
     carrierName: 'innofulfill_ecomm',
     carrierId: '30d5f835-a63a-4125-b095-93b3098e4e3d',
   },
   {
     id: 6103,
-    name: 'Innofulfill Hyperlocal',
+    name: 'Shreemaruti Hyperlocal',
     mode: 'hyperlocal',
     carrierName: 'innofulfillHyperlocal',
     carrierId: '',
@@ -78,7 +78,7 @@ const resolveCredentialInput = () => ({
   tenantId: argValue('tenant-id') || normalize(process.env.INNOFULFILL_TENANT_ID),
   userId: argValue('user-id') || normalize(process.env.INNOFULFILL_USER_ID),
   signinType: argValue('signin-type') || normalize(process.env.INNOFULFILL_SIGNIN_TYPE) || 'EMAIL',
-  clientName: argValue('client-name') || normalize(process.env.INNOFULFILL_CLIENT_NAME) || 'Innofulfill',
+  clientName: argValue('client-name') || normalize(process.env.INNOFULFILL_CLIENT_NAME) || 'Shreemaruti',
 })
 
 const innofulfillHeaders = (input: ReturnType<typeof resolveCredentialInput>) => ({
@@ -155,7 +155,7 @@ const runLiveChecks = async (input: ReturnType<typeof resolveCredentialInput>) =
   const failed = checks.filter((check) => !check.ok)
   if (failed.length) {
     throw new Error(
-      `Innofulfill live checks failed: ${failed
+      `Shreemaruti live checks failed: ${failed
         .map((check) => `${check.name}=${check.status || 'ERR'} ${check.message || ''}`.trim())
         .join(', ')}`,
     )

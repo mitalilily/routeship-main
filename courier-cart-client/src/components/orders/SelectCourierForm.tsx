@@ -1088,10 +1088,10 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                       >
                         <Box>
                           <Typography sx={{ fontSize: 12, fontWeight: 800, color: TEXT_PRIMARY }}>
-                            Innofulfill delivery mode
+                            Shreemaruti delivery mode
                           </Typography>
                           <Typography sx={{ mt: 0.2, fontSize: 11, color: TEXT_SECONDARY }}>
-                            Sent as Innofulfill ECOMM deliveryMode while booking this shipment.
+                            Sent as Shreemaruti ECOMM deliveryMode while booking this shipment.
                           </Typography>
                         </Box>
                         <Select

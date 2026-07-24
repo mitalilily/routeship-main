@@ -4,5 +4,5 @@ export const COURIER_PROVIDER_OPTIONS = [
   { value: 'xpressbees', label: 'Xpressbees' },
   { value: 'shadowfax', label: 'Shadowfax' },
   { value: 'amazon', label: 'Amazon Shipping' },
-  { value: 'innofulfill', label: 'Innofulfill' },
+  { value: 'innofulfill', label: 'Shreemaruti' },
 ]

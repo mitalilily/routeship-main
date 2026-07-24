@@ -1099,7 +1099,7 @@ const CourierCredentials = () => {
       },
       {
         onSuccess: () => {
-          toast({ title: 'Innofulfill credentials updated', status: 'success' })
+          toast({ title: 'Shreemaruti credentials updated', status: 'success' })
           setInnofulfillForm((prev) => ({
             ...prev,
             password: '',
@@ -1109,7 +1109,7 @@ const CourierCredentials = () => {
         },
         onError: (err) => {
           toast({
-            title: 'Failed to update Innofulfill credentials',
+            title: 'Failed to update Shreemaruti credentials',
             description: err?.message,
             status: 'error',
           })
@@ -1374,7 +1374,7 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center">
-              <Text fontWeight="semibold">Innofulfill</Text>
+              <Text fontWeight="semibold">Shreemaruti</Text>
               <Badge
                 colorScheme={
                   data?.innofulfill?.hasApiKey ||
@@ -1401,7 +1401,7 @@ const CourierCredentials = () => {
                 placeholder="https://apis.innofulfill.com"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Innofulfill API host. Use the production URL from Innofulfill unless they provide
+                Shreemaruti API host. Use the production URL from Shreemaruti unless they provide
                 a sandbox or merchant-specific base URL.
               </Text>
             </FormControl>
@@ -1416,7 +1416,7 @@ const CourierCredentials = () => {
                 placeholder="user@example.com"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Login email for the Innofulfill account. Ask Innofulfill for the API-enabled
+                Login email for the Shreemaruti account. Ask Shreemaruti for the API-enabled
                 merchant or admin user email.
               </Text>
             </FormControl>
@@ -1432,12 +1432,12 @@ const CourierCredentials = () => {
                 placeholder="Leave blank to keep existing password"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Password for the Innofulfill login user. Leave this blank when you only want to
+                Password for the Shreemaruti login user. Leave this blank when you only want to
                 keep the saved password unchanged.
               </Text>
               {data?.innofulfill?.hasPassword && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Login password already configured on Innofulfill.
+                  Login password already configured on Shreemaruti.
                 </Text>
               )}
             </FormControl>
@@ -1452,7 +1452,7 @@ const CourierCredentials = () => {
                 placeholder="EMAIL"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Authentication mode sent to Innofulfill login. This integration currently supports
+                Authentication mode sent to Shreemaruti login. This integration currently supports
                 only EMAIL.
               </Text>
             </FormControl>
@@ -1465,11 +1465,11 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setInnofulfillForm((prev) => ({ ...prev, apiKey: e.target.value }))
                 }
-                placeholder={data?.innofulfill?.apiKeyMasked || 'Enter Innofulfill API key'}
+                placeholder={data?.innofulfill?.apiKeyMasked || 'Enter Shreemaruti API key'}
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Static key used as the Api-Key header for serviceability, rate, order, document,
-                and tracking calls. Ask Innofulfill support or the dashboard owner for the API key.
+                and tracking calls. Ask Shreemaruti support or the dashboard owner for the API key.
               </Text>
               {!!data?.innofulfill?.apiKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
@@ -1489,7 +1489,7 @@ const CourierCredentials = () => {
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Tenant context for bearer-token calls. Usually appears in the login response or
-                Innofulfill merchant/account settings.
+                Shreemaruti merchant/account settings.
               </Text>
             </FormControl>
 
@@ -1503,7 +1503,7 @@ const CourierCredentials = () => {
                 placeholder="User ID from login response"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Innofulfill user identifier returned by login. Required for token refresh and
+                Shreemaruti user identifier returned by login. Required for token refresh and
                 shipping-label document generation.
               </Text>
             </FormControl>
@@ -1520,18 +1520,18 @@ const CourierCredentials = () => {
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Shared secret used to verify x-webhook-signature on delivery webhooks. Configure
-                the same secret in Innofulfill webhook settings.
+                the same secret in Shreemaruti webhook settings.
               </Text>
               {data?.innofulfill?.hasWebhookSecret && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Webhook signature key already configured on Innofulfill.
+                  Webhook signature key already configured on Shreemaruti.
                 </Text>
               )}
             </FormControl>
 
             <Text fontSize="xs" color="gray.500">
               Operational calls use either Api-Key authentication or Authorization: Bearer access
-              token with TenantId. Access and refresh tokens are generated by Innofulfill login and
+              token with TenantId. Access and refresh tokens are generated by Shreemaruti login and
               are not stored here as permanent credentials. Leave password, API key, or webhook
               signature key blank to keep the saved value.
             </Text>
@@ -1542,7 +1542,7 @@ const CourierCredentials = () => {
               isLoading={updateInnofulfill.isPending}
               alignSelf="flex-start"
             >
-              Save Innofulfill Credentials
+              Save Shreemaruti Credentials
             </Button>
           </VStack>
         </Box>

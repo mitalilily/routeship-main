@@ -228,6 +228,7 @@ export const courierLogos: Record<string, string> = {
   Ekart: publicAssetUrl('/logo/integrations/ekart.png'),
   Xpressbees: publicAssetUrl('/logo/integrations/xpressbees.png'),
   Innofulfill: publicAssetUrl('/logo/integrations/default-courier.png'),
+  Shreemaruti: publicAssetUrl('/logo/integrations/default-courier.png'),
   smileEcomm: publicAssetUrl('/logo/integrations/default-courier.png'),
 }
 export const defaultLogo = publicAssetUrl('/logo/integrations/default-courier.png')

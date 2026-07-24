@@ -48,7 +48,7 @@ const ServiceProviders = () => {
         Service Providers
       </Text>
       <Text fontSize="sm" color="gray.500">
-        Manage enabled courier providers for Delhivery, Ekart, Xpressbees, Shadowfax, Amazon Shipping, and Innofulfill.
+        Manage enabled courier providers for Delhivery, Ekart, Xpressbees, Shadowfax, Amazon Shipping, and Shreemaruti.
       </Text>
       <Table variant="simple">
         <Thead>

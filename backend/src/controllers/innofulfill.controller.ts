@@ -423,7 +423,7 @@ export const innofulfillLoginController = async (req: Request, res: Response) =>
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill authentication service',
+      message: 'Unable to reach Shreemaruti authentication service',
     })
   }
 }
@@ -459,7 +459,7 @@ export const innofulfillRefreshTokenController = async (req: Request, res: Respo
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill authentication service',
+      message: 'Unable to reach Shreemaruti authentication service',
     })
   }
 }
@@ -525,7 +525,7 @@ export const innofulfillEcommServiceabilityController = async (req: Request, res
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill serviceability service',
+      message: 'Unable to reach Shreemaruti serviceability service',
     })
   }
 }
@@ -647,7 +647,7 @@ export const innofulfillEcommRateCalculationController = async (req: Request, re
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill rate calculation service',
+      message: 'Unable to reach Shreemaruti rate calculation service',
     })
   }
 }
@@ -678,7 +678,7 @@ export const innofulfillListOrdersController = async (req: Request, res: Respons
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill orders service',
+      message: 'Unable to reach Shreemaruti orders service',
     })
   }
 }
@@ -792,7 +792,7 @@ export const innofulfillCreateOrderController = async (req: Request, res: Respon
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill orders service',
+      message: 'Unable to reach Shreemaruti orders service',
     })
   }
 }
@@ -837,7 +837,7 @@ export const innofulfillCreateEcommOrderController = async (req: Request, res: R
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill ECOMM order service',
+      message: 'Unable to reach Shreemaruti ECOMM order service',
     })
   }
 }
@@ -882,7 +882,7 @@ export const innofulfillCreateHyperlocalOrderController = async (req: Request, r
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill HYPERLOCAL order service',
+      message: 'Unable to reach Shreemaruti HYPERLOCAL order service',
     })
   }
 }
@@ -918,7 +918,7 @@ export const innofulfillGetOrderController = async (req: Request, res: Response)
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill orders service',
+      message: 'Unable to reach Shreemaruti orders service',
     })
   }
 }
@@ -957,7 +957,7 @@ export const innofulfillBulkManifestOrdersController = async (req: Request, res:
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill manifest service',
+      message: 'Unable to reach Shreemaruti manifest service',
     })
   }
 }
@@ -1007,7 +1007,7 @@ export const innofulfillBulkCancelOrdersController = async (req: Request, res: R
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill cancel service',
+      message: 'Unable to reach Shreemaruti cancel service',
     })
   }
 }
@@ -1053,7 +1053,7 @@ export const innofulfillDownloadShippingLabelController = async (req: Request, r
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill shipping label service',
+      message: 'Unable to reach Shreemaruti shipping label service',
     })
   }
 }
@@ -1099,7 +1099,7 @@ export const innofulfillDownloadInvoiceController = async (req: Request, res: Re
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill invoice service',
+      message: 'Unable to reach Shreemaruti invoice service',
     })
   }
 }
@@ -1135,7 +1135,7 @@ export const innofulfillTrackShipmentByAwbController = async (req: Request, res:
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill tracking service',
+      message: 'Unable to reach Shreemaruti tracking service',
     })
   }
 }
@@ -1166,7 +1166,7 @@ export const innofulfillListLabelConfigurationsController = async (req: Request,
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill label configuration service',
+      message: 'Unable to reach Shreemaruti label configuration service',
     })
   }
 }
@@ -1236,7 +1236,7 @@ export const innofulfillCreateLabelConfigurationController = async (req: Request
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill label configuration service',
+      message: 'Unable to reach Shreemaruti label configuration service',
     })
   }
 }
@@ -1267,7 +1267,7 @@ export const innofulfillListInvoiceConfigurationsController = async (req: Reques
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill invoice configuration service',
+      message: 'Unable to reach Shreemaruti invoice configuration service',
     })
   }
 }
@@ -1341,7 +1341,7 @@ export const innofulfillCreateInvoiceConfigurationController = async (req: Reque
 
     return res.status(502).json({
       success: false,
-      message: 'Unable to reach Innofulfill invoice configuration service',
+      message: 'Unable to reach Shreemaruti invoice configuration service',
     })
   }
 }

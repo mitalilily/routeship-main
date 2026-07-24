@@ -55,7 +55,7 @@ export class InnofulfillCourierService {
   private async getAuthHeaders() {
     const config = await this.getConfig()
     if (!config.apiKey && !(config.tenantId && config.username && config.password)) {
-      throw new HttpError(400, 'Innofulfill credentials are not configured')
+      throw new HttpError(400, 'Shreemaruti credentials are not configured')
     }
 
     const headers: Record<string, string> = {}
@@ -91,7 +91,7 @@ export class InnofulfillCourierService {
 
     const response = await calculateInnofulfillEcommRates(payload, await this.getAuthHeaders())
     if (response.status < 200 || response.status >= 300) {
-      throw new HttpError(response.status, response.data?.message || 'Innofulfill rate calculation failed')
+      throw new HttpError(response.status, response.data?.message || 'Shreemaruti rate calculation failed')
     }
 
     return response.data
@@ -169,7 +169,7 @@ export class InnofulfillCourierService {
 
     const response = await createInnofulfillOrder(payload, await this.getAuthHeaders())
     if (response.status < 200 || response.status >= 300) {
-      throw new HttpError(response.status, response.data?.message || 'Innofulfill order creation failed')
+      throw new HttpError(response.status, response.data?.message || 'Shreemaruti order creation failed')
     }
 
     return response.data
@@ -178,7 +178,7 @@ export class InnofulfillCourierService {
   async getOrder(orderId: string) {
     const response = await getInnofulfillOrder(orderId, await this.getAuthHeaders())
     if (response.status < 200 || response.status >= 300) {
-      throw new HttpError(response.status, response.data?.message || 'Innofulfill order fetch failed')
+      throw new HttpError(response.status, response.data?.message || 'Shreemaruti order fetch failed')
     }
     return response.data
   }
@@ -186,7 +186,7 @@ export class InnofulfillCourierService {
   async trackByAwb(awb: string) {
     const response = await trackInnofulfillShipmentByAwb(awb, await this.getAuthHeaders())
     if (response.status < 200 || response.status >= 300) {
-      throw new HttpError(response.status, response.data?.message || 'Innofulfill tracking failed')
+      throw new HttpError(response.status, response.data?.message || 'Shreemaruti tracking failed')
     }
     return response.data
   }
@@ -199,7 +199,7 @@ export class InnofulfillCourierService {
       shipment,
       orderId: trim(order?.orderId),
       awb: trim(shipment?.awbNumber || order?.awbNumber),
-      carrierName: trim(order?.carrierDisplayName || order?.carrierName || 'Innofulfill'),
+      carrierName: trim(order?.carrierDisplayName || order?.carrierName || 'Shreemaruti'),
       carrierId: trim(order?.carrierId),
       status: trim(order?.orderStatus || shipment?.shipmentStatus || 'booked'),
     }
