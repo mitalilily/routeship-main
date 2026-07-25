@@ -176,6 +176,46 @@ const upsertShippingRate = async (
   return rateId
 }
 
+const normalizeDelhiverySlabContinuations = async (client: PoolClient) => {
+  const result = await client.query(
+    `with latest_finite_slab as (
+       select distinct on (s.shipping_rate_id)
+              s.id,
+              s.rate
+         from shipping_rate_slabs s
+         join shipping_rates sr on sr.id = s.shipping_rate_id
+        where lower(coalesce(sr.service_provider, '')) = 'delhivery'
+          and lower(coalesce(sr.business_type, '')) = 'b2c'
+          and s.weight_to is not null
+          and not exists (
+            select 1
+              from shipping_rate_slabs open_slab
+             where open_slab.shipping_rate_id = s.shipping_rate_id
+               and open_slab.weight_to is null
+          )
+        order by s.shipping_rate_id, s.weight_to desc
+     )
+     update shipping_rate_slabs s
+        set extra_rate = case
+              when s.extra_rate is null or s.extra_rate <= 0 then latest_finite_slab.rate
+              else s.extra_rate
+            end,
+            extra_weight_unit = case
+              when s.extra_weight_unit is null or s.extra_weight_unit <= 0 then 0.500
+              else s.extra_weight_unit
+            end,
+            updated_at = now()
+       from latest_finite_slab
+      where s.id = latest_finite_slab.id
+        and (
+          s.extra_rate is null or s.extra_rate <= 0 or
+          s.extra_weight_unit is null or s.extra_weight_unit <= 0
+        )`,
+  )
+
+  return result.rowCount ?? 0
+}
+
 const main = async () => {
   const configuredProviders = await getConfiguredCourierProviderSet()
   const credentials = await getDelhiveryCredentials()
@@ -241,6 +281,7 @@ const main = async () => {
         savedRates += 2
       }
     }
+    const slabsNormalized = await normalizeDelhiverySlabContinuations(client)
     await client.query(
       `delete from routeship_b2c_courier_rate_configs
        where lower(coalesce(service_provider, '')) = 'delhivery'
@@ -251,6 +292,12 @@ const main = async () => {
       [DELHIVERY_COURIER_IDS.EXPRESS, DELHIVERY_COURIER_IDS.SURFACE],
     )
     await client.query('commit')
+    console.log(
+      JSON.stringify({
+        provider: 'delhivery',
+        slabContinuationsNormalized: slabsNormalized,
+      }),
+    )
   } catch (error) {
     await client.query('rollback').catch(() => undefined)
     throw error
