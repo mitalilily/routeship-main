@@ -15972,6 +15972,7 @@ const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrack
   const payload = raw?.data || raw?.payload || raw || {}
   const header = payload?.trackHeader || payload?.track_header || {}
   const details = payload?.trackDetails || payload?.track_details || []
+  const shipsyEvents = Array.isArray(payload?.events) ? payload.events : []
   const parseDtdcTime = (dateValue: unknown, timeValue?: unknown) => {
     const date = sanitizeString(dateValue)
     const time = sanitizeString(timeValue)
@@ -15991,6 +15992,25 @@ const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrack
       Number(second),
     )
   }
+  const parseShipsyTime = (value: unknown) => {
+    const numeric = Number(value)
+    if (Number.isFinite(numeric) && numeric > 0) return new Date(numeric)
+    return value
+  }
+
+  shipsyEvents.forEach((entry: any) => {
+    pushHistoryEvent(history, {
+      statusCode: entry?.type || entry?.status,
+      message:
+        entry?.customer_update ||
+        entry?.notes ||
+        entry?.failure_reason ||
+        entry?.type ||
+        entry?.status,
+      location: entry?.hub_name || entry?.hub_code,
+      time: parseShipsyTime(entry?.event_time),
+    })
+  })
 
   const eventRows = Array.isArray(details)
     ? details
@@ -16017,7 +16037,9 @@ const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrack
   }
 
   const status = sanitizeString(
-    header?.strStatus ||
+    payload?.status ||
+      payload?.customer_update ||
+      header?.strStatus ||
       payload?.status ||
       payload?.statusFlag ||
       payload?.errorDetails?.[0]?.value ||
@@ -16032,7 +16054,15 @@ const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrack
     courier_name: 'DTDC',
     edd: sanitizeString(header?.strExpectedDeliveryDate || payload?.expectedDeliveryDate || '') || undefined,
     shipment_info:
-      sanitizeString(header?.strRemarks || payload?.status || payload?.statusCode || '', '') ||
+      sanitizeString(
+        payload?.customer_reference_number ||
+          payload?.service_type_id ||
+          header?.strRemarks ||
+          payload?.status ||
+          payload?.statusCode ||
+          '',
+        '',
+      ) ||
       undefined,
   }
 }

@@ -8,6 +8,8 @@ const DTDC_TRACKING_ENDPOINT = '/dtdc-api/rest/JSONCnTrk/getTrackDetails'
 const DTDC_BOOKING_BASE_URL = 'https://dtdcapi.shipsy.io'
 const DTDC_CANCEL_BASE_URL = 'https://app.shipsy.in'
 const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
+const DTDC_SHIPSY_TRACK_ENDPOINT = '/api/customer/integration/consignment/track'
+const DTDC_SHIPSY_LABEL_STREAM_ENDPOINT = '/api/customer/integration/consignment/shippinglabel/stream'
 const DTDC_SOFTDATA_ENDPOINT = '/api/customer/integration/consignment/softdata'
 
 export class DtdcService {
@@ -313,9 +315,40 @@ export class DtdcService {
     }
   }
 
-  async trackShipment(awb: string, options: { trkType?: 'cnno' | 'reference'; addtnlDtl?: 'Y' | 'N' } = {}) {
+  async trackShipment(awb: string, options: { trkType?: 'cnno' | 'reference'; addtnlDtl?: 'Y' | 'N'; preferLegacy?: boolean } = {}) {
     const normalizedAwb = String(awb || '').trim()
     if (!normalizedAwb) throw new HttpError(400, 'DTDC consignment number is required for tracking')
+
+    const apiKey = String(this.accessToken || '').trim() || (await this.authenticate().catch(() => ''))
+    if (apiKey && !options.preferLegacy) {
+      try {
+        const response = await axios.get(`${this.cancelApiBase}${DTDC_SHIPSY_TRACK_ENDPOINT}`, {
+          params: { reference_number: normalizedAwb },
+          timeout: 20000,
+          validateStatus: () => true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'api-key': apiKey,
+          },
+        })
+
+        if (response.status >= 200 && response.status < 300) {
+          return response.data
+        }
+
+        console.warn('[DTDC] Shipsy tracking failed, falling back to legacy tracking', {
+          awb: normalizedAwb,
+          status: response.status,
+          response: response.data,
+        })
+      } catch (err: any) {
+        console.warn('[DTDC] Shipsy tracking errored, falling back to legacy tracking', {
+          awb: normalizedAwb,
+          message: err?.message || err,
+        })
+      }
+    }
 
     const http = await this.getHttp()
     const payload = {
@@ -334,6 +367,50 @@ export class DtdcService {
           err?.response?.data?.status ||
           err?.message ||
           'DTDC tracking request failed',
+      )
+    }
+  }
+
+  async getShippingLabelStream(referenceNumber: string) {
+    await this.ensureConfigLoaded()
+
+    const normalizedReference = String(referenceNumber || '').trim()
+    if (!normalizedReference) throw new HttpError(400, 'DTDC reference number is required for label download')
+
+    const apiKey = String(this.accessToken || '').trim() || (await this.authenticate())
+    if (!apiKey) throw new HttpError(400, 'DTDC API key is not configured')
+
+    try {
+      const response = await axios.get(`${this.cancelApiBase}${DTDC_SHIPSY_LABEL_STREAM_ENDPOINT}`, {
+        params: { reference_number: normalizedReference },
+        responseType: 'arraybuffer',
+        timeout: 30000,
+        validateStatus: () => true,
+        headers: {
+          Accept: 'application/pdf',
+          'api-key': apiKey,
+        },
+      })
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new HttpError(
+          response.status,
+          response.data?.message || response.data?.error || 'DTDC shipping label download failed',
+        )
+      }
+
+      return {
+        buffer: Buffer.from(response.data),
+        contentType: String(response.headers?.['content-type'] || 'application/pdf'),
+      }
+    } catch (err: any) {
+      if (err instanceof HttpError) throw err
+      throw new HttpError(
+        Number(err?.response?.status || 502),
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          'DTDC shipping label download failed',
       )
     }
   }
