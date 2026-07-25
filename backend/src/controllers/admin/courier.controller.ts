@@ -582,7 +582,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       dtdc: {
         provider: 'dtdc',
         apiBase: 'https://blktracksvc.dtdc.com',
-        cancelApiBase: 'http://dtdcapi.shipsy.io',
+        bookingApiBase: 'https://dtdcapi.shipsy.io',
+        cancelApiBase: 'https://app.shipsy.in',
         clientName: '',
         username: '',
         customerCode: '',
@@ -711,9 +712,12 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         acc.dtdc = {
           provider: 'dtdc',
           apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
+          bookingApiBase:
+            String(metadata.bookingApiBase || metadata.booking_api_base || metadata.softdataApiBase || '').trim() ||
+            'https://dtdcapi.shipsy.io',
           cancelApiBase:
             String(metadata.cancelApiBase || metadata.cancel_api_base || '').trim() ||
-            'http://dtdcapi.shipsy.io',
+            'https://app.shipsy.in',
           clientName: row.clientName || '',
           username: row.username || '',
           customerCode: String(metadata.customerCode || metadata.customer_code || '').trim(),
@@ -2170,6 +2174,7 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
 export const updateDtdcCredentialsController = async (req: Request, res: Response) => {
   const {
     apiBase,
+    bookingApiBase,
     cancelApiBase,
     clientName,
     username,
@@ -2184,6 +2189,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextBookingApiBase = typeof bookingApiBase === 'string' ? bookingApiBase.trim() : undefined
     const nextCancelApiBase = typeof cancelApiBase === 'string' ? cancelApiBase.trim() : undefined
     const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
@@ -2217,8 +2223,11 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
           ? { ...existing.metadata }
           : {}
+      if (nextBookingApiBase !== undefined) {
+        metadata.bookingApiBase = nextBookingApiBase || 'https://dtdcapi.shipsy.io'
+      }
       if (nextCancelApiBase !== undefined) {
-        metadata.cancelApiBase = nextCancelApiBase || 'http://dtdcapi.shipsy.io'
+        metadata.cancelApiBase = nextCancelApiBase || 'https://app.shipsy.in'
       }
       if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
       if (nextServiceTypeId !== undefined) metadata.serviceTypeId = nextServiceTypeId || 'B2C PRIORITY'
@@ -2238,7 +2247,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         password: hasNewPassword ? nextPassword : '',
         apiKey: hasNewAccessToken ? nextAccessToken : '',
         metadata: {
-          cancelApiBase: nextCancelApiBase || 'http://dtdcapi.shipsy.io',
+          bookingApiBase: nextBookingApiBase || 'https://dtdcapi.shipsy.io',
+          cancelApiBase: nextCancelApiBase || 'https://app.shipsy.in',
           customerCode: nextCustomerCode || '',
           serviceTypeId: nextServiceTypeId || 'B2C PRIORITY',
           commodityId: nextCommodityId || '99',
@@ -2267,9 +2277,12 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       data: {
         provider: 'dtdc',
         apiBase: saved?.apiBase || 'https://blktracksvc.dtdc.com',
+        bookingApiBase:
+          String(saved?.metadata?.bookingApiBase || saved?.metadata?.booking_api_base || saved?.metadata?.softdataApiBase || '').trim() ||
+          'https://dtdcapi.shipsy.io',
         cancelApiBase:
           String(saved?.metadata?.cancelApiBase || saved?.metadata?.cancel_api_base || '').trim() ||
-          'http://dtdcapi.shipsy.io',
+          'https://app.shipsy.in',
         clientName: saved?.clientName || '',
         username: saved?.username || '',
         customerCode: String(saved?.metadata?.customerCode || saved?.metadata?.customer_code || '').trim(),

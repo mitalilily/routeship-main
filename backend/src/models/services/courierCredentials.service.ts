@@ -98,6 +98,7 @@ export type DtdcConfig = {
   clientName?: string
   username?: string
   password?: string
+  bookingApiBase?: string
   cancelApiBase?: string
   customerCode?: string
   serviceTypeId?: string
@@ -346,6 +347,7 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       clientName: normalize(row.clientName),
       username: normalize(row.username),
       password: normalize(row.password),
+      bookingApiBase: normalize((metadata.bookingApiBase as string) || (metadata.booking_api_base as string) || (metadata.softdataApiBase as string) || ''),
       cancelApiBase: normalize((metadata.cancelApiBase as string) || (metadata.cancel_api_base as string) || ''),
       customerCode: normalize((metadata.customerCode as string) || (metadata.customer_code as string) || ''),
       serviceTypeId: normalize((metadata.serviceTypeId as string) || (metadata.service_type_id as string) || ''),

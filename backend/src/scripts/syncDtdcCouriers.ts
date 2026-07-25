@@ -29,6 +29,7 @@ const upsertDtdcCredentials = async (
   client: PoolClient,
   config: {
     apiBase: string
+    bookingApiBase: string
     cancelApiBase: string
     clientName: string
     username: string
@@ -62,6 +63,7 @@ const upsertDtdcCredentials = async (
       config.accessToken,
       JSON.stringify({
         cancelApiBase: config.cancelApiBase,
+        bookingApiBase: config.bookingApiBase,
         customerCode: config.customerCode,
         serviceTypeId: config.serviceTypeId,
         commodityId: config.commodityId,
@@ -93,7 +95,8 @@ async function main() {
   const databaseUrl = requiredEnv('DATABASE_URL')
   const config = {
     apiBase: normalizeBaseUrl(process.env.DTDC_API_BASE),
-    cancelApiBase: normalizeBaseUrl(process.env.DTDC_CANCEL_API_BASE || 'http://dtdcapi.shipsy.io'),
+    bookingApiBase: normalizeBaseUrl(process.env.DTDC_BOOKING_API_BASE || process.env.DTDC_SOFTDATA_API_BASE || 'https://dtdcapi.shipsy.io'),
+    cancelApiBase: normalizeBaseUrl(process.env.DTDC_CANCEL_API_BASE || 'https://app.shipsy.in'),
     clientName: normalize(process.env.DTDC_CLIENT_NAME),
     username: normalize(process.env.DTDC_USERNAME),
     password: normalize(process.env.DTDC_PASSWORD),
@@ -120,6 +123,7 @@ async function main() {
         {
           provider: DTDC_PROVIDER,
           apiBase: config.apiBase,
+          bookingApiBase: config.bookingApiBase,
           cancelApiBase: config.cancelApiBase,
           clientName: config.clientName || null,
           credentialsSaved,

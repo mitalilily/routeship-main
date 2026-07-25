@@ -196,7 +196,8 @@ const CourierCredentials = () => {
   })
   const [dtdcForm, setDtdcForm] = useState({
     apiBase: 'https://blktracksvc.dtdc.com',
-    cancelApiBase: 'http://dtdcapi.shipsy.io',
+    bookingApiBase: 'https://dtdcapi.shipsy.io',
+    cancelApiBase: 'https://app.shipsy.in',
     clientName: '',
     username: '',
     password: '',
@@ -269,7 +270,8 @@ const CourierCredentials = () => {
     if (data?.dtdc) {
       setDtdcForm({
         apiBase: data.dtdc.apiBase || 'https://blktracksvc.dtdc.com',
-        cancelApiBase: data.dtdc.cancelApiBase || 'http://dtdcapi.shipsy.io',
+        bookingApiBase: data.dtdc.bookingApiBase || 'https://dtdcapi.shipsy.io',
+        cancelApiBase: data.dtdc.cancelApiBase || 'https://app.shipsy.in',
         clientName: data.dtdc.clientName || '',
         username: data.dtdc.username || '',
         password: '',
@@ -1059,6 +1061,7 @@ const CourierCredentials = () => {
     updateDtdc.mutate(
       {
         apiBase: dtdcForm.apiBase,
+        bookingApiBase: dtdcForm.bookingApiBase,
         cancelApiBase: dtdcForm.cancelApiBase,
         clientName: dtdcForm.clientName,
         username: dtdcForm.username,
@@ -1713,16 +1716,30 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
+              <FormLabel>Booking API Base URL</FormLabel>
+              <Input
+                value={dtdcForm.bookingApiBase}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, bookingApiBase: e.target.value }))
+                }
+                placeholder="https://dtdcapi.shipsy.io"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                DTDC Shipsy softdata booking base URL used to create consignments.
+              </Text>
+            </FormControl>
+
+            <FormControl>
               <FormLabel>Cancellation API Base URL</FormLabel>
               <Input
                 value={dtdcForm.cancelApiBase}
                 onChange={(e) =>
                   setDtdcForm((prev) => ({ ...prev, cancelApiBase: e.target.value }))
                 }
-                placeholder="http://dtdcapi.shipsy.io"
+                placeholder="https://app.shipsy.in"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Shipsy DTDC cancellation base URL. Use staging only while testing cancellations.
+                Shipsy DTDC cancellation API server. The current DTDC doc lists https://app.shipsy.in.
               </Text>
             </FormControl>
 

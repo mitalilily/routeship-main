@@ -5,12 +5,14 @@ import type { ShipmentParams } from '../shiprocket.service'
 
 const DTDC_TRACKING_BASE_URL = 'https://blktracksvc.dtdc.com'
 const DTDC_TRACKING_ENDPOINT = '/dtdc-api/rest/JSONCnTrk/getTrackDetails'
-const DTDC_CANCEL_BASE_URL = 'http://dtdcapi.shipsy.io'
+const DTDC_BOOKING_BASE_URL = 'https://dtdcapi.shipsy.io'
+const DTDC_CANCEL_BASE_URL = 'https://app.shipsy.in'
 const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
 const DTDC_SOFTDATA_ENDPOINT = '/api/customer/integration/consignment/softdata'
 
 export class DtdcService {
   private apiBase = process.env.DTDC_API_BASE || DTDC_TRACKING_BASE_URL
+  private bookingApiBase = process.env.DTDC_BOOKING_API_BASE || process.env.DTDC_SOFTDATA_API_BASE || DTDC_BOOKING_BASE_URL
   private cancelApiBase = process.env.DTDC_CANCEL_API_BASE || DTDC_CANCEL_BASE_URL
   private accessToken = process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY || ''
   private username = process.env.DTDC_USERNAME || ''
@@ -38,6 +40,7 @@ export class DtdcService {
     const cfg = DtdcService.cachedConfig
     if (cfg) {
       this.apiBase = cfg.apiBase || this.apiBase
+      this.bookingApiBase = cfg.bookingApiBase || this.bookingApiBase
       this.cancelApiBase = cfg.cancelApiBase || this.cancelApiBase
       this.accessToken = cfg.accessToken || cfg.apiKey || this.accessToken
       this.username = cfg.username || this.username
@@ -48,6 +51,7 @@ export class DtdcService {
     }
 
     this.apiBase = this.normalizeBaseUrl(this.apiBase)
+    this.bookingApiBase = this.normalizeBaseUrl(this.bookingApiBase || DTDC_BOOKING_BASE_URL)
     this.cancelApiBase = this.normalizeBaseUrl(this.cancelApiBase || DTDC_CANCEL_BASE_URL)
   }
 
@@ -259,7 +263,7 @@ export class DtdcService {
     const payload = this.buildSoftdataPayload(params)
 
     try {
-      const response = await axios.post(`${this.cancelApiBase}${DTDC_SOFTDATA_ENDPOINT}`, payload, {
+      const response = await axios.post(`${this.bookingApiBase}${DTDC_SOFTDATA_ENDPOINT}`, payload, {
         timeout: 30000,
         validateStatus: () => true,
         headers: {
