@@ -38,6 +38,7 @@ const upsertDtdcCredentials = async (
     serviceTypeId: string
     commodityId: string
     accessToken: string
+    trackingToken: string
   },
 ) => {
   if (!config.accessToken && (!config.username || !config.password) && !config.customerCode) return false
@@ -67,6 +68,7 @@ const upsertDtdcCredentials = async (
         customerCode: config.customerCode,
         serviceTypeId: config.serviceTypeId,
         commodityId: config.commodityId,
+        trackingToken: config.trackingToken,
       }),
     ],
   )
@@ -96,7 +98,7 @@ async function main() {
   const config = {
     apiBase: normalizeBaseUrl(process.env.DTDC_API_BASE),
     bookingApiBase: normalizeBaseUrl(process.env.DTDC_BOOKING_API_BASE || process.env.DTDC_SOFTDATA_API_BASE || 'https://dtdcapi.shipsy.io'),
-    cancelApiBase: normalizeBaseUrl(process.env.DTDC_CANCEL_API_BASE || 'https://app.shipsy.in'),
+    cancelApiBase: normalizeBaseUrl(process.env.DTDC_CANCEL_API_BASE || 'https://dtdcapi.shipsy.io'),
     clientName: normalize(process.env.DTDC_CLIENT_NAME),
     username: normalize(process.env.DTDC_USERNAME),
     password: normalize(process.env.DTDC_PASSWORD),
@@ -104,6 +106,7 @@ async function main() {
     serviceTypeId: normalize(process.env.DTDC_SERVICE_TYPE_ID) || 'B2C PRIORITY',
     commodityId: normalize(process.env.DTDC_COMMODITY_ID) || '99',
     accessToken: normalize(process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY),
+    trackingToken: normalize(process.env.DTDC_TRACKING_TOKEN),
   }
 
   const pool = new Pool({
@@ -133,6 +136,7 @@ async function main() {
           serviceTypeId: config.serviceTypeId,
           commodityId: config.commodityId,
           accessTokenConfigured: Boolean(config.accessToken),
+          trackingTokenConfigured: Boolean(config.trackingToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),
           ratesSeeded: false,
         },

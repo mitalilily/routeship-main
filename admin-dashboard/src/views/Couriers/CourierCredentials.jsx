@@ -197,14 +197,15 @@ const CourierCredentials = () => {
   const [dtdcForm, setDtdcForm] = useState({
     apiBase: 'https://blktracksvc.dtdc.com',
     bookingApiBase: 'https://dtdcapi.shipsy.io',
-    cancelApiBase: 'https://app.shipsy.in',
+    cancelApiBase: 'https://dtdcapi.shipsy.io',
     clientName: '',
     username: '',
     password: '',
     customerCode: '',
     serviceTypeId: 'B2C PRIORITY',
     commodityId: '99',
-    accessToken: '',
+    apiKey: '',
+    trackingToken: '',
   })
   const [xpressbeesForm, setXpressbeesForm] = useState({
     apiBase: '',
@@ -271,14 +272,15 @@ const CourierCredentials = () => {
       setDtdcForm({
         apiBase: data.dtdc.apiBase || 'https://blktracksvc.dtdc.com',
         bookingApiBase: data.dtdc.bookingApiBase || 'https://dtdcapi.shipsy.io',
-        cancelApiBase: data.dtdc.cancelApiBase || 'https://app.shipsy.in',
+        cancelApiBase: data.dtdc.cancelApiBase || 'https://dtdcapi.shipsy.io',
         clientName: data.dtdc.clientName || '',
         username: data.dtdc.username || '',
         password: '',
         customerCode: data.dtdc.customerCode || '',
         serviceTypeId: data.dtdc.serviceTypeId || 'B2C PRIORITY',
         commodityId: data.dtdc.commodityId || '99',
-        accessToken: '',
+        apiKey: '',
+        trackingToken: '',
       })
     }
     if (data?.xpressbees) {
@@ -1069,12 +1071,13 @@ const CourierCredentials = () => {
         serviceTypeId: dtdcForm.serviceTypeId,
         commodityId: dtdcForm.commodityId,
         ...(dtdcForm.password ? { password: dtdcForm.password } : {}),
-        ...(dtdcForm.accessToken ? { accessToken: dtdcForm.accessToken } : {}),
+        ...(dtdcForm.apiKey ? { apiKey: dtdcForm.apiKey } : {}),
+        ...(dtdcForm.trackingToken ? { trackingToken: dtdcForm.trackingToken } : {}),
       },
       {
         onSuccess: () => {
           toast({ title: 'DTDC credentials updated', status: 'success' })
-          setDtdcForm((prev) => ({ ...prev, password: '', accessToken: '' }))
+          setDtdcForm((prev) => ({ ...prev, password: '', apiKey: '', trackingToken: '' }))
         },
         onError: (err) => {
           toast({
@@ -1697,9 +1700,9 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center">
-              <Text fontWeight="semibold">DTDC Tracking</Text>
-              <Badge colorScheme={data?.dtdc?.hasAccessToken ? 'green' : 'orange'}>
-                {data?.dtdc?.hasAccessToken ? 'Token set' : 'Missing token'}
+              <Text fontWeight="semibold">DTDC</Text>
+              <Badge colorScheme={data?.dtdc?.hasApiKey ? 'green' : 'orange'}>
+                {data?.dtdc?.hasApiKey ? 'API key set' : 'Missing API key'}
               </Badge>
             </Flex>
 
@@ -1736,10 +1739,10 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setDtdcForm((prev) => ({ ...prev, cancelApiBase: e.target.value }))
                 }
-                placeholder="https://app.shipsy.in"
+                placeholder="https://dtdcapi.shipsy.io"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Shipsy DTDC cancellation API server. The current DTDC doc lists https://app.shipsy.in.
+                Shipsy DTDC cancellation, label, and tracking API server.
               </Text>
             </FormControl>
 
@@ -1835,29 +1838,49 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
-              <FormLabel>X-Access-Token</FormLabel>
+              <FormLabel>Shipsy API Key</FormLabel>
               <Input
                 type="password"
-                value={dtdcForm.accessToken}
+                value={dtdcForm.apiKey}
                 onChange={(e) =>
-                  setDtdcForm((prev) => ({ ...prev, accessToken: e.target.value }))
+                  setDtdcForm((prev) => ({ ...prev, apiKey: e.target.value }))
                 }
-                placeholder={data?.dtdc?.accessTokenMasked || 'Token shared by DTDC'}
+                placeholder={data?.dtdc?.apiKeyMasked || 'API key shared by DTDC/Shipsy'}
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                DTDC tracking API token sent as the X-Access-Token request header.
+                Customer integration API key sent as api-key for booking, cancellation, label, and
+                Shipsy tracking.
               </Text>
-              {!!data?.dtdc?.accessTokenMasked && (
+              {!!data?.dtdc?.apiKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Current token: {data.dtdc.accessTokenMasked}
+                  Current API key: {data.dtdc.apiKeyMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Legacy Tracking Token</FormLabel>
+              <Input
+                type="password"
+                value={dtdcForm.trackingToken}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, trackingToken: e.target.value }))
+                }
+                placeholder={data?.dtdc?.trackingTokenMasked || 'Optional DTDC tracking token'}
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Token for the older DTDC tracking API fallback. It is sent as X-Access-Token.
+              </Text>
+              {!!data?.dtdc?.trackingTokenMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current tracking token: {data.dtdc.trackingTokenMasked}
                 </Text>
               )}
             </FormControl>
 
             <Text fontSize="xs" color="gray.500">
-              The backend can use either a saved X-Access-Token or generate one from the DTDC
-              username/password. Shipment booking still needs the separate DTDC booking, label,
-              pickup, and serviceability APIs.
+              The Shipsy API key is required for live DTDC booking/cancellation. The legacy
+              tracking token is only used when the Shipsy tracking endpoint cannot return tracking.
             </Text>
 
             <Button

@@ -583,15 +583,17 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         provider: 'dtdc',
         apiBase: 'https://blktracksvc.dtdc.com',
         bookingApiBase: 'https://dtdcapi.shipsy.io',
-        cancelApiBase: 'https://app.shipsy.in',
+        cancelApiBase: 'https://dtdcapi.shipsy.io',
         clientName: '',
         username: '',
         customerCode: '',
         serviceTypeId: 'B2C PRIORITY',
         commodityId: '99',
         hasPassword: false,
-        hasAccessToken: false,
-        accessTokenMasked: '',
+        hasApiKey: false,
+        apiKeyMasked: '',
+        hasTrackingToken: false,
+        trackingTokenMasked: '',
       },
     }
 
@@ -707,8 +709,9 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
         }
       } else if (provider === 'dtdc') {
-        const accessToken = row.apiKey || ''
+        const apiKey = row.apiKey || ''
         const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
+        const trackingToken = String(metadata.trackingToken || metadata.tracking_token || '').trim()
         acc.dtdc = {
           provider: 'dtdc',
           apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
@@ -717,7 +720,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
             'https://dtdcapi.shipsy.io',
           cancelApiBase:
             String(metadata.cancelApiBase || metadata.cancel_api_base || '').trim() ||
-            'https://app.shipsy.in',
+            'https://dtdcapi.shipsy.io',
           clientName: row.clientName || '',
           username: row.username || '',
           customerCode: String(metadata.customerCode || metadata.customer_code || '').trim(),
@@ -725,8 +728,10 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
             String(metadata.serviceTypeId || metadata.service_type_id || '').trim() || 'B2C PRIORITY',
           commodityId: String(metadata.commodityId || metadata.commodity_id || '').trim() || '99',
           hasPassword: Boolean((row.password || '').trim()),
-          hasAccessToken: Boolean(accessToken.trim()),
-          accessTokenMasked: maskCourierCredential(accessToken),
+          hasApiKey: Boolean(apiKey.trim()),
+          apiKeyMasked: maskCourierCredential(apiKey),
+          hasTrackingToken: Boolean(trackingToken),
+          trackingTokenMasked: maskCourierCredential(trackingToken),
         }
       }
       return acc
@@ -2184,6 +2189,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
     commodityId,
     accessToken,
     apiKey,
+    trackingToken,
   } =
     req.body || {}
 
@@ -2204,6 +2210,9 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
           ? apiKey.trim()
           : undefined
     const hasNewAccessToken = typeof nextAccessToken === 'string' && nextAccessToken.length > 0
+    const nextTrackingToken = typeof trackingToken === 'string' ? trackingToken.trim() : undefined
+    const hasNewTrackingToken =
+      typeof nextTrackingToken === 'string' && nextTrackingToken.length > 0
     const hasNewPassword = typeof nextPassword === 'string' && nextPassword.length > 0
 
     const [existing] = await db
@@ -2227,11 +2236,12 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         metadata.bookingApiBase = nextBookingApiBase || 'https://dtdcapi.shipsy.io'
       }
       if (nextCancelApiBase !== undefined) {
-        metadata.cancelApiBase = nextCancelApiBase || 'https://app.shipsy.in'
+        metadata.cancelApiBase = nextCancelApiBase || 'https://dtdcapi.shipsy.io'
       }
       if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
       if (nextServiceTypeId !== undefined) metadata.serviceTypeId = nextServiceTypeId || 'B2C PRIORITY'
       if (nextCommodityId !== undefined) metadata.commodityId = nextCommodityId || '99'
+      if (hasNewTrackingToken) metadata.trackingToken = nextTrackingToken
       updatePayload.metadata = metadata
 
       await db
@@ -2248,10 +2258,11 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         apiKey: hasNewAccessToken ? nextAccessToken : '',
         metadata: {
           bookingApiBase: nextBookingApiBase || 'https://dtdcapi.shipsy.io',
-          cancelApiBase: nextCancelApiBase || 'https://app.shipsy.in',
+          cancelApiBase: nextCancelApiBase || 'https://dtdcapi.shipsy.io',
           customerCode: nextCustomerCode || '',
           serviceTypeId: nextServiceTypeId || 'B2C PRIORITY',
           commodityId: nextCommodityId || '99',
+          trackingToken: hasNewTrackingToken ? nextTrackingToken : '',
         },
       })
     }
@@ -2282,7 +2293,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
           'https://dtdcapi.shipsy.io',
         cancelApiBase:
           String(saved?.metadata?.cancelApiBase || saved?.metadata?.cancel_api_base || '').trim() ||
-          'https://app.shipsy.in',
+          'https://dtdcapi.shipsy.io',
         clientName: saved?.clientName || '',
         username: saved?.username || '',
         customerCode: String(saved?.metadata?.customerCode || saved?.metadata?.customer_code || '').trim(),
@@ -2292,8 +2303,14 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         commodityId:
           String(saved?.metadata?.commodityId || saved?.metadata?.commodity_id || '').trim() || '99',
         hasPassword: Boolean((saved?.password || '').trim()),
-        hasAccessToken: Boolean((saved?.apiKey || '').trim()),
-        accessTokenMasked: maskCourierCredential(saved?.apiKey || ''),
+        hasApiKey: Boolean((saved?.apiKey || '').trim()),
+        apiKeyMasked: maskCourierCredential(saved?.apiKey || ''),
+        hasTrackingToken: Boolean(
+          String(saved?.metadata?.trackingToken || saved?.metadata?.tracking_token || '').trim(),
+        ),
+        trackingTokenMasked: maskCourierCredential(
+          String(saved?.metadata?.trackingToken || saved?.metadata?.tracking_token || '').trim(),
+        ),
       },
     })
   } catch (err) {

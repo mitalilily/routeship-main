@@ -95,6 +95,7 @@ export type DtdcConfig = {
   apiBase?: string
   apiKey?: string
   accessToken?: string
+  trackingToken?: string
   clientName?: string
   username?: string
   password?: string
@@ -344,6 +345,7 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       apiBase: normalize(row.apiBase),
       apiKey: normalize(row.apiKey),
       accessToken: normalize(row.apiKey),
+      trackingToken: normalize((metadata.trackingToken as string) || (metadata.tracking_token as string) || ''),
       clientName: normalize(row.clientName),
       username: normalize(row.username),
       password: normalize(row.password),

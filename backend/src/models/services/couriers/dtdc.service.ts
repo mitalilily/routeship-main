@@ -6,7 +6,7 @@ import type { ShipmentParams } from '../shiprocket.service'
 const DTDC_TRACKING_BASE_URL = 'https://blktracksvc.dtdc.com'
 const DTDC_TRACKING_ENDPOINT = '/dtdc-api/rest/JSONCnTrk/getTrackDetails'
 const DTDC_BOOKING_BASE_URL = 'https://dtdcapi.shipsy.io'
-const DTDC_CANCEL_BASE_URL = 'https://app.shipsy.in'
+const DTDC_CANCEL_BASE_URL = 'https://dtdcapi.shipsy.io'
 const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
 const DTDC_SHIPSY_TRACK_ENDPOINT = '/api/customer/integration/consignment/track'
 const DTDC_SHIPSY_LABEL_STREAM_ENDPOINT = '/api/customer/integration/consignment/shippinglabel/stream'
@@ -17,6 +17,7 @@ export class DtdcService {
   private bookingApiBase = process.env.DTDC_BOOKING_API_BASE || process.env.DTDC_SOFTDATA_API_BASE || DTDC_BOOKING_BASE_URL
   private cancelApiBase = process.env.DTDC_CANCEL_API_BASE || DTDC_CANCEL_BASE_URL
   private accessToken = process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY || ''
+  private trackingToken = process.env.DTDC_TRACKING_TOKEN || ''
   private username = process.env.DTDC_USERNAME || ''
   private password = process.env.DTDC_PASSWORD || ''
   private customerCode = process.env.DTDC_CUSTOMER_CODE || ''
@@ -45,6 +46,7 @@ export class DtdcService {
       this.bookingApiBase = cfg.bookingApiBase || this.bookingApiBase
       this.cancelApiBase = cfg.cancelApiBase || this.cancelApiBase
       this.accessToken = cfg.accessToken || cfg.apiKey || this.accessToken
+      this.trackingToken = cfg.trackingToken || this.trackingToken
       this.username = cfg.username || this.username
       this.password = cfg.password || this.password
       this.customerCode = cfg.customerCode || this.customerCode
@@ -118,7 +120,7 @@ export class DtdcService {
 
   private async getHttp(): Promise<AxiosInstance> {
     await this.ensureConfigLoaded()
-    const token = String(this.accessToken || '').trim() || (await this.authenticate())
+    const token = String(this.trackingToken || '').trim() || (await this.authenticate())
 
     return axios.create({
       baseURL: this.apiBase,
@@ -319,7 +321,7 @@ export class DtdcService {
     const normalizedAwb = String(awb || '').trim()
     if (!normalizedAwb) throw new HttpError(400, 'DTDC consignment number is required for tracking')
 
-    const apiKey = String(this.accessToken || '').trim() || (await this.authenticate().catch(() => ''))
+    const apiKey = String(this.accessToken || '').trim()
     if (apiKey && !options.preferLegacy) {
       try {
         const response = await axios.get(`${this.cancelApiBase}${DTDC_SHIPSY_TRACK_ENDPOINT}`, {
