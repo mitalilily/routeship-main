@@ -5257,8 +5257,30 @@ export const fetchAvailableCouriersWithRates = async (
             .trim()
             .toLowerCase() === provider,
       )
+    const hasDelhiveryModeInCombined = (mode: DelhiveryShippingMode) =>
+      combined.some((courier: any) => {
+        const providerKey = String(
+          courier?.integration_type || courier?.serviceProvider || courier?.service_provider || '',
+        )
+          .trim()
+          .toLowerCase()
+        if (providerKey !== 'delhivery') return false
 
-    if (effectiveShipmentType === 'b2c' && !hasProviderInCombined('delhivery')) {
+        const shippingMode = resolveDelhiveryShippingMode({
+          courierId: courier?.id,
+          mode:
+            courier?.shipping_mode ??
+            courier?.service_mode ??
+            courier?.provider_serviceability?.shipping_mode ??
+            courier?.provider_serviceability?.service_mode ??
+            courier?.provider_serviceability?.mode ??
+            courier?.mode,
+          courierName: courier?.name,
+        })
+        return shippingMode === mode
+      })
+
+    if (effectiveShipmentType === 'b2c') {
       const delhiveryBucketRows = providerCourierBuckets.get('delhivery')?.rows ?? []
       const delhiveryFallbackCards = localRates.flatMap((rate) => {
         if (inferProviderFromRateCard(rate) !== 'delhivery') return []
@@ -5270,6 +5292,7 @@ export const fetchAvailableCouriersWithRates = async (
           mode: rate.mode,
         })
         if (!canonical) return []
+        if (hasDelhiveryModeInCombined(canonical.shippingMode)) return []
 
         if (
           isCourierDisabledForProvider('delhivery', {
