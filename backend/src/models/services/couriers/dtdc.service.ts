@@ -23,6 +23,8 @@ export class DtdcService {
   private customerCode = process.env.DTDC_CUSTOMER_CODE || ''
   private serviceTypeId = process.env.DTDC_SERVICE_TYPE_ID || 'B2C PRIORITY'
   private commodityId = process.env.DTDC_COMMODITY_ID || '99'
+  private hubCode = process.env.DTDC_HUB_CODE || ''
+  private pickupVendorCode = process.env.DTDC_PICKUP_VENDOR_CODE || ''
   private static cachedConfig: DtdcConfig | null | undefined
   private static cachedAccessToken: string | null = null
 
@@ -52,6 +54,8 @@ export class DtdcService {
       this.customerCode = cfg.customerCode || this.customerCode
       this.serviceTypeId = cfg.serviceTypeId || this.serviceTypeId
       this.commodityId = cfg.commodityId || this.commodityId
+      this.hubCode = cfg.hubCode || this.hubCode
+      this.pickupVendorCode = cfg.pickupVendorCode || this.pickupVendorCode
     }
 
     this.apiBase = this.normalizeBaseUrl(this.apiBase)
@@ -201,6 +205,13 @@ export class DtdcService {
     const firstItem = items[0] || {}
     const isCod = String(params.payment_type || '').toLowerCase() === 'cod'
     const declaredValue = Number(params.order_amount ?? firstItem.price ?? 0) || 0
+    const hubCode = this.trim((params as any).dtdc_hub_code || (params as any).hub_code || this.hubCode)
+    const pickupVendorCode = this.trim(
+      (params as any).dtdc_pickup_vendor_code ||
+        (params as any).pickup_vendor_code ||
+        (params as any).pickupVendorCode ||
+        this.pickupVendorCode,
+    )
     const description =
       items.map((item: any) => this.trim(item?.name)).filter(Boolean).join(', ').slice(0, 250) ||
       this.trim((params as any).description, 'Shipment')
@@ -208,6 +219,7 @@ export class DtdcService {
     const consignment: Record<string, any> = {
       customer_code: customerCode,
       service_type_id: this.trim((params as any).dtdc_service_type_id || this.serviceTypeId, 'B2C PRIORITY'),
+      consignment_type: this.trim((params as any).consignment_type, 'Forward'),
       load_type: this.trim((params as any).load_type, 'NON-DOCUMENT'),
       description,
       dimension_unit: 'cm',
@@ -230,6 +242,16 @@ export class DtdcService {
       invoice_number: this.trim((params as any).invoice_number || params.order_number),
       invoice_date: this.formatInvoiceDate((params as any).invoice_date || params.order_date),
       reference_number: this.trim((params as any).reference_number || (params as any).awb_number),
+    }
+
+    if (hubCode) {
+      consignment.hub_code = hubCode
+      consignment.origin_hub_code = hubCode
+    }
+
+    if (pickupVendorCode) {
+      consignment.pickup_vendor_code = pickupVendorCode
+      consignment.vendor_code = pickupVendorCode
     }
 
     if (items.length > 1 || Number(consignment.num_pieces) > 1) {
@@ -259,6 +281,34 @@ export class DtdcService {
     return { first, awb }
   }
 
+  private extractProviderMessage(data: any, first?: any) {
+    const messages = [
+      first?.message,
+      first?.error,
+      first?.reason,
+      data?.message,
+      data?.error,
+      data?.reason,
+      Array.isArray(data?.errors) ? data.errors.map((err: any) => err?.message || err?.error || err).join(', ') : '',
+    ]
+      .map((message) => this.trim(message))
+      .filter(Boolean)
+
+    return messages[0] || ''
+  }
+
+  private normalizeCreateError(message: string) {
+    const normalized = String(message || '').toLowerCase()
+    if (normalized.includes('auto allocated hub not found')) {
+      const suffix = this.customerCode ? ` for customer code ${this.customerCode}` : ''
+      return (
+        `DTDC rejected booking: Auto allocated hub not found${suffix}. ` +
+        'Ask DTDC/Shipsy to assign the pickup hub to this account, or add the DTDC Hub Code in Admin > Couriers > Credentials.'
+      )
+    }
+    return message
+  }
+
   async createShipment(params: ShipmentParams) {
     await this.ensureConfigLoaded()
     const apiKey = String(this.accessToken || '').trim() || (await this.authenticate())
@@ -278,17 +328,19 @@ export class DtdcService {
       })
 
       if (response.status < 200 || response.status >= 300) {
+        const providerMessage = this.extractProviderMessage(response.data)
         throw new HttpError(
           response.status,
-          response.data?.message || response.data?.error || 'DTDC shipment creation failed',
+          this.normalizeCreateError(providerMessage || 'DTDC shipment creation failed'),
         )
       }
 
       const { first, awb } = this.getCreateResult(response.data)
       if (first?.success === false || !awb) {
+        const providerMessage = this.extractProviderMessage(response.data, first)
         throw new HttpError(
           502,
-          first?.message || first?.error || response.data?.message || 'DTDC shipment creation did not return an AWB',
+          this.normalizeCreateError(providerMessage || 'DTDC shipment creation did not return an AWB'),
         )
       }
 
@@ -307,12 +359,10 @@ export class DtdcService {
       }
     } catch (err: any) {
       if (err instanceof HttpError) throw err
+      const providerMessage = this.extractProviderMessage(err?.response?.data)
       throw new HttpError(
         Number(err?.response?.status || 502),
-        err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          'DTDC shipment creation failed',
+        this.normalizeCreateError(providerMessage || err?.message || 'DTDC shipment creation failed'),
       )
     }
   }

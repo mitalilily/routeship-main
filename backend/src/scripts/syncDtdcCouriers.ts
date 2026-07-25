@@ -37,6 +37,8 @@ const upsertDtdcCredentials = async (
     customerCode: string
     serviceTypeId: string
     commodityId: string
+    hubCode: string
+    pickupVendorCode: string
     accessToken: string
     trackingToken: string
   },
@@ -68,6 +70,8 @@ const upsertDtdcCredentials = async (
         customerCode: config.customerCode,
         serviceTypeId: config.serviceTypeId,
         commodityId: config.commodityId,
+        hubCode: config.hubCode,
+        pickupVendorCode: config.pickupVendorCode,
         trackingToken: config.trackingToken,
       }),
     ],
@@ -264,6 +268,8 @@ async function main() {
     customerCode: normalize(process.env.DTDC_CUSTOMER_CODE),
     serviceTypeId: normalize(process.env.DTDC_SERVICE_TYPE_ID) || 'B2C PRIORITY',
     commodityId: normalize(process.env.DTDC_COMMODITY_ID) || '99',
+    hubCode: normalize(process.env.DTDC_HUB_CODE),
+    pickupVendorCode: normalize(process.env.DTDC_PICKUP_VENDOR_CODE),
     accessToken: normalize(process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY),
     trackingToken: normalize(process.env.DTDC_TRACKING_TOKEN),
   }
@@ -296,6 +302,8 @@ async function main() {
           customerCodeConfigured: Boolean(config.customerCode),
           serviceTypeId: config.serviceTypeId,
           commodityId: config.commodityId,
+          hubCodeConfigured: Boolean(config.hubCode),
+          pickupVendorCodeConfigured: Boolean(config.pickupVendorCode),
           accessTokenConfigured: Boolean(config.accessToken),
           trackingTokenConfigured: Boolean(config.trackingToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),

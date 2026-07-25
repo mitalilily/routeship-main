@@ -712,6 +712,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         const apiKey = row.apiKey || ''
         const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
         const trackingToken = String(metadata.trackingToken || metadata.tracking_token || '').trim()
+        const hubCode = String(metadata.hubCode || metadata.hub_code || '').trim()
+        const pickupVendorCode = String(metadata.pickupVendorCode || metadata.pickup_vendor_code || '').trim()
         acc.dtdc = {
           provider: 'dtdc',
           apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
@@ -727,11 +729,15 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           serviceTypeId:
             String(metadata.serviceTypeId || metadata.service_type_id || '').trim() || 'B2C PRIORITY',
           commodityId: String(metadata.commodityId || metadata.commodity_id || '').trim() || '99',
+          hubCode,
+          pickupVendorCode,
           hasPassword: Boolean((row.password || '').trim()),
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: maskCourierCredential(apiKey),
           hasTrackingToken: Boolean(trackingToken),
           trackingTokenMasked: maskCourierCredential(trackingToken),
+          hasHubCode: Boolean(hubCode),
+          hasPickupVendorCode: Boolean(pickupVendorCode),
         }
       }
       return acc
@@ -2187,6 +2193,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
     customerCode,
     serviceTypeId,
     commodityId,
+    hubCode,
+    pickupVendorCode,
     accessToken,
     apiKey,
     trackingToken,
@@ -2203,6 +2211,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
     const nextCustomerCode = typeof customerCode === 'string' ? customerCode.trim() : undefined
     const nextServiceTypeId = typeof serviceTypeId === 'string' ? serviceTypeId.trim() : undefined
     const nextCommodityId = typeof commodityId === 'string' ? commodityId.trim() : undefined
+    const nextHubCode = typeof hubCode === 'string' ? hubCode.trim() : undefined
+    const nextPickupVendorCode = typeof pickupVendorCode === 'string' ? pickupVendorCode.trim() : undefined
     const nextAccessToken =
       typeof accessToken === 'string'
         ? accessToken.trim()
@@ -2241,6 +2251,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
       if (nextServiceTypeId !== undefined) metadata.serviceTypeId = nextServiceTypeId || 'B2C PRIORITY'
       if (nextCommodityId !== undefined) metadata.commodityId = nextCommodityId || '99'
+      if (nextHubCode !== undefined) metadata.hubCode = nextHubCode
+      if (nextPickupVendorCode !== undefined) metadata.pickupVendorCode = nextPickupVendorCode
       if (hasNewTrackingToken) metadata.trackingToken = nextTrackingToken
       updatePayload.metadata = metadata
 
@@ -2262,6 +2274,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
           customerCode: nextCustomerCode || '',
           serviceTypeId: nextServiceTypeId || 'B2C PRIORITY',
           commodityId: nextCommodityId || '99',
+          hubCode: nextHubCode || '',
+          pickupVendorCode: nextPickupVendorCode || '',
           trackingToken: hasNewTrackingToken ? nextTrackingToken : '',
         },
       })
@@ -2302,6 +2316,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
           'B2C PRIORITY',
         commodityId:
           String(saved?.metadata?.commodityId || saved?.metadata?.commodity_id || '').trim() || '99',
+        hubCode: String(saved?.metadata?.hubCode || saved?.metadata?.hub_code || '').trim(),
+        pickupVendorCode: String(saved?.metadata?.pickupVendorCode || saved?.metadata?.pickup_vendor_code || '').trim(),
         hasPassword: Boolean((saved?.password || '').trim()),
         hasApiKey: Boolean((saved?.apiKey || '').trim()),
         apiKeyMasked: maskCourierCredential(saved?.apiKey || ''),
@@ -2310,6 +2326,10 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         ),
         trackingTokenMasked: maskCourierCredential(
           String(saved?.metadata?.trackingToken || saved?.metadata?.tracking_token || '').trim(),
+        ),
+        hasHubCode: Boolean(String(saved?.metadata?.hubCode || saved?.metadata?.hub_code || '').trim()),
+        hasPickupVendorCode: Boolean(
+          String(saved?.metadata?.pickupVendorCode || saved?.metadata?.pickup_vendor_code || '').trim(),
         ),
       },
     })

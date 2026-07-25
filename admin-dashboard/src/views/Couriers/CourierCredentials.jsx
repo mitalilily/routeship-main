@@ -204,6 +204,8 @@ const CourierCredentials = () => {
     customerCode: '',
     serviceTypeId: 'B2C PRIORITY',
     commodityId: '99',
+    hubCode: '',
+    pickupVendorCode: '',
     apiKey: '',
     trackingToken: '',
   })
@@ -279,6 +281,8 @@ const CourierCredentials = () => {
         customerCode: data.dtdc.customerCode || '',
         serviceTypeId: data.dtdc.serviceTypeId || 'B2C PRIORITY',
         commodityId: data.dtdc.commodityId || '99',
+        hubCode: data.dtdc.hubCode || '',
+        pickupVendorCode: data.dtdc.pickupVendorCode || '',
         apiKey: '',
         trackingToken: '',
       })
@@ -1070,6 +1074,8 @@ const CourierCredentials = () => {
         customerCode: dtdcForm.customerCode,
         serviceTypeId: dtdcForm.serviceTypeId,
         commodityId: dtdcForm.commodityId,
+        hubCode: dtdcForm.hubCode,
+        pickupVendorCode: dtdcForm.pickupVendorCode,
         ...(dtdcForm.password ? { password: dtdcForm.password } : {}),
         ...(dtdcForm.apiKey ? { apiKey: dtdcForm.apiKey } : {}),
         ...(dtdcForm.trackingToken ? { trackingToken: dtdcForm.trackingToken } : {}),
@@ -1805,6 +1811,36 @@ const CourierCredentials = () => {
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Customer code assigned by DTDC and required in the cancellation payload.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Hub Code</FormLabel>
+              <Input
+                value={dtdcForm.hubCode}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, hubCode: e.target.value }))
+                }
+                placeholder="DTDC/Shipsy pickup hub code"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Pickup hub assigned by DTDC/Shipsy. Add this if bookings fail with Auto
+                allocated hub not found.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Pickup Vendor Code</FormLabel>
+              <Input
+                value={dtdcForm.pickupVendorCode}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, pickupVendorCode: e.target.value }))
+                }
+                placeholder="Optional DTDC pickup vendor code"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Vendor or pickup location code shared by DTDC/Shipsy when the account has more
+                than one pickup mapping.
               </Text>
             </FormControl>
 

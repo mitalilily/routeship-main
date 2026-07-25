@@ -104,6 +104,8 @@ export type DtdcConfig = {
   customerCode?: string
   serviceTypeId?: string
   commodityId?: string
+  hubCode?: string
+  pickupVendorCode?: string
 }
 
 export type CourierConfig =
@@ -354,6 +356,10 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       customerCode: normalize((metadata.customerCode as string) || (metadata.customer_code as string) || ''),
       serviceTypeId: normalize((metadata.serviceTypeId as string) || (metadata.service_type_id as string) || ''),
       commodityId: normalize((metadata.commodityId as string) || (metadata.commodity_id as string) || ''),
+      hubCode: normalize((metadata.hubCode as string) || (metadata.hub_code as string) || ''),
+      pickupVendorCode: normalize(
+        (metadata.pickupVendorCode as string) || (metadata.pickup_vendor_code as string) || '',
+      ),
     }
     return cfg
   }
