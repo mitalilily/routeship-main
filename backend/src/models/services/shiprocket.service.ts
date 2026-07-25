@@ -7954,6 +7954,7 @@ export const createB2CShipmentService = async (
     amazon_package_client_reference_id?: string | null
     amazon_label?: string | null
     innofulfill?: any
+    dtdc?: any
   } = {}
 
   const rollbackActions: Array<() => Promise<void>> = []
@@ -7964,10 +7965,10 @@ export const createB2CShipmentService = async (
   try {
     // 1️⃣ CREATE SHIPMENT
     const requestedIntegrationType = String(params.integration_type || '').toLowerCase()
-    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill']
+    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill', 'dtdc']
     if (!requestedIntegrationType || !allowedIntegrationTypes.includes(requestedIntegrationType)) {
       throw new Error(
-        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shadowfax, amazon, innofulfill.`,
+        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shadowfax, amazon, innofulfill, dtdc.`,
       )
     }
 
@@ -7978,6 +7979,7 @@ export const createB2CShipmentService = async (
       | 'shadowfax'
       | 'amazon'
       | 'innofulfill'
+      | 'dtdc'
     const providerName =
       integrationType === 'delhivery'
         ? 'Delhivery'
@@ -7989,7 +7991,9 @@ export const createB2CShipmentService = async (
               ? 'Shadowfax'
               : integrationType === 'amazon'
                 ? 'Amazon Shipping'
-                : 'Shreemaruti'
+                : integrationType === 'dtdc'
+                  ? 'DTDC'
+                  : 'Shreemaruti'
 
     if (!isReverseShipment) {
       const orderDateRaw =
@@ -8684,6 +8688,50 @@ export const createB2CShipmentService = async (
           response: shipmentData,
         },
       }
+    } else if (integrationType === 'dtdc') {
+      console.log('Using DTDC softdata API...')
+      const dtdc = new DtdcService()
+      shipmentData = await dtdc.createShipment(params)
+
+      const dtdcAwb =
+        shipmentData?.awb_number ||
+        shipmentData?.reference_number ||
+        shipmentData?.data?.[0]?.reference_number ||
+        shipmentData?.data?.[0]?.pieces?.[0]?.reference_number ||
+        null
+
+      if (!dtdcAwb) {
+        console.error('Invalid DTDC shipment:', {
+          order_number: params.order_number,
+          response_keys:
+            shipmentData && typeof shipmentData === 'object' ? Object.keys(shipmentData) : [],
+        })
+        throw new HttpError(
+          502,
+          'DTDC shipment creation succeeded but did not return an AWB/reference number.',
+        )
+      }
+
+      providerCourierCost = params?.courier_cost ? Number(params.courier_cost) : null
+      shipmentMeta = {
+        shipment_id: shipmentData?.shipment_id || dtdcAwb,
+        awb_number: dtdcAwb,
+        courier_name: 'DTDC',
+        courier_id: params.courier_id ? Number(params.courier_id) : null,
+        label: undefined,
+        manifest: undefined,
+        courier_cost: providerCourierCost,
+        sort_code: null,
+        provider_reference: shipmentData?.provider_reference || dtdcAwb,
+        provider_request_id: shipmentData?.provider_request_id || dtdcAwb,
+        provider_service: (params as any).dtdc_service_type_id || 'B2C PRIORITY',
+        provider_mode: normalizeB2CShippingMode(params.shipping_mode) || 'surface',
+        dtdc: {
+          reference_number: dtdcAwb,
+          chargeable_weight: shipmentData?.chargeable_weight ?? null,
+          response: shipmentData,
+        },
+      }
     } else if (integrationType === 'amazon') {
       console.log('Using Amazon Shipping API...')
       const amazonCredentials = await getStoredAmazonShippingCredentials()
@@ -9261,6 +9309,9 @@ export const createB2CShipmentService = async (
             ? resolveShadowfaxServiceMode() || resolveShadowfaxForwardMode()
             : null) ??
           (integrationType === 'innofulfill'
+            ? shipmentMeta.provider_mode || normalizeB2CShippingMode(params.shipping_mode) || 'surface'
+            : null) ??
+          (integrationType === 'dtdc'
             ? shipmentMeta.provider_mode || normalizeB2CShippingMode(params.shipping_mode) || 'surface'
             : null),
         selectedMaxSlabWeight,

@@ -1,11 +1,13 @@
 import axios, { AxiosInstance } from 'axios'
 import { HttpError } from '../../../utils/classes'
 import { DtdcConfig, getEffectiveCourierConfig } from '../courierCredentials.service'
+import type { ShipmentParams } from '../shiprocket.service'
 
 const DTDC_TRACKING_BASE_URL = 'https://blktracksvc.dtdc.com'
 const DTDC_TRACKING_ENDPOINT = '/dtdc-api/rest/JSONCnTrk/getTrackDetails'
 const DTDC_CANCEL_BASE_URL = 'http://dtdcapi.shipsy.io'
 const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
+const DTDC_SOFTDATA_ENDPOINT = '/api/customer/integration/consignment/softdata'
 
 export class DtdcService {
   private apiBase = process.env.DTDC_API_BASE || DTDC_TRACKING_BASE_URL
@@ -14,6 +16,8 @@ export class DtdcService {
   private username = process.env.DTDC_USERNAME || ''
   private password = process.env.DTDC_PASSWORD || ''
   private customerCode = process.env.DTDC_CUSTOMER_CODE || ''
+  private serviceTypeId = process.env.DTDC_SERVICE_TYPE_ID || 'B2C PRIORITY'
+  private commodityId = process.env.DTDC_COMMODITY_ID || '99'
   private static cachedConfig: DtdcConfig | null | undefined
   private static cachedAccessToken: string | null = null
 
@@ -39,6 +43,8 @@ export class DtdcService {
       this.username = cfg.username || this.username
       this.password = cfg.password || this.password
       this.customerCode = cfg.customerCode || this.customerCode
+      this.serviceTypeId = cfg.serviceTypeId || this.serviceTypeId
+      this.commodityId = cfg.commodityId || this.commodityId
     }
 
     this.apiBase = this.normalizeBaseUrl(this.apiBase)
@@ -117,6 +123,190 @@ export class DtdcService {
         'X-Access-Token': token,
       },
     })
+  }
+
+  private trim(value: unknown, fallback = '') {
+    const text = String(value ?? '').trim()
+    return text || fallback
+  }
+
+  private numberString(value: unknown, fallback: number) {
+    const parsed = Number(value)
+    const safe = Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+    return safe.toFixed(2).replace(/\.00$/, '')
+  }
+
+  private phone(value: unknown, fallback = '0000000000') {
+    const digits = String(value || '').replace(/\D/g, '')
+    return (digits.length >= 10 ? digits.slice(-10) : digits.padStart(10, '0')) || fallback
+  }
+
+  private formatInvoiceDate(value: unknown) {
+    const raw = this.trim(value)
+    const date = raw ? new Date(raw) : new Date()
+    if (Number.isNaN(date.getTime())) return raw || new Date().toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  private buildAddress(details: any, fallbackName: string) {
+    return {
+      name: this.trim(details?.name || details?.warehouse_name || details?.company_name, fallbackName).slice(0, 100),
+      phone: this.phone(details?.phone),
+      alternate_phone: this.phone(details?.alternate_phone || details?.phone),
+      address_line_1: this.trim(details?.address || details?.address_line_1 || details?.addressLine1, 'Address').slice(0, 200),
+      address_line_2: this.trim(details?.address_2 || details?.address_line_2 || details?.addressLine2).slice(0, 200),
+      pincode: this.trim(details?.pincode).replace(/\D/g, '').slice(0, 6),
+      city: this.trim(details?.city, 'City').slice(0, 80),
+      state: this.trim(details?.state, 'State').slice(0, 80),
+    }
+  }
+
+  private buildReturnDetails(params: ShipmentParams) {
+    const rto = (params as any).rto || params.pickup || {}
+    const pickup = params.pickup || {}
+    return {
+      address_line_1: this.trim(rto.address || pickup.address, 'Return Address').slice(0, 200),
+      address_line_2: this.trim(rto.address_2 || pickup.address_2).slice(0, 200),
+      city_name: this.trim(rto.city || pickup.city, 'City').slice(0, 80),
+      name: this.trim(rto.name || rto.warehouse_name || pickup.name || pickup.warehouse_name, 'Return').slice(0, 100),
+      phone: this.phone(rto.phone || pickup.phone),
+      pincode: this.trim(rto.pincode || pickup.pincode).replace(/\D/g, '').slice(0, 6),
+      state_name: this.trim(rto.state || pickup.state, 'State').slice(0, 80),
+      email: this.trim((params.consignee as any)?.email || (params as any).email),
+      alternate_phone: this.phone(rto.alternate_phone || rto.phone || pickup.phone),
+    }
+  }
+
+  private buildSoftdataPayload(params: ShipmentParams) {
+    const customerCode = this.trim(this.customerCode)
+    if (!customerCode) throw new HttpError(400, 'DTDC customer code is not configured')
+
+    const items = Array.isArray(params.order_items) ? params.order_items : []
+    const firstItem = items[0] || {}
+    const isCod = String(params.payment_type || '').toLowerCase() === 'cod'
+    const declaredValue = Number(params.order_amount ?? firstItem.price ?? 0) || 0
+    const description =
+      items.map((item: any) => this.trim(item?.name)).filter(Boolean).join(', ').slice(0, 250) ||
+      this.trim((params as any).description, 'Shipment')
+
+    const consignment: Record<string, any> = {
+      customer_code: customerCode,
+      service_type_id: this.trim((params as any).dtdc_service_type_id || this.serviceTypeId, 'B2C PRIORITY'),
+      load_type: this.trim((params as any).load_type, 'NON-DOCUMENT'),
+      description,
+      dimension_unit: 'cm',
+      length: this.numberString(params.package_length ?? (params as any).length, 1),
+      width: this.numberString(params.package_breadth ?? (params as any).breadth, 1),
+      height: this.numberString(params.package_height ?? (params as any).height, 1),
+      weight_unit: 'kg',
+      weight: this.numberString(params.package_weight ?? (params as any).weight, 0.5),
+      declared_value: this.numberString(declaredValue, 1),
+      num_pieces: this.trim((params as any).num_pieces, '1'),
+      origin_details: this.buildAddress(params.pickup, 'Sender'),
+      destination_details: this.buildAddress(params.consignee, 'Receiver'),
+      return_details: this.buildReturnDetails(params),
+      customer_reference_number: this.trim(params.order_number || (params as any).order_id, `RS-${Date.now()}`),
+      cod_collection_mode: isCod ? 'CASH' : '',
+      cod_amount: isCod ? this.numberString(params.order_amount, 0) : '',
+      commodity_id: this.trim((params as any).commodity_id || this.commodityId, '99'),
+      eway_bill: this.trim((params as any).eway_bill || (params as any).ewaybill || (params as any).ewbn),
+      is_risk_surcharge_applicable: Boolean((params as any).is_risk_surcharge_applicable),
+      invoice_number: this.trim((params as any).invoice_number || params.order_number),
+      invoice_date: this.formatInvoiceDate((params as any).invoice_date || params.order_date),
+      reference_number: this.trim((params as any).reference_number || (params as any).awb_number),
+    }
+
+    if (items.length > 1 || Number(consignment.num_pieces) > 1) {
+      consignment.pieces_detail = items.map((item: any) => ({
+        description: this.trim(item?.name, description).slice(0, 200),
+        declared_value: this.numberString(item?.price ?? declaredValue, 1),
+        weight: consignment.weight,
+        height: consignment.height,
+        length: consignment.length,
+        width: consignment.width,
+      }))
+    }
+
+    return { consignments: [consignment] }
+  }
+
+  private getCreateResult(data: any) {
+    const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data?.consignments) ? data.consignments : []
+    const first = rows[0] || data
+    const awb = this.trim(
+      first?.reference_number ||
+        first?.awb_number ||
+        first?.AWBNo ||
+        first?.courier_partner_reference_number ||
+        first?.pieces?.[0]?.reference_number,
+    )
+    return { first, awb }
+  }
+
+  async createShipment(params: ShipmentParams) {
+    await this.ensureConfigLoaded()
+    const apiKey = String(this.accessToken || '').trim() || (await this.authenticate())
+    if (!apiKey) throw new HttpError(400, 'DTDC API key is not configured')
+
+    const payload = this.buildSoftdataPayload(params)
+
+    try {
+      const response = await axios.post(`${this.cancelApiBase}${DTDC_SOFTDATA_ENDPOINT}`, payload, {
+        timeout: 30000,
+        validateStatus: () => true,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+        },
+      })
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new HttpError(
+          response.status,
+          response.data?.message || response.data?.error || 'DTDC shipment creation failed',
+        )
+      }
+
+      const { first, awb } = this.getCreateResult(response.data)
+      if (first?.success === false || !awb) {
+        throw new HttpError(
+          502,
+          first?.message || first?.error || response.data?.message || 'DTDC shipment creation did not return an AWB',
+        )
+      }
+
+      return {
+        ...response.data,
+        awb_number: awb,
+        shipment_id: awb,
+        provider_reference: first?.reference_number || awb,
+        provider_request_id: first?.reference_number || awb,
+        courier_name: 'DTDC',
+        chargeable_weight: first?.chargeable_weight,
+        dtdc: {
+          request: payload,
+          response: response.data,
+        },
+      }
+    } catch (err: any) {
+      if (err instanceof HttpError) throw err
+      throw new HttpError(
+        Number(err?.response?.status || 502),
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          'DTDC shipment creation failed',
+      )
+    }
   }
 
   async trackShipment(awb: string, options: { trkType?: 'cnno' | 'reference'; addtnlDtl?: 'Y' | 'N' } = {}) {

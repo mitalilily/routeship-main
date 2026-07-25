@@ -586,6 +586,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         clientName: '',
         username: '',
         customerCode: '',
+        serviceTypeId: 'B2C PRIORITY',
+        commodityId: '99',
         hasPassword: false,
         hasAccessToken: false,
         accessTokenMasked: '',
@@ -715,6 +717,9 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           clientName: row.clientName || '',
           username: row.username || '',
           customerCode: String(metadata.customerCode || metadata.customer_code || '').trim(),
+          serviceTypeId:
+            String(metadata.serviceTypeId || metadata.service_type_id || '').trim() || 'B2C PRIORITY',
+          commodityId: String(metadata.commodityId || metadata.commodity_id || '').trim() || '99',
           hasPassword: Boolean((row.password || '').trim()),
           hasAccessToken: Boolean(accessToken.trim()),
           accessTokenMasked: maskCourierCredential(accessToken),
@@ -2163,7 +2168,18 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
 }
 
 export const updateDtdcCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, cancelApiBase, clientName, username, password, customerCode, accessToken, apiKey } =
+  const {
+    apiBase,
+    cancelApiBase,
+    clientName,
+    username,
+    password,
+    customerCode,
+    serviceTypeId,
+    commodityId,
+    accessToken,
+    apiKey,
+  } =
     req.body || {}
 
   try {
@@ -2173,6 +2189,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
     const nextPassword = typeof password === 'string' ? password.trim() : undefined
     const nextCustomerCode = typeof customerCode === 'string' ? customerCode.trim() : undefined
+    const nextServiceTypeId = typeof serviceTypeId === 'string' ? serviceTypeId.trim() : undefined
+    const nextCommodityId = typeof commodityId === 'string' ? commodityId.trim() : undefined
     const nextAccessToken =
       typeof accessToken === 'string'
         ? accessToken.trim()
@@ -2203,6 +2221,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         metadata.cancelApiBase = nextCancelApiBase || 'http://dtdcapi.shipsy.io'
       }
       if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
+      if (nextServiceTypeId !== undefined) metadata.serviceTypeId = nextServiceTypeId || 'B2C PRIORITY'
+      if (nextCommodityId !== undefined) metadata.commodityId = nextCommodityId || '99'
       updatePayload.metadata = metadata
 
       await db
@@ -2220,6 +2240,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         metadata: {
           cancelApiBase: nextCancelApiBase || 'http://dtdcapi.shipsy.io',
           customerCode: nextCustomerCode || '',
+          serviceTypeId: nextServiceTypeId || 'B2C PRIORITY',
+          commodityId: nextCommodityId || '99',
         },
       })
     }
@@ -2251,6 +2273,11 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         clientName: saved?.clientName || '',
         username: saved?.username || '',
         customerCode: String(saved?.metadata?.customerCode || saved?.metadata?.customer_code || '').trim(),
+        serviceTypeId:
+          String(saved?.metadata?.serviceTypeId || saved?.metadata?.service_type_id || '').trim() ||
+          'B2C PRIORITY',
+        commodityId:
+          String(saved?.metadata?.commodityId || saved?.metadata?.commodity_id || '').trim() || '99',
         hasPassword: Boolean((saved?.password || '').trim()),
         hasAccessToken: Boolean((saved?.apiKey || '').trim()),
         accessTokenMasked: maskCourierCredential(saved?.apiKey || ''),

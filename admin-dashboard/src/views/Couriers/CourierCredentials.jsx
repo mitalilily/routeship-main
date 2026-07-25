@@ -201,6 +201,8 @@ const CourierCredentials = () => {
     username: '',
     password: '',
     customerCode: '',
+    serviceTypeId: 'B2C PRIORITY',
+    commodityId: '99',
     accessToken: '',
   })
   const [xpressbeesForm, setXpressbeesForm] = useState({
@@ -272,6 +274,8 @@ const CourierCredentials = () => {
         username: data.dtdc.username || '',
         password: '',
         customerCode: data.dtdc.customerCode || '',
+        serviceTypeId: data.dtdc.serviceTypeId || 'B2C PRIORITY',
+        commodityId: data.dtdc.commodityId || '99',
         accessToken: '',
       })
     }
@@ -1059,6 +1063,8 @@ const CourierCredentials = () => {
         clientName: dtdcForm.clientName,
         username: dtdcForm.username,
         customerCode: dtdcForm.customerCode,
+        serviceTypeId: dtdcForm.serviceTypeId,
+        commodityId: dtdcForm.commodityId,
         ...(dtdcForm.password ? { password: dtdcForm.password } : {}),
         ...(dtdcForm.accessToken ? { accessToken: dtdcForm.accessToken } : {}),
       },
@@ -1779,6 +1785,35 @@ const CourierCredentials = () => {
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Customer code assigned by DTDC and required in the cancellation payload.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Service Type ID</FormLabel>
+              <Input
+                value={dtdcForm.serviceTypeId}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, serviceTypeId: e.target.value }))
+                }
+                placeholder="B2C PRIORITY"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                DTDC service type for softdata booking. Default from the API document is B2C
+                PRIORITY.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Commodity ID</FormLabel>
+              <Input
+                value={dtdcForm.commodityId}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, commodityId: e.target.value }))
+                }
+                placeholder="99"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                DTDC commodity ID required in the softdata booking payload.
               </Text>
             </FormControl>
 

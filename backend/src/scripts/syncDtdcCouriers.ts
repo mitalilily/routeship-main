@@ -34,6 +34,8 @@ const upsertDtdcCredentials = async (
     username: string
     password: string
     customerCode: string
+    serviceTypeId: string
+    commodityId: string
     accessToken: string
   },
 ) => {
@@ -61,6 +63,8 @@ const upsertDtdcCredentials = async (
       JSON.stringify({
         cancelApiBase: config.cancelApiBase,
         customerCode: config.customerCode,
+        serviceTypeId: config.serviceTypeId,
+        commodityId: config.commodityId,
       }),
     ],
   )
@@ -94,6 +98,8 @@ async function main() {
     username: normalize(process.env.DTDC_USERNAME),
     password: normalize(process.env.DTDC_PASSWORD),
     customerCode: normalize(process.env.DTDC_CUSTOMER_CODE),
+    serviceTypeId: normalize(process.env.DTDC_SERVICE_TYPE_ID) || 'B2C PRIORITY',
+    commodityId: normalize(process.env.DTDC_COMMODITY_ID) || '99',
     accessToken: normalize(process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY),
   }
 
@@ -120,6 +126,8 @@ async function main() {
           usernameConfigured: Boolean(config.username),
           passwordConfigured: Boolean(config.password),
           customerCodeConfigured: Boolean(config.customerCode),
+          serviceTypeId: config.serviceTypeId,
+          commodityId: config.commodityId,
           accessTokenConfigured: Boolean(config.accessToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),
           ratesSeeded: false,
