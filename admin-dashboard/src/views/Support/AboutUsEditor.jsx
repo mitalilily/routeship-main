@@ -56,9 +56,10 @@ const AboutUsEditor = () => {
       </ul>
 
       <h3>Contact</h3>
-      <p><strong>Registered Office:</strong> B-76 Shiv Shakti Nagar, Jagatpura Road, Malviya Nagar, Jaipur, Rajasthan, India 302017</p>
-      <p><strong>Email:</strong> info@shiplifi.com</p>
-      <p><strong>Website:</strong> www.shiplifi.com</p>
+      <p><strong>Registered Office:</strong> 56/6, 7th Main, Srirampuram, Bangalore, Karnataka, India 560021</p>
+      <p><strong>Phone:</strong> 7899990977</p>
+      <p><strong>Email:</strong> hello@routeship.in</p>
+      <p><strong>Website:</strong> routeship.in</p>
     `
 
     setContent(templateHtml)

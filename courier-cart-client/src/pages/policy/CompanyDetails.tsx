@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { FiClock, FiGlobe, FiMail, FiMapPin } from 'react-icons/fi'
+import { FiClock, FiGlobe, FiMail, FiMapPin, FiPhone } from 'react-icons/fi'
 import PageHeading from '../../components/UI/heading/PageHeading'
 import MapViewer from '../../components/UI/map/MapViewer'
 
@@ -17,7 +17,7 @@ const CompanyDetails = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const coords = { lat: 26.8467, lng: 75.8267 }
+  const coords = { lat: 12.9962, lng: 77.5636 }
 
   return (
     <Stack mt={2} gap={5}>
@@ -58,8 +58,22 @@ const CompanyDetails = () => {
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
             <FiMapPin size={22} color={theme.palette.primary.main} />
             <Typography fontSize="1rem">
-              B-76 Shiv Shakti Nagar, Jagatpura Road, Malviya Nagar, Jaipur, Rajasthan, India 302017
+              56/6, 7th Main, Srirampuram, Bangalore, Karnataka, India 560021
             </Typography>
+          </Box>
+
+          {/* Phone */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <FiPhone size={22} color={theme.palette.primary.main} />
+            <Chip
+              clickable
+              component={Link}
+              href="tel:+917899990977"
+              label="7899990977"
+              color="primary"
+              variant="filled"
+              icon={<FiPhone size={16} />}
+            />
           </Box>
 
           {/* Email */}
@@ -82,10 +96,10 @@ const CompanyDetails = () => {
             <Chip
               clickable
               component={Link}
-              href="https://www.shiplifi.com"
+              href="https://routeship.in"
               target="_blank"
               rel="noreferrer"
-              label="www.shiplifi.com"
+              label="routeship.in"
               color="secondary"
               variant="filled"
               icon={<FiGlobe size={16} />}

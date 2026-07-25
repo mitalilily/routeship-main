@@ -3846,6 +3846,7 @@ export const fetchAvailableCouriersWithRates = async (
       if (courierName.includes('ekart')) return 'ekart'
       if (courierName.includes('shadowfax')) return 'shadowfax'
       if (courierName.includes('xpress')) return 'xpressbees'
+      if (courierName.includes('dtdc')) return 'dtdc'
       return ''
     }
 
@@ -4578,6 +4579,7 @@ export const fetchAvailableCouriersWithRates = async (
       shadowfax: 'Shadowfax',
       amazon: 'Amazon Shipping',
       innofulfill: 'Shreemaruti',
+      dtdc: 'DTDC',
     }
 
     const fallbackProviderDetails: Array<{
@@ -4957,7 +4959,9 @@ export const fetchAvailableCouriersWithRates = async (
 
     let combined = combinedCouriers
       ?.flatMap((courier: any) => {
-        const providerKey = String(courier.integration_type || courier.service_provider || '')
+        const providerKey = String(
+          courier.integration_type || courier.service_provider || courier.serviceProvider || '',
+        )
           .toLowerCase()
           .trim()
         const delhiveryShippingMode =
