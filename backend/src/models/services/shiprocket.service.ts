@@ -17068,15 +17068,13 @@ const resolveRtoChargeAmount = async (order: OrderSummary): Promise<number> => {
       integration_type: b2c_orders.integration_type,
       shipping_mode: b2c_orders.shipping_mode,
       selected_max_slab_weight: b2c_orders.selected_max_slab_weight,
+      order_amount: b2c_orders.order_amount,
     })
     .from(b2c_orders)
     .where(eq(b2c_orders.id, order.id))
     .limit(1)
 
   if (!fullOrder) return 0
-
-  const storedCharge = Number(fullOrder.freight_charges ?? fullOrder.shipping_charges ?? 0) || 0
-  if (storedCharge > 0) return storedCharge
 
   const courierId = Number(fullOrder.courier_id ?? 0)
   const originPincode = (normalizePickupDetails(fullOrder.pickup_details) as any)?.pincode
@@ -17112,6 +17110,7 @@ const resolveRtoChargeAmount = async (order: OrderSummary): Promise<number> => {
       lengthCm,
       breadthCm,
       heightCm,
+      orderAmount: Number(fullOrder.order_amount ?? 0),
       isReverse: true,
     })
 
@@ -17122,15 +17121,66 @@ const resolveRtoChargeAmount = async (order: OrderSummary): Promise<number> => {
   }
 }
 
+const creditCodChargeRefundForRtoOnce = async (
+  tx: any,
+  wallet: typeof wallets.$inferSelect,
+  order: OrderSummary,
+  params: RtoChargeEventParams,
+) => {
+  const [fullOrder] = await tx
+    .select({
+      order_type: b2c_orders.order_type,
+      cod_charges: b2c_orders.cod_charges,
+    })
+    .from(b2c_orders)
+    .where(eq(b2c_orders.id, order.id))
+    .limit(1)
+
+  const isCodOrder = String(fullOrder?.order_type ?? order.order_type ?? '').toLowerCase() === 'cod'
+  const codCharge = Number(fullOrder?.cod_charges ?? 0)
+  if (!isCodOrder || codCharge <= 0) return 0
+
+  const [existingRefund] = await tx
+    .select({ id: walletTransactions.id })
+    .from(walletTransactions)
+    .where(
+      and(
+        eq(walletTransactions.wallet_id, wallet.id),
+        eq(walletTransactions.type, 'credit'),
+        eq(walletTransactions.ref, order.id),
+        ilike(walletTransactions.reason, 'COD charge refund - RTO%'),
+      ),
+    )
+    .limit(1)
+
+  if (existingRefund) return codCharge
+
+  await createWalletTransaction({
+    walletId: wallet.id,
+    amount: codCharge,
+    type: 'credit',
+    currency: wallet.currency ?? 'INR',
+    reason: `COD charge refund - RTO (${order.order_number})`,
+    ref: order.id,
+    meta: {
+      awb: order.awb_number,
+      order_number: order.order_number,
+      source: sanitizeString(params.source) || 'live_tracking_fetch',
+      status: params.status,
+      refund_component: 'cod_charges',
+    },
+    tx: tx as any,
+  })
+
+  return codCharge
+}
+
 export async function recordRtoChargeAndEventOnce(
   tx: any,
   order: OrderSummary,
   params: RtoChargeEventParams,
 ): Promise<number | null> {
   if (order.source_type !== 'b2c') return null
-
-  const amount = await resolveRtoChargeAmount(order)
-  if (amount <= 0) return null
 
   const eventAt =
     params.eventAt instanceof Date
@@ -17152,6 +17202,11 @@ export async function recordRtoChargeAndEventOnce(
   if (!wallet) {
     throw new Error(`Wallet not found for user ${order.user_id}`)
   }
+
+  await creditCodChargeRefundForRtoOnce(tx, wallet, order, params)
+
+  const amount = await resolveRtoChargeAmount(order)
+  if (amount <= 0) return null
 
   const [existingDebit] = await tx
     .select({
