@@ -91,6 +91,165 @@ const upsertDtdcCouriers = async (client: PoolClient) => {
   }
 }
 
+const propagateDtdcRatesToActiveB2CPlans = async (client: PoolClient) => {
+  const baselinePlan = await client.query<{ plan_id: string }>(
+    `select sr.plan_id
+       from shipping_rates sr
+       join plans p on p.id = sr.plan_id
+      where lower(coalesce(sr.service_provider, '')) = $1
+        and lower(coalesce(sr.business_type, '')) = 'b2c'
+        and lower(coalesce(p.business_type, '')) = 'b2c'
+      group by sr.plan_id
+      order by count(*) desc
+      limit 1`,
+    [DTDC_PROVIDER],
+  )
+
+  const sourcePlanId = baselinePlan.rows[0]?.plan_id
+  if (!sourcePlanId) {
+    return {
+      sourcePlanId: null,
+      plansBackfilled: 0,
+      ratesBackfilled: 0,
+      slabsBackfilled: 0,
+      configsBackfilled: 0,
+    }
+  }
+
+  const ratesResult = await client.query<{
+    target_plan_id: string
+    source_rate_id: string
+    new_rate_id: string
+  }>(
+    `with target_plans as (
+       select p.id as plan_id
+         from plans p
+        where lower(coalesce(p.business_type, '')) = 'b2c'
+          and coalesce(p.is_active, true) = true
+          and not exists (
+            select 1
+              from shipping_rates existing
+             where existing.plan_id = p.id
+               and lower(coalesce(existing.business_type, '')) = 'b2c'
+               and lower(coalesce(existing.service_provider, '')) = $1
+          )
+     ),
+     source_rates as (
+       select *
+         from shipping_rates
+        where plan_id = $2
+          and lower(coalesce(business_type, '')) = 'b2c'
+          and lower(coalesce(service_provider, '')) = $1
+     ),
+     inserted as (
+       insert into shipping_rates
+         (plan_id, service_provider, cod_charges, cod_percent, other_charges, rate,
+          last_updated, courier_id, courier_name, mode, business_type, min_weight, zone_id, type, created_at)
+       select tp.plan_id, sr.service_provider, sr.cod_charges, sr.cod_percent, sr.other_charges, sr.rate,
+              now(), sr.courier_id, sr.courier_name, sr.mode, sr.business_type, sr.min_weight, sr.zone_id, sr.type, now()
+         from target_plans tp
+         cross join source_rates sr
+       returning id, plan_id, courier_id, courier_name, mode, type, zone_id, min_weight
+     )
+     select inserted.plan_id as target_plan_id, sr.id as source_rate_id, inserted.id as new_rate_id
+       from inserted
+       join source_rates sr
+         on sr.courier_id = inserted.courier_id
+        and sr.courier_name = inserted.courier_name
+        and sr.mode = inserted.mode
+        and sr.type = inserted.type
+        and sr.zone_id = inserted.zone_id
+        and sr.min_weight = inserted.min_weight`,
+    [DTDC_PROVIDER, sourcePlanId],
+  )
+
+  let slabsBackfilled = 0
+  for (const row of ratesResult.rows) {
+    const insertedSlabs = await client.query(
+      `insert into shipping_rate_slabs
+         (shipping_rate_id, weight_from, weight_to, rate, extra_rate, extra_weight_unit, created_at, updated_at)
+       select $1, weight_from, weight_to, rate, extra_rate, extra_weight_unit, now(), now()
+         from shipping_rate_slabs
+        where shipping_rate_id = $2`,
+      [row.new_rate_id, row.source_rate_id],
+    )
+    slabsBackfilled += insertedSlabs.rowCount ?? 0
+  }
+
+  const configsResult = await client.query(
+    `with target_plans as (
+       select p.id as plan_id
+         from plans p
+        where lower(coalesce(p.business_type, '')) = 'b2c'
+          and coalesce(p.is_active, true) = true
+          and not exists (
+            select 1
+              from routeship_b2c_courier_rate_configs existing
+             where existing.plan_id = p.id
+               and lower(coalesce(existing.service_provider, '')) = $1
+          )
+     )
+     insert into routeship_b2c_courier_rate_configs
+       (plan_id, courier_id, service_provider, mode, use_shipping_charge_api,
+        fsc_percentage, minimum_cod_charge, cod_charge_percentage, to_pay_charge,
+        minimum_ras_charge, ras_charge_per_kg, minimum_critical_pickup_charge,
+        critical_pickup_charge_per_kg, minimum_critical_delivery_charge,
+        critical_delivery_charge_per_kg, addition_rules, created_at, updated_at)
+     select tp.plan_id, cfg.courier_id, cfg.service_provider, cfg.mode, cfg.use_shipping_charge_api,
+            cfg.fsc_percentage, cfg.minimum_cod_charge, cfg.cod_charge_percentage, cfg.to_pay_charge,
+            cfg.minimum_ras_charge, cfg.ras_charge_per_kg, cfg.minimum_critical_pickup_charge,
+            cfg.critical_pickup_charge_per_kg, cfg.minimum_critical_delivery_charge,
+            cfg.critical_delivery_charge_per_kg, cfg.addition_rules, now(), now()
+       from target_plans tp
+       join routeship_b2c_courier_rate_configs cfg
+         on cfg.plan_id = $2
+        and lower(coalesce(cfg.service_provider, '')) = $1
+     on conflict (plan_id, courier_id, service_provider, mode) do nothing`,
+    [DTDC_PROVIDER, sourcePlanId],
+  )
+
+  const plansBackfilled = new Set(ratesResult.rows.map((row) => row.target_plan_id)).size
+  return {
+    sourcePlanId,
+    plansBackfilled,
+    ratesBackfilled: ratesResult.rowCount ?? 0,
+    slabsBackfilled,
+    configsBackfilled: configsResult.rowCount ?? 0,
+  }
+}
+
+const normalizeDtdcSlabContinuations = async (client: PoolClient) => {
+  const result = await client.query(
+    `with latest_finite_slab as (
+       select distinct on (s.shipping_rate_id)
+              s.id,
+              s.rate
+         from shipping_rate_slabs s
+         join shipping_rates sr on sr.id = s.shipping_rate_id
+        where lower(coalesce(sr.service_provider, '')) = $1
+          and lower(coalesce(sr.business_type, '')) = 'b2c'
+          and s.weight_to is not null
+          and not exists (
+            select 1
+              from shipping_rate_slabs open_slab
+             where open_slab.shipping_rate_id = s.shipping_rate_id
+               and open_slab.weight_to is null
+          )
+        order by s.shipping_rate_id, s.weight_to desc
+     )
+     update shipping_rate_slabs s
+        set extra_rate = coalesce(s.extra_rate, latest_finite_slab.rate),
+            extra_weight_unit = coalesce(s.extra_weight_unit, 0.500),
+            updated_at = now()
+       from latest_finite_slab
+      where s.id = latest_finite_slab.id
+        and (s.extra_rate is null or s.extra_weight_unit is null)`,
+    [DTDC_PROVIDER],
+  )
+
+  return result.rowCount ?? 0
+}
+
 async function main() {
   loadEnv()
 
@@ -119,6 +278,8 @@ async function main() {
     await client.query('begin')
     const credentialsSaved = await upsertDtdcCredentials(client, config)
     await upsertDtdcCouriers(client)
+    const ratePropagation = await propagateDtdcRatesToActiveB2CPlans(client)
+    const slabsNormalized = await normalizeDtdcSlabContinuations(client)
     await client.query('commit')
 
     console.log(
@@ -138,7 +299,8 @@ async function main() {
           accessTokenConfigured: Boolean(config.accessToken),
           trackingTokenConfigured: Boolean(config.trackingToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),
-          ratesSeeded: false,
+          ratePropagation,
+          slabsNormalized,
         },
         null,
         2,
