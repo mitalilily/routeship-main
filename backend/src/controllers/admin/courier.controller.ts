@@ -583,6 +583,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         provider: 'dtdc',
         apiBase: 'https://blktracksvc.dtdc.com',
         clientName: '',
+        username: '',
+        hasPassword: false,
         hasAccessToken: false,
         accessTokenMasked: '',
       },
@@ -705,6 +707,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           provider: 'dtdc',
           apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
           clientName: row.clientName || '',
+          username: row.username || '',
+          hasPassword: Boolean((row.password || '').trim()),
           hasAccessToken: Boolean(accessToken.trim()),
           accessTokenMasked: maskCourierCredential(accessToken),
         }
@@ -2152,11 +2156,13 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
 }
 
 export const updateDtdcCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, clientName, accessToken, apiKey } = req.body || {}
+  const { apiBase, clientName, username, password, accessToken, apiKey } = req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
     const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextPassword = typeof password === 'string' ? password.trim() : undefined
     const nextAccessToken =
       typeof accessToken === 'string'
         ? accessToken.trim()
@@ -2164,6 +2170,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
           ? apiKey.trim()
           : undefined
     const hasNewAccessToken = typeof nextAccessToken === 'string' && nextAccessToken.length > 0
+    const hasNewPassword = typeof nextPassword === 'string' && nextPassword.length > 0
 
     const [existing] = await db
       .select({ id: courier_credentials.id })
@@ -2175,6 +2182,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       const updatePayload: Record<string, any> = { updatedAt: new Date() }
       if (nextApiBase !== undefined) updatePayload.apiBase = nextApiBase || 'https://blktracksvc.dtdc.com'
       if (nextClientName !== undefined) updatePayload.clientName = nextClientName
+      if (nextUsername !== undefined) updatePayload.username = nextUsername
+      if (hasNewPassword) updatePayload.password = nextPassword
       if (hasNewAccessToken) updatePayload.apiKey = nextAccessToken
 
       await db
@@ -2186,6 +2195,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         provider: 'dtdc',
         apiBase: nextApiBase || 'https://blktracksvc.dtdc.com',
         clientName: nextClientName || '',
+        username: nextUsername || '',
+        password: hasNewPassword ? nextPassword : '',
         apiKey: hasNewAccessToken ? nextAccessToken : '',
       })
     }
@@ -2194,6 +2205,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       .select({
         apiBase: courier_credentials.apiBase,
         clientName: courier_credentials.clientName,
+        username: courier_credentials.username,
+        password: courier_credentials.password,
         apiKey: courier_credentials.apiKey,
       })
       .from(courier_credentials)
@@ -2209,6 +2222,8 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         provider: 'dtdc',
         apiBase: saved?.apiBase || 'https://blktracksvc.dtdc.com',
         clientName: saved?.clientName || '',
+        username: saved?.username || '',
+        hasPassword: Boolean((saved?.password || '').trim()),
         hasAccessToken: Boolean((saved?.apiKey || '').trim()),
         accessTokenMasked: maskCourierCredential(saved?.apiKey || ''),
       },

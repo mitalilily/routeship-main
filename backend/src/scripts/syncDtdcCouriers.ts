@@ -30,21 +30,32 @@ const upsertDtdcCredentials = async (
   config: {
     apiBase: string
     clientName: string
+    username: string
+    password: string
     accessToken: string
   },
 ) => {
-  if (!config.accessToken) return false
+  if (!config.accessToken && (!config.username || !config.password)) return false
 
   await client.query(
     `insert into courier_credentials
-       (provider, api_base, client_name, api_key, created_at, updated_at)
-     values ($1, $2, $3, $4, now(), now())
+       (provider, api_base, client_name, username, password, api_key, created_at, updated_at)
+     values ($1, $2, $3, $4, $5, $6, now(), now())
      on conflict (provider) do update set
        api_base = excluded.api_base,
        client_name = excluded.client_name,
-       api_key = excluded.api_key,
+       username = case when excluded.username <> '' then excluded.username else courier_credentials.username end,
+       password = case when excluded.password <> '' then excluded.password else courier_credentials.password end,
+       api_key = case when excluded.api_key <> '' then excluded.api_key else courier_credentials.api_key end,
        updated_at = now()`,
-    [DTDC_PROVIDER, config.apiBase, config.clientName, config.accessToken],
+    [
+      DTDC_PROVIDER,
+      config.apiBase,
+      config.clientName,
+      config.username,
+      config.password,
+      config.accessToken,
+    ],
   )
 
   return true
@@ -72,6 +83,8 @@ async function main() {
   const config = {
     apiBase: normalizeBaseUrl(process.env.DTDC_API_BASE),
     clientName: normalize(process.env.DTDC_CLIENT_NAME),
+    username: normalize(process.env.DTDC_USERNAME),
+    password: normalize(process.env.DTDC_PASSWORD),
     accessToken: normalize(process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY),
   }
 
@@ -94,6 +107,9 @@ async function main() {
           apiBase: config.apiBase,
           clientName: config.clientName || null,
           credentialsSaved,
+          usernameConfigured: Boolean(config.username),
+          passwordConfigured: Boolean(config.password),
+          accessTokenConfigured: Boolean(config.accessToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),
           ratesSeeded: false,
         },

@@ -197,6 +197,8 @@ const CourierCredentials = () => {
   const [dtdcForm, setDtdcForm] = useState({
     apiBase: 'https://blktracksvc.dtdc.com',
     clientName: '',
+    username: '',
+    password: '',
     accessToken: '',
   })
   const [xpressbeesForm, setXpressbeesForm] = useState({
@@ -264,6 +266,8 @@ const CourierCredentials = () => {
       setDtdcForm({
         apiBase: data.dtdc.apiBase || 'https://blktracksvc.dtdc.com',
         clientName: data.dtdc.clientName || '',
+        username: data.dtdc.username || '',
+        password: '',
         accessToken: '',
       })
     }
@@ -1048,12 +1052,14 @@ const CourierCredentials = () => {
       {
         apiBase: dtdcForm.apiBase,
         clientName: dtdcForm.clientName,
+        username: dtdcForm.username,
+        ...(dtdcForm.password ? { password: dtdcForm.password } : {}),
         ...(dtdcForm.accessToken ? { accessToken: dtdcForm.accessToken } : {}),
       },
       {
         onSuccess: () => {
           toast({ title: 'DTDC credentials updated', status: 'success' })
-          setDtdcForm((prev) => ({ ...prev, accessToken: '' }))
+          setDtdcForm((prev) => ({ ...prev, password: '', accessToken: '' }))
         },
         onError: (err) => {
           toast({
@@ -1709,6 +1715,40 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
+              <FormLabel>Username</FormLabel>
+              <Input
+                value={dtdcForm.username}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, username: e.target.value }))
+                }
+                placeholder="DTDC API username"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Username shared by DTDC for the authenticate endpoint.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                value={dtdcForm.password}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, password: e.target.value }))
+                }
+                placeholder="Leave blank to keep existing password"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Password shared by DTDC. It is used only to generate the tracking access token.
+              </Text>
+              {data?.dtdc?.hasPassword && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Password already configured on DTDC.
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
               <FormLabel>X-Access-Token</FormLabel>
               <Input
                 type="password"
@@ -1729,8 +1769,9 @@ const CourierCredentials = () => {
             </FormControl>
 
             <Text fontSize="xs" color="gray.500">
-              This card configures DTDC shipment tracking. Shipment booking needs the separate DTDC
-              booking, label, pickup, and serviceability APIs.
+              The backend can use either a saved X-Access-Token or generate one from the DTDC
+              username/password. Shipment booking still needs the separate DTDC booking, label,
+              pickup, and serviceability APIs.
             </Text>
 
             <Button

@@ -96,6 +96,8 @@ export type DtdcConfig = {
   apiKey?: string
   accessToken?: string
   clientName?: string
+  username?: string
+  password?: string
 }
 
 export type CourierConfig =
@@ -338,6 +340,8 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       apiKey: normalize(row.apiKey),
       accessToken: normalize(row.apiKey),
       clientName: normalize(row.clientName),
+      username: normalize(row.username),
+      password: normalize(row.password),
     }
     return cfg
   }
