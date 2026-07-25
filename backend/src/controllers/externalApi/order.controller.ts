@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { Response } from 'express'
 import { db } from '../../models/client'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
+import { DtdcService } from '../../models/services/couriers/dtdc.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
 import { ShadowfaxService } from '../../models/services/couriers/shadowfax.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
@@ -364,11 +365,11 @@ export const cancelOrderController = async (req: any, res: Response) => {
 
     let cancellationResult: any = null
     const provider = String(order.integration_type || '').toLowerCase()
-    if (!['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon'].includes(provider)) {
+    if (!['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'dtdc'].includes(provider)) {
       return res.status(400).json({
         success: false,
         error: 'Unsupported provider',
-        message: `Only Delhivery, Ekart, Xpressbees, Shadowfax and Amazon are supported for cancellation. Found: ${order.integration_type}`,
+        message: `Only Delhivery, Ekart, Xpressbees, Shadowfax, Amazon and DTDC are supported for cancellation. Found: ${order.integration_type}`,
       })
     }
 
@@ -405,6 +406,9 @@ export const cancelOrderController = async (req: any, res: Response) => {
       } else if (provider === 'ekart') {
         const ekart = new EkartService()
         cancellationResult = await ekart.cancelShipment(order.awb_number)
+      } else if (provider === 'dtdc') {
+        const dtdc = new DtdcService()
+        cancellationResult = await dtdc.cancelShipment(order.awb_number)
       } else if (provider === 'shadowfax') {
         const shadowfax = new ShadowfaxService()
         cancellationResult = await shadowfax.cancelShipment(

@@ -582,8 +582,10 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       dtdc: {
         provider: 'dtdc',
         apiBase: 'https://blktracksvc.dtdc.com',
+        cancelApiBase: 'http://dtdcapi.shipsy.io',
         clientName: '',
         username: '',
+        customerCode: '',
         hasPassword: false,
         hasAccessToken: false,
         accessTokenMasked: '',
@@ -703,11 +705,16 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         }
       } else if (provider === 'dtdc') {
         const accessToken = row.apiKey || ''
+        const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
         acc.dtdc = {
           provider: 'dtdc',
           apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
+          cancelApiBase:
+            String(metadata.cancelApiBase || metadata.cancel_api_base || '').trim() ||
+            'http://dtdcapi.shipsy.io',
           clientName: row.clientName || '',
           username: row.username || '',
+          customerCode: String(metadata.customerCode || metadata.customer_code || '').trim(),
           hasPassword: Boolean((row.password || '').trim()),
           hasAccessToken: Boolean(accessToken.trim()),
           accessTokenMasked: maskCourierCredential(accessToken),
@@ -2156,13 +2163,16 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
 }
 
 export const updateDtdcCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, clientName, username, password, accessToken, apiKey } = req.body || {}
+  const { apiBase, cancelApiBase, clientName, username, password, customerCode, accessToken, apiKey } =
+    req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextCancelApiBase = typeof cancelApiBase === 'string' ? cancelApiBase.trim() : undefined
     const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
     const nextPassword = typeof password === 'string' ? password.trim() : undefined
+    const nextCustomerCode = typeof customerCode === 'string' ? customerCode.trim() : undefined
     const nextAccessToken =
       typeof accessToken === 'string'
         ? accessToken.trim()
@@ -2173,7 +2183,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
     const hasNewPassword = typeof nextPassword === 'string' && nextPassword.length > 0
 
     const [existing] = await db
-      .select({ id: courier_credentials.id })
+      .select({ id: courier_credentials.id, metadata: courier_credentials.metadata })
       .from(courier_credentials)
       .where(eq(courier_credentials.provider, 'dtdc'))
       .limit(1)
@@ -2185,6 +2195,15 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       if (nextUsername !== undefined) updatePayload.username = nextUsername
       if (hasNewPassword) updatePayload.password = nextPassword
       if (hasNewAccessToken) updatePayload.apiKey = nextAccessToken
+      const metadata =
+        existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+          ? { ...existing.metadata }
+          : {}
+      if (nextCancelApiBase !== undefined) {
+        metadata.cancelApiBase = nextCancelApiBase || 'http://dtdcapi.shipsy.io'
+      }
+      if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
+      updatePayload.metadata = metadata
 
       await db
         .update(courier_credentials)
@@ -2198,6 +2217,10 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         username: nextUsername || '',
         password: hasNewPassword ? nextPassword : '',
         apiKey: hasNewAccessToken ? nextAccessToken : '',
+        metadata: {
+          cancelApiBase: nextCancelApiBase || 'http://dtdcapi.shipsy.io',
+          customerCode: nextCustomerCode || '',
+        },
       })
     }
 
@@ -2208,6 +2231,7 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
         username: courier_credentials.username,
         password: courier_credentials.password,
         apiKey: courier_credentials.apiKey,
+        metadata: courier_credentials.metadata,
       })
       .from(courier_credentials)
       .where(eq(courier_credentials.provider, 'dtdc'))
@@ -2221,8 +2245,12 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
       data: {
         provider: 'dtdc',
         apiBase: saved?.apiBase || 'https://blktracksvc.dtdc.com',
+        cancelApiBase:
+          String(saved?.metadata?.cancelApiBase || saved?.metadata?.cancel_api_base || '').trim() ||
+          'http://dtdcapi.shipsy.io',
         clientName: saved?.clientName || '',
         username: saved?.username || '',
+        customerCode: String(saved?.metadata?.customerCode || saved?.metadata?.customer_code || '').trim(),
         hasPassword: Boolean((saved?.password || '').trim()),
         hasAccessToken: Boolean((saved?.apiKey || '').trim()),
         accessTokenMasked: maskCourierCredential(saved?.apiKey || ''),

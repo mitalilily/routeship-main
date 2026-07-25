@@ -4,12 +4,16 @@ import { DtdcConfig, getEffectiveCourierConfig } from '../courierCredentials.ser
 
 const DTDC_TRACKING_BASE_URL = 'https://blktracksvc.dtdc.com'
 const DTDC_TRACKING_ENDPOINT = '/dtdc-api/rest/JSONCnTrk/getTrackDetails'
+const DTDC_CANCEL_BASE_URL = 'http://dtdcapi.shipsy.io'
+const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
 
 export class DtdcService {
   private apiBase = process.env.DTDC_API_BASE || DTDC_TRACKING_BASE_URL
+  private cancelApiBase = process.env.DTDC_CANCEL_API_BASE || DTDC_CANCEL_BASE_URL
   private accessToken = process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY || ''
   private username = process.env.DTDC_USERNAME || ''
   private password = process.env.DTDC_PASSWORD || ''
+  private customerCode = process.env.DTDC_CUSTOMER_CODE || ''
   private static cachedConfig: DtdcConfig | null | undefined
   private static cachedAccessToken: string | null = null
 
@@ -30,12 +34,15 @@ export class DtdcService {
     const cfg = DtdcService.cachedConfig
     if (cfg) {
       this.apiBase = cfg.apiBase || this.apiBase
+      this.cancelApiBase = cfg.cancelApiBase || this.cancelApiBase
       this.accessToken = cfg.accessToken || cfg.apiKey || this.accessToken
       this.username = cfg.username || this.username
       this.password = cfg.password || this.password
+      this.customerCode = cfg.customerCode || this.customerCode
     }
 
     this.apiBase = this.normalizeBaseUrl(this.apiBase)
+    this.cancelApiBase = this.normalizeBaseUrl(this.cancelApiBase || DTDC_CANCEL_BASE_URL)
   }
 
   private extractAccessToken(data: any) {
@@ -133,6 +140,58 @@ export class DtdcService {
           err?.response?.data?.status ||
           err?.message ||
           'DTDC tracking request failed',
+      )
+    }
+  }
+
+  async cancelShipment(awb: string, customerCode?: string) {
+    await this.ensureConfigLoaded()
+
+    const normalizedAwb = String(awb || '').trim()
+    if (!normalizedAwb) throw new HttpError(400, 'DTDC AWB number is required for cancellation')
+
+    const resolvedCustomerCode = String(customerCode || this.customerCode || '').trim()
+    if (!resolvedCustomerCode) {
+      throw new HttpError(400, 'DTDC customer code is not configured')
+    }
+
+    const apiKey = String(this.accessToken || '').trim() || (await this.authenticate())
+    if (!apiKey) throw new HttpError(400, 'DTDC API key is not configured')
+
+    try {
+      const response = await axios.post(
+        `${this.cancelApiBase}${DTDC_CANCEL_ENDPOINT}`,
+        {
+          AWBNo: [normalizedAwb],
+          customerCode: resolvedCustomerCode,
+        },
+        {
+          timeout: 20000,
+          validateStatus: () => true,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'api-key': apiKey,
+          },
+        },
+      )
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new HttpError(
+          response.status,
+          response.data?.message || response.data?.error || 'DTDC cancellation request failed',
+        )
+      }
+
+      return response.data
+    } catch (err: any) {
+      if (err instanceof HttpError) throw err
+      throw new HttpError(
+        Number(err?.response?.status || 502),
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          'DTDC cancellation request failed',
       )
     }
   }

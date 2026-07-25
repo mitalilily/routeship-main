@@ -9,6 +9,7 @@ import {
   getStoredAmazonShippingCredentials,
 } from './amazonShippingCredentials.service'
 import { DelhiveryService } from './couriers/delhivery.service'
+import { DtdcService } from './couriers/dtdc.service'
 import { EkartService } from './couriers/ekart.service'
 import { ShadowfaxService } from './couriers/shadowfax.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
@@ -21,6 +22,7 @@ const SUPPORTED_CANCELLATION_PROVIDERS = new Set([
   'xpressbees',
   'shadowfax',
   'amazon',
+  'dtdc',
 ])
 
 const TERMINAL_NON_CANCELLABLE_STATUSES = new Set(['delivered', 'rto_delivered'])
@@ -682,6 +684,9 @@ export async function cancelOrderShipment(orderId: string) {
     cancellationResult = await svc.cancelShipment(awbNumber)
   } else if (integration === 'ekart') {
     const svc = new EkartService()
+    cancellationResult = await svc.cancelShipment(awbNumber)
+  } else if (integration === 'dtdc') {
+    const svc = new DtdcService()
     cancellationResult = await svc.cancelShipment(awbNumber)
   } else if (integration === 'shadowfax') {
     const svc = new ShadowfaxService()

@@ -196,9 +196,11 @@ const CourierCredentials = () => {
   })
   const [dtdcForm, setDtdcForm] = useState({
     apiBase: 'https://blktracksvc.dtdc.com',
+    cancelApiBase: 'http://dtdcapi.shipsy.io',
     clientName: '',
     username: '',
     password: '',
+    customerCode: '',
     accessToken: '',
   })
   const [xpressbeesForm, setXpressbeesForm] = useState({
@@ -265,9 +267,11 @@ const CourierCredentials = () => {
     if (data?.dtdc) {
       setDtdcForm({
         apiBase: data.dtdc.apiBase || 'https://blktracksvc.dtdc.com',
+        cancelApiBase: data.dtdc.cancelApiBase || 'http://dtdcapi.shipsy.io',
         clientName: data.dtdc.clientName || '',
         username: data.dtdc.username || '',
         password: '',
+        customerCode: data.dtdc.customerCode || '',
         accessToken: '',
       })
     }
@@ -1051,8 +1055,10 @@ const CourierCredentials = () => {
     updateDtdc.mutate(
       {
         apiBase: dtdcForm.apiBase,
+        cancelApiBase: dtdcForm.cancelApiBase,
         clientName: dtdcForm.clientName,
         username: dtdcForm.username,
+        customerCode: dtdcForm.customerCode,
         ...(dtdcForm.password ? { password: dtdcForm.password } : {}),
         ...(dtdcForm.accessToken ? { accessToken: dtdcForm.accessToken } : {}),
       },
@@ -1701,6 +1707,20 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
+              <FormLabel>Cancellation API Base URL</FormLabel>
+              <Input
+                value={dtdcForm.cancelApiBase}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, cancelApiBase: e.target.value }))
+                }
+                placeholder="http://dtdcapi.shipsy.io"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Shipsy DTDC cancellation base URL. Use staging only while testing cancellations.
+              </Text>
+            </FormControl>
+
+            <FormControl>
               <FormLabel>Client Name</FormLabel>
               <Input
                 value={dtdcForm.clientName}
@@ -1743,9 +1763,23 @@ const CourierCredentials = () => {
               </Text>
               {data?.dtdc?.hasPassword && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Password already configured on DTDC.
-                </Text>
-              )}
+                Password already configured on DTDC.
+              </Text>
+            )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Customer Code</FormLabel>
+              <Input
+                value={dtdcForm.customerCode}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, customerCode: e.target.value }))
+                }
+                placeholder="DTDC customer code"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Customer code assigned by DTDC and required in the cancellation payload.
+              </Text>
             </FormControl>
 
             <FormControl>

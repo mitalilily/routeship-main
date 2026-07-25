@@ -29,24 +29,27 @@ const upsertDtdcCredentials = async (
   client: PoolClient,
   config: {
     apiBase: string
+    cancelApiBase: string
     clientName: string
     username: string
     password: string
+    customerCode: string
     accessToken: string
   },
 ) => {
-  if (!config.accessToken && (!config.username || !config.password)) return false
+  if (!config.accessToken && (!config.username || !config.password) && !config.customerCode) return false
 
   await client.query(
     `insert into courier_credentials
-       (provider, api_base, client_name, username, password, api_key, created_at, updated_at)
-     values ($1, $2, $3, $4, $5, $6, now(), now())
+       (provider, api_base, client_name, username, password, api_key, metadata, created_at, updated_at)
+     values ($1, $2, $3, $4, $5, $6, $7::jsonb, now(), now())
      on conflict (provider) do update set
        api_base = excluded.api_base,
        client_name = excluded.client_name,
        username = case when excluded.username <> '' then excluded.username else courier_credentials.username end,
        password = case when excluded.password <> '' then excluded.password else courier_credentials.password end,
        api_key = case when excluded.api_key <> '' then excluded.api_key else courier_credentials.api_key end,
+       metadata = courier_credentials.metadata || excluded.metadata,
        updated_at = now()`,
     [
       DTDC_PROVIDER,
@@ -55,6 +58,10 @@ const upsertDtdcCredentials = async (
       config.username,
       config.password,
       config.accessToken,
+      JSON.stringify({
+        cancelApiBase: config.cancelApiBase,
+        customerCode: config.customerCode,
+      }),
     ],
   )
 
@@ -82,9 +89,11 @@ async function main() {
   const databaseUrl = requiredEnv('DATABASE_URL')
   const config = {
     apiBase: normalizeBaseUrl(process.env.DTDC_API_BASE),
+    cancelApiBase: normalizeBaseUrl(process.env.DTDC_CANCEL_API_BASE || 'http://dtdcapi.shipsy.io'),
     clientName: normalize(process.env.DTDC_CLIENT_NAME),
     username: normalize(process.env.DTDC_USERNAME),
     password: normalize(process.env.DTDC_PASSWORD),
+    customerCode: normalize(process.env.DTDC_CUSTOMER_CODE),
     accessToken: normalize(process.env.DTDC_ACCESS_TOKEN || process.env.DTDC_API_KEY),
   }
 
@@ -105,10 +114,12 @@ async function main() {
         {
           provider: DTDC_PROVIDER,
           apiBase: config.apiBase,
+          cancelApiBase: config.cancelApiBase,
           clientName: config.clientName || null,
           credentialsSaved,
           usernameConfigured: Boolean(config.username),
           passwordConfigured: Boolean(config.password),
+          customerCodeConfigured: Boolean(config.customerCode),
           accessTokenConfigured: Boolean(config.accessToken),
           couriers: DTDC_COURIERS.map(({ id, name, mode }) => ({ id, name, mode })),
           ratesSeeded: false,

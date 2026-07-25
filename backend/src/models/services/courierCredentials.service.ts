@@ -98,6 +98,8 @@ export type DtdcConfig = {
   clientName?: string
   username?: string
   password?: string
+  cancelApiBase?: string
+  customerCode?: string
 }
 
 export type CourierConfig =
@@ -342,6 +344,8 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       clientName: normalize(row.clientName),
       username: normalize(row.username),
       password: normalize(row.password),
+      cancelApiBase: normalize((metadata.cancelApiBase as string) || (metadata.cancel_api_base as string) || ''),
+      customerCode: normalize((metadata.customerCode as string) || (metadata.customer_code as string) || ''),
     }
     return cfg
   }
