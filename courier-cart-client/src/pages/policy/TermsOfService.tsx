@@ -128,6 +128,15 @@ const TermsOfService = () => {
           <ListItemText primary="The merchant has to pay within 7 days from the date of Invoice, or he/she risks the chance of closure/termination of the online store." />
         </ListItem>
         <ListItem sx={{ display: 'list-item' }}>
+          <ListItemText
+            primary={
+              <Typography component="span" fontWeight={700}>
+                Weight discrepancy if not approved will be deducted from the wallet within 7 days.
+              </Typography>
+            }
+          />
+        </ListItem>
+        <ListItem sx={{ display: 'list-item' }}>
           <ListItemText primary="All fees are exclusive of all state and central taxes, service, sales tax or other taxes, fees or charges now in force or enacted in the future (“Taxes”)." />
         </ListItem>
         <ListItem sx={{ display: 'list-item' }}>

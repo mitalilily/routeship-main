@@ -111,6 +111,11 @@ const TermsOfService = () => {
           Payment must be made within 7 days from the invoice date to avoid closure/termination of
           the online store.
         </li>
+        <li>
+          <strong>
+            Weight discrepancy if not approved will be deducted from the wallet within 7 days.
+          </strong>
+        </li>
         <li>All fees are exclusive of applicable taxes, fees, or charges.</li>
         <li>RouteShip does not provide refunds.</li>
       </ul>
