@@ -36,6 +36,7 @@ import {
   useUpdateDelhiveryLtlClientWarehouse,
   useUpdateDelhiveryLtlShipment,
   useUpdateDelhiveryCredentials,
+  useUpdateDtdcCredentials,
   useUpdateEkartCredentials,
   useUpdateInnofulfillCredentials,
   useUpdateXpressbeesAwbRange,
@@ -67,6 +68,7 @@ const CourierCredentials = () => {
   const updateDelhiveryLtlClientWarehouse = useUpdateDelhiveryLtlClientWarehouse()
   const updateDelhiveryLtlShipment = useUpdateDelhiveryLtlShipment()
   const requestDelhiveryLtlPasswordReset = useRequestDelhiveryLtlPasswordReset()
+  const updateDtdc = useUpdateDtdcCredentials()
   const updateEkart = useUpdateEkartCredentials()
   const updateInnofulfill = useUpdateInnofulfillCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
@@ -192,6 +194,11 @@ const CourierCredentials = () => {
     password: '',
     webhookSecret: '',
   })
+  const [dtdcForm, setDtdcForm] = useState({
+    apiBase: 'https://blktracksvc.dtdc.com',
+    clientName: '',
+    accessToken: '',
+  })
   const [xpressbeesForm, setXpressbeesForm] = useState({
     apiBase: '',
     username: '',
@@ -251,6 +258,13 @@ const CourierCredentials = () => {
         username: data.ekart.username || '',
         password: '',
         webhookSecret: '',
+      })
+    }
+    if (data?.dtdc) {
+      setDtdcForm({
+        apiBase: data.dtdc.apiBase || 'https://blktracksvc.dtdc.com',
+        clientName: data.dtdc.clientName || '',
+        accessToken: '',
       })
     }
     if (data?.xpressbees) {
@@ -1029,6 +1043,29 @@ const CourierCredentials = () => {
     )
   }
 
+  const handleSaveDtdc = () => {
+    updateDtdc.mutate(
+      {
+        apiBase: dtdcForm.apiBase,
+        clientName: dtdcForm.clientName,
+        ...(dtdcForm.accessToken ? { accessToken: dtdcForm.accessToken } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'DTDC credentials updated', status: 'success' })
+          setDtdcForm((prev) => ({ ...prev, accessToken: '' }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update DTDC credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSaveXpressbees = () => {
     updateXpressbees.mutate(
       {
@@ -1632,6 +1669,77 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Save Ekart Credentials
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">DTDC Tracking</Text>
+              <Badge colorScheme={data?.dtdc?.hasAccessToken ? 'green' : 'orange'}>
+                {data?.dtdc?.hasAccessToken ? 'Token set' : 'Missing token'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={dtdcForm.apiBase}
+                onChange={(e) => setDtdcForm((prev) => ({ ...prev, apiBase: e.target.value }))}
+                placeholder="https://blktracksvc.dtdc.com"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Production tracking API base from DTDC. Use staging only while testing.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Client Name</FormLabel>
+              <Input
+                value={dtdcForm.clientName}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, clientName: e.target.value }))
+                }
+                placeholder="Your DTDC account or client name"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Internal label for the DTDC account these credentials belong to.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>X-Access-Token</FormLabel>
+              <Input
+                type="password"
+                value={dtdcForm.accessToken}
+                onChange={(e) =>
+                  setDtdcForm((prev) => ({ ...prev, accessToken: e.target.value }))
+                }
+                placeholder={data?.dtdc?.accessTokenMasked || 'Token shared by DTDC'}
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                DTDC tracking API token sent as the X-Access-Token request header.
+              </Text>
+              {!!data?.dtdc?.accessTokenMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current token: {data.dtdc.accessTokenMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <Text fontSize="xs" color="gray.500">
+              This card configures DTDC shipment tracking. Shipment booking needs the separate DTDC
+              booking, label, pickup, and serviceability APIs.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveDtdc}
+              isLoading={updateDtdc.isPending}
+              alignSelf="flex-start"
+            >
+              Save DTDC Credentials
             </Button>
           </VStack>
         </Box>

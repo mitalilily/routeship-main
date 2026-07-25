@@ -110,6 +110,7 @@ import {
   getStoredAmazonShippingCredentials,
 } from './amazonShippingCredentials.service'
 import { DelhiveryService } from './couriers/delhivery.service'
+import { DtdcService } from './couriers/dtdc.service'
 import { EkartService } from './couriers/ekart.service'
 import { InnofulfillCourierService } from './couriers/innofulfill.service'
 import { ShadowfaxService } from './couriers/shadowfax.service'
@@ -3464,7 +3465,7 @@ export const fetchAvailableCouriersWithRates = async (
 
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
-    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill']
+    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shadowfax', 'amazon', 'innofulfill', 'dtdc']
     const allCourierRows = await db
       .select({
         id: couriers.id,
@@ -15915,6 +15916,76 @@ const mapInnofulfillTracking = (raw: any, order: OrderSummary): ProviderNormaliz
   }
 }
 
+const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const history: TrackingHistoryItem[] = []
+  const payload = raw?.data || raw?.payload || raw || {}
+  const header = payload?.trackHeader || payload?.track_header || {}
+  const details = payload?.trackDetails || payload?.track_details || []
+  const parseDtdcTime = (dateValue: unknown, timeValue?: unknown) => {
+    const date = sanitizeString(dateValue)
+    const time = sanitizeString(timeValue)
+    const dateMatch = date.match(/^(\d{2})(\d{2})(\d{4})$/)
+    if (!dateMatch) return dateValue
+    const [, day, month, year] = dateMatch
+    const timeMatch = time.match(/^(\d{2})(\d{2})(?::?(\d{2}))?$/)
+    const hour = timeMatch?.[1] || '00'
+    const minute = timeMatch?.[2] || '00'
+    const second = timeMatch?.[3] || '00'
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+    )
+  }
+
+  const eventRows = Array.isArray(details)
+    ? details
+    : details && typeof details === 'object'
+      ? [details]
+      : []
+
+  eventRows.forEach((entry: any) => {
+    pushHistoryEvent(history, {
+      statusCode: entry?.strCode || entry?.code,
+      message: entry?.strAction || entry?.action || entry?.sTrRemarks || entry?.strRemarks,
+      location: entry?.strOrigin || entry?.origin || entry?.strDestination || entry?.destination,
+      time: parseDtdcTime(entry?.strActionDate || entry?.actionDate, entry?.strActionTime || entry?.actionTime),
+    })
+  })
+
+  if (header?.strStatus || header?.strStatusTransOn) {
+    pushHistoryEvent(history, {
+      statusCode: header?.strStatus || payload?.status,
+      message: header?.strRemarks || header?.strStatus || payload?.status,
+      location: header?.strDestination || header?.strOrigin,
+      time: parseDtdcTime(header?.strStatusTransOn || header?.strBookedDate, header?.strStatusTransTime || header?.strBookedTime),
+    })
+  }
+
+  const status = sanitizeString(
+    header?.strStatus ||
+      payload?.status ||
+      payload?.statusFlag ||
+      payload?.errorDetails?.[0]?.value ||
+      history[0]?.message ||
+      order.order_status,
+    order.order_status || 'In Transit',
+  )
+
+  return {
+    history,
+    status,
+    courier_name: 'DTDC',
+    edd: sanitizeString(header?.strExpectedDeliveryDate || payload?.expectedDeliveryDate || '') || undefined,
+    shipment_info:
+      sanitizeString(header?.strRemarks || payload?.status || payload?.statusCode || '', '') ||
+      undefined,
+  }
+}
+
 const mapXpressbeesTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
   const history: TrackingHistoryItem[] = []
   const payload = raw?.data || raw?.payload || raw || {}
@@ -17324,6 +17395,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const xpressbeesService = new XpressbeesService()
       const raw = await xpressbeesService.trackShipment(awb)
       providerData = mapXpressbeesTracking(raw, order)
+    } else if (providerKey === 'dtdc') {
+      const dtdcService = new DtdcService()
+      const raw = await dtdcService.trackShipment(awb)
+      providerData = mapDtdcTracking(raw, order)
     } else if (providerKey === 'ekart') {
       const ekartService = new EkartService()
       const raw = await ekartService.track(awb)

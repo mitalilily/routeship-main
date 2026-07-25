@@ -30,6 +30,7 @@ import {
   requestDelhiveryLtlPasswordResetController,
   updateDelhiveryLtlClientWarehouseController,
   updateDelhiveryCredentialsController,
+  updateDtdcCredentialsController,
   updateEkartCredentialsController,
   updateInnofulfillCredentialsController,
   updateXpressbeesAwbRangeController,
@@ -213,6 +214,12 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateEkartCredentialsController,
+)
+router.put(
+  '/credentials/dtdc',
+  requireAuth,
+  isAdminMiddleware,
+  updateDtdcCredentialsController,
 )
 router.get(
   '/credentials/ekart/serviceability/bulk/:type',

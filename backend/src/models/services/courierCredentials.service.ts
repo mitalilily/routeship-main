@@ -10,6 +10,7 @@ export type ServiceProviderId =
   | 'ekart'
   | 'shadowfax'
   | 'innofulfill'
+  | 'dtdc'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -90,6 +91,13 @@ export type InnofulfillConfig = {
   webhookSecret?: string
 }
 
+export type DtdcConfig = {
+  apiBase?: string
+  apiKey?: string
+  accessToken?: string
+  clientName?: string
+}
+
 export type CourierConfig =
   | DelhiveryConfig
   | SmartshipConfig
@@ -99,6 +107,7 @@ export type CourierConfig =
   | EkartConfig
   | ShadowfaxConfig
   | InnofulfillConfig
+  | DtdcConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -133,6 +142,7 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = [
   'ekart',
   'shadowfax',
   'innofulfill',
+  'dtdc',
 ]
 
 const normalize = (val?: string | null) => String(val || '').trim()
@@ -183,6 +193,7 @@ export const isCourierCredentialRowConfigured = (
     const userId = metadataValue(row, 'userId', 'user_id')
     return Boolean(apiKey || (username && password && tenantId && userId))
   }
+  if (normalizedProvider === 'dtdc') return Boolean(apiKey)
   if (normalizedProvider === 'amazon') {
     const accessToken = metadataValue(row, 'accessToken')
     const refreshToken = metadataValue(row, 'refreshToken') || apiKey
@@ -230,6 +241,9 @@ const configuredProvidersFromEnvironment = () => {
       normalize(process.env.INNOFULFILL_TENANT_ID) &&
       normalize(process.env.INNOFULFILL_USER_ID))
   ) providers.add('innofulfill')
+  if (normalize(process.env.DTDC_ACCESS_TOKEN) || normalize(process.env.DTDC_API_KEY)) {
+    providers.add('dtdc')
+  }
   return providers
 }
 
@@ -314,6 +328,16 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       userId: normalize((metadata.userId as string) || (metadata.user_id as string) || ''),
       signinType: normalize((metadata.signinType as string) || (metadata.signin_type as string) || 'EMAIL') || 'EMAIL',
       webhookSecret: normalize(row.webhookSecret),
+    }
+    return cfg
+  }
+
+  if (provider === 'dtdc') {
+    const cfg: DtdcConfig = {
+      apiBase: normalize(row.apiBase),
+      apiKey: normalize(row.apiKey),
+      accessToken: normalize(row.apiKey),
+      clientName: normalize(row.clientName),
     }
     return cfg
   }

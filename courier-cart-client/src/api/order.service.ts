@@ -10,7 +10,7 @@ export interface CreateShipmentParams {
   package_breadth?: number
   package_height?: number
   transaction_fee?: number
-  integration_type?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill'
+  integration_type?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill' | 'dtdc'
   isReverse?: boolean
   request_auto_pickup?: 'Yes' | 'No'
   gift_wrap?: number

@@ -128,7 +128,7 @@ export interface B2COrder {
   city: string
   state: string
   country: string
-  integration_type: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'icarry'
+  integration_type: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'icarry' | 'dtdc'
   pincode: string
 
   // Product info

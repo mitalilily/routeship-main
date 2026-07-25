@@ -38,6 +38,7 @@ import {
   parseAmazonSandboxFlag,
 } from '../../models/services/amazonShippingCredentials.service'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
+import { DtdcService } from '../../models/services/couriers/dtdc.service'
 import { readXlsxRows, xlsxRowsToRecords } from '../../utils/xlsx'
 import { getConfiguredCourierProviderSet } from '../../models/services/courierCredentials.service'
 
@@ -511,6 +512,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           'ekart',
           'innofulfill',
           'xpressbees',
+          'dtdc',
         ]),
       )
 
@@ -576,6 +578,13 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         hasApiKey: false,
         apiKeyMasked: '',
         hasWebhookSecret: false,
+      },
+      dtdc: {
+        provider: 'dtdc',
+        apiBase: 'https://blktracksvc.dtdc.com',
+        clientName: '',
+        hasAccessToken: false,
+        accessTokenMasked: '',
       },
     }
 
@@ -689,6 +698,15 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: maskCourierCredential(apiKey),
           hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
+        }
+      } else if (provider === 'dtdc') {
+        const accessToken = row.apiKey || ''
+        acc.dtdc = {
+          provider: 'dtdc',
+          apiBase: row.apiBase || 'https://blktracksvc.dtdc.com',
+          clientName: row.clientName || '',
+          hasAccessToken: Boolean(accessToken.trim()),
+          accessTokenMasked: maskCourierCredential(accessToken),
         }
       }
       return acc
@@ -2130,6 +2148,74 @@ export const updateInnofulfillCredentialsController = async (req: Request, res: 
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Shreemaruti credentials' })
+  }
+}
+
+export const updateDtdcCredentialsController = async (req: Request, res: Response) => {
+  const { apiBase, clientName, accessToken, apiKey } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
+    const nextAccessToken =
+      typeof accessToken === 'string'
+        ? accessToken.trim()
+        : typeof apiKey === 'string'
+          ? apiKey.trim()
+          : undefined
+    const hasNewAccessToken = typeof nextAccessToken === 'string' && nextAccessToken.length > 0
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'dtdc'))
+      .limit(1)
+
+    if (existing) {
+      const updatePayload: Record<string, any> = { updatedAt: new Date() }
+      if (nextApiBase !== undefined) updatePayload.apiBase = nextApiBase || 'https://blktracksvc.dtdc.com'
+      if (nextClientName !== undefined) updatePayload.clientName = nextClientName
+      if (hasNewAccessToken) updatePayload.apiKey = nextAccessToken
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'dtdc'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'dtdc',
+        apiBase: nextApiBase || 'https://blktracksvc.dtdc.com',
+        clientName: nextClientName || '',
+        apiKey: hasNewAccessToken ? nextAccessToken : '',
+      })
+    }
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        clientName: courier_credentials.clientName,
+        apiKey: courier_credentials.apiKey,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'dtdc'))
+      .limit(1)
+
+    DtdcService.clearCachedConfig()
+
+    res.json({
+      success: true,
+      message: 'DTDC credentials updated successfully',
+      data: {
+        provider: 'dtdc',
+        apiBase: saved?.apiBase || 'https://blktracksvc.dtdc.com',
+        clientName: saved?.clientName || '',
+        hasAccessToken: Boolean((saved?.apiKey || '').trim()),
+        accessTokenMasked: maskCourierCredential(saved?.apiKey || ''),
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update DTDC credentials' })
   }
 }
 
