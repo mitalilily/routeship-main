@@ -1,7 +1,7 @@
 export const sampleUsers = [
   {
     name: "Operations Manager",
-    email: "ops@routeship.in",
+    email: "support@routeship.in",
     password: "RouteShip@123",
     role: "admin",
     phone: "+910000000000",
