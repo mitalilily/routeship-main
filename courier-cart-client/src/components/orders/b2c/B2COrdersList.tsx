@@ -1627,7 +1627,7 @@ const B2COrdersList = () => {
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             gap={1.25}
-            // flexWrap="wrap"
+            flexWrap="wrap"
             width={{ xs: '100%', lg: 'auto' }}
             justifyContent="flex-end"
           >
@@ -1778,11 +1778,11 @@ const B2COrdersList = () => {
               onClick={handleExportCSV}
               disabled={exportingCsv}
               startIcon={<MdDownload size={16} />}
-              fullWidth
               sx={{
                 minHeight: 28,
                 py: 0.75,
                 px: 1.5,
+                width: { xs: '100%', sm: 'auto' },
                 borderRadius: '8px',
                 fontWeight: 600,
                 fontSize: '0.8rem',
@@ -1801,40 +1801,40 @@ const B2COrdersList = () => {
             </Button>
 
             <Button
-              variant="outlined"
+              variant="contained"
               onClick={handleOpenBulkUpload}
               startIcon={<FiUploadCloud size={16} />}
-              fullWidth
               sx={{
-                minHeight: 28,
-                py: 0.75,
-                px: 1.5,
+                minHeight: 36,
+                py: 0.85,
+                px: 1.8,
+                width: { xs: '100%', sm: 'auto' },
                 borderRadius: '8px',
-                fontWeight: 600,
-                fontSize: '0.8rem',
+                fontWeight: 800,
+                fontSize: '0.84rem',
                 textTransform: 'none',
-                borderColor: '#FECACA',
-                color: '#DC2626',
-                backgroundColor: '#FEF2F2',
+                color: '#FFFFFF',
+                background: 'linear-gradient(135deg, #FE6502 0%, #D95700 100%)',
+                boxShadow: '0 12px 24px rgba(254,101,2,0.22)',
                 whiteSpace: 'nowrap',
                 '&:hover': {
-                  borderColor: '#FCA5A5',
-                  backgroundColor: '#FEE2E2',
+                  background: 'linear-gradient(135deg, #E85500 0%, #B94300 100%)',
+                  boxShadow: '0 14px 28px rgba(254,101,2,0.28)',
                 },
               }}
             >
-              Bulk Upload
+              Bulk Order Upload
             </Button>
 
             <Button
               variant="contained"
               onClick={handleCreateB2COrder}
               startIcon={<FiPlusCircle size={16} />}
-              fullWidth
               sx={{
                 minHeight: 28,
                 py: 0.75,
                 px: 1.5,
+                width: { xs: '100%', sm: 'auto' },
                 borderRadius: '8px',
                 fontWeight: 700,
                 fontSize: '0.8rem',
