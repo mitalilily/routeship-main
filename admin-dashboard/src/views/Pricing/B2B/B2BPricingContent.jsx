@@ -33,12 +33,12 @@ const B2BPricingContent = () => {
   const [selectedPlanId, setSelectedPlanId] = useState('')
 
   const [selectedCourierKey, setSelectedCourierKey] = useState('')
-  const { data: delhiveryB2BCouriers = [] } = useCouriers({
+  const { data: movinB2BCouriers = [] } = useCouriers({
     businessType: 'b2b',
-    serviceProvider: 'delhivery',
+    serviceProvider: 'movin',
   })
 
-  // Default to the Basic B2B plan because Delhivery workbook data is seeded there.
+  // Default to the Basic B2B plan when available.
   useEffect(() => {
     if (plans?.length > 0 && !selectedPlanId) {
       const basicPlan =
@@ -48,43 +48,43 @@ const B2BPricingContent = () => {
   }, [plans, selectedPlanId])
 
   useEffect(() => {
-    if (!delhiveryB2BCouriers.length) {
+    if (!movinB2BCouriers.length) {
       if (selectedCourierKey) {
         setSelectedCourierKey('')
       }
       return
     }
 
-    const hasSelectedCourier = delhiveryB2BCouriers.some((courier) => {
+    const hasSelectedCourier = movinB2BCouriers.some((courier) => {
       const provider = courier.serviceProvider || courier.service_provider || ''
       return `${courier.id}|${provider}` === selectedCourierKey
     })
 
     if (!hasSelectedCourier) {
       const preferredCourier =
-        delhiveryB2BCouriers.find((courier) =>
+        movinB2BCouriers.find((courier) =>
           String(courier.name || '')
             .trim()
             .toLowerCase()
-            .includes('surface'),
-        ) || delhiveryB2BCouriers[0]
+            .includes('standard'),
+        ) || movinB2BCouriers[0]
       const provider = preferredCourier.serviceProvider || preferredCourier.service_provider || ''
       setSelectedCourierKey(`${preferredCourier.id}|${provider}`)
     }
-  }, [delhiveryB2BCouriers, selectedCourierKey])
+  }, [movinB2BCouriers, selectedCourierKey])
 
-  const selectedCourier = delhiveryB2BCouriers.find((courier) => {
+  const selectedCourier = movinB2BCouriers.find((courier) => {
     const provider = courier.serviceProvider || courier.service_provider || ''
     return `${courier.id}|${provider}` === selectedCourierKey
   })
   const scopedCourierId = selectedCourier ? String(selectedCourier.id) : ''
   const scopedServiceProvider =
-    selectedCourier?.serviceProvider || selectedCourier?.service_provider || 'delhivery'
+    selectedCourier?.serviceProvider || selectedCourier?.service_provider || 'movin'
 
   return (
     <Box>
       {/* Plan Selector - Simplified */}
-      {(plans?.length > 0 || delhiveryB2BCouriers.length > 1) && (
+      {(plans?.length > 0 || movinB2BCouriers.length > 1) && (
         <Box mb={4} px={6} pt={4}>
           <HStack spacing={3} align="center">
             {plans?.length > 0 && (
@@ -105,17 +105,17 @@ const B2BPricingContent = () => {
                 </Select>
               </>
             )}
-            {delhiveryB2BCouriers.length > 1 && (
+            {movinB2BCouriers.length > 1 && (
               <>
                 <Text fontSize="sm" fontWeight="medium" color="gray.700" minW="140px">
-                  Delhivery B2B Courier:
+                  Movin B2B Courier:
                 </Text>
                 <Select
                   value={selectedCourierKey}
                   onChange={(e) => setSelectedCourierKey(e.target.value)}
                   maxW="320px"
                 >
-                  {delhiveryB2BCouriers.map((courier) => {
+                  {movinB2BCouriers.map((courier) => {
                     const provider = courier.serviceProvider || courier.service_provider || ''
                     const courierKey = `${courier.id}|${provider}`
                     return (
@@ -132,10 +132,10 @@ const B2BPricingContent = () => {
         </Box>
       )}
 
-      {!delhiveryB2BCouriers.length && (
+      {!movinB2BCouriers.length && (
         <Box px={6} pb={4}>
           <Text fontSize="sm" color="red.500">
-            No Delhivery B2B courier is configured yet. Add or enable a Delhivery courier with B2B
+            No Movin B2B courier is configured yet. Sync or enable Movin couriers with B2B
             business type to manage this rate card.
           </Text>
         </Box>

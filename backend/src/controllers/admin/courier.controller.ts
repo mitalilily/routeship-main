@@ -163,9 +163,19 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
     const { search, serviceProvider, businessType } = req.query
 
     const whereClauses = []
+    const normalizedServiceProvider =
+      typeof serviceProvider === 'string' && serviceProvider.trim()
+        ? serviceProvider.trim().toLowerCase()
+        : ''
+    const normalizedBusinessType =
+      typeof businessType === 'string' ? businessType.trim().toLowerCase() : ''
     const configuredProviders = [...(await getConfiguredCourierProviderSet())]
-    if (!configuredProviders.length) return res.json({ success: true, data: [] })
-    whereClauses.push(inArray(sql`lower(${couriers.serviceProvider})`, configuredProviders))
+    const providerScope = new Set(configuredProviders)
+    if (normalizedBusinessType === 'b2b' && normalizedServiceProvider) {
+      providerScope.add(normalizedServiceProvider)
+    }
+    if (!providerScope.size) return res.json({ success: true, data: [] })
+    whereClauses.push(inArray(sql`lower(${couriers.serviceProvider})`, [...providerScope]))
 
     // Filter by search (name or id)
     if (search && typeof search === 'string' && search.trim()) {
@@ -179,23 +189,20 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
     }
 
     // Filter by service provider
-    if (serviceProvider && typeof serviceProvider === 'string' && serviceProvider.trim()) {
-      whereClauses.push(eq(couriers.serviceProvider, serviceProvider.trim()))
+    if (normalizedServiceProvider) {
+      whereClauses.push(eq(sql`lower(${couriers.serviceProvider})`, normalizedServiceProvider))
     }
 
     // Filter by business type (b2c or b2b)
-    if (businessType && typeof businessType === 'string') {
-      const normalizedBusinessType = businessType.trim().toLowerCase()
-      if (normalizedBusinessType === 'b2c' || normalizedBusinessType === 'b2b') {
-        // Construct JSONB array string - value is validated above (only 'b2c' or 'b2b')
-        const jsonbArrayStr = JSON.stringify([normalizedBusinessType])
-        // Match the pattern from shiprocket.service.ts - construct the full JSONB literal
-        whereClauses.push(
-          sql`${couriers.businessType} @> ${sql.raw(
-            `'${jsonbArrayStr.replace(/'/g, "''")}'::jsonb`,
-          )}`,
-        )
-      }
+    if (normalizedBusinessType === 'b2c' || normalizedBusinessType === 'b2b') {
+      // Construct JSONB array string - value is validated above (only 'b2c' or 'b2b')
+      const jsonbArrayStr = JSON.stringify([normalizedBusinessType])
+      // Match the pattern from shiprocket.service.ts - construct the full JSONB literal
+      whereClauses.push(
+        sql`${couriers.businessType} @> ${sql.raw(
+          `'${jsonbArrayStr.replace(/'/g, "''")}'::jsonb`,
+        )}`,
+      )
     }
 
     const whereCondition = whereClauses.length > 0 ? and(...whereClauses) : undefined
