@@ -33,6 +33,7 @@ import {
   updateDtdcCredentialsController,
   updateEkartCredentialsController,
   updateInnofulfillCredentialsController,
+  updateMovinCredentialsController,
   updateXpressbeesAwbRangeController,
   updateXpressbeesCredentialsController,
   updateShippingRateController,
@@ -220,6 +221,12 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateDtdcCredentialsController,
+)
+router.put(
+  '/credentials/movin',
+  requireAuth,
+  isAdminMiddleware,
+  updateMovinCredentialsController,
 )
 router.get(
   '/credentials/ekart/serviceability/bulk/:type',

@@ -513,6 +513,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           'innofulfill',
           'xpressbees',
           'dtdc',
+          'movin',
         ]),
       )
 
@@ -594,6 +595,17 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         apiKeyMasked: '',
         hasTrackingToken: false,
         trackingTokenMasked: '',
+      },
+      movin: {
+        provider: 'movin',
+        apiBase: 'https://newco-apim-test.azure-api.net',
+        tenantId: '',
+        serverId: '',
+        clientId: '',
+        accountNumber: '',
+        hasClientSecret: false,
+        hasSubscriptionKey: false,
+        subscriptionKeyMasked: '',
       },
     }
 
@@ -738,6 +750,25 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           trackingTokenMasked: maskCourierCredential(trackingToken),
           hasHubCode: Boolean(hubCode),
           hasPickupVendorCode: Boolean(pickupVendorCode),
+        }
+      } else if (provider === 'movin') {
+        const subscriptionKey = row.apiKey || ''
+        const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
+        const tenantId = String((metadata as any).tenantId || (metadata as any).tenant_id || '').trim()
+        const serverId = String((metadata as any).serverId || (metadata as any).server_id || '').trim()
+        const accountNumber = String(
+          (metadata as any).accountNumber || (metadata as any).account_number || '',
+        ).trim()
+        acc.movin = {
+          provider: 'movin',
+          apiBase: row.apiBase || 'https://newco-apim-test.azure-api.net',
+          tenantId,
+          serverId,
+          clientId: row.clientId || '',
+          accountNumber,
+          hasClientSecret: Boolean((row.password || '').trim()),
+          hasSubscriptionKey: Boolean(subscriptionKey.trim()),
+          subscriptionKeyMasked: maskCourierCredential(subscriptionKey),
         }
       }
       return acc
@@ -2336,6 +2367,115 @@ export const updateDtdcCredentialsController = async (req: Request, res: Respons
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update DTDC credentials' })
+  }
+}
+
+export const updateMovinCredentialsController = async (req: Request, res: Response) => {
+  const {
+    apiBase,
+    tenantId,
+    serverId,
+    clientId,
+    clientSecret,
+    subscriptionKey,
+    accountNumber,
+  } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextTenantId = typeof tenantId === 'string' ? tenantId.trim() : undefined
+    const nextServerId = typeof serverId === 'string' ? serverId.trim() : undefined
+    const nextClientId = typeof clientId === 'string' ? clientId.trim() : undefined
+    const nextClientSecret = typeof clientSecret === 'string' ? clientSecret.trim() : undefined
+    const nextSubscriptionKey =
+      typeof subscriptionKey === 'string' ? subscriptionKey.trim() : undefined
+    const nextAccountNumber = typeof accountNumber === 'string' ? accountNumber.trim() : undefined
+    const hasNewClientSecret =
+      typeof nextClientSecret === 'string' && nextClientSecret.length > 0
+    const hasNewSubscriptionKey =
+      typeof nextSubscriptionKey === 'string' && nextSubscriptionKey.length > 0
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id, metadata: courier_credentials.metadata })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'movin'))
+      .limit(1)
+
+    if (existing) {
+      const metadata =
+        existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+          ? { ...existing.metadata }
+          : {}
+      const updatePayload: Record<string, any> = { updatedAt: new Date() }
+
+      if (nextApiBase !== undefined) {
+        updatePayload.apiBase = nextApiBase || 'https://newco-apim-test.azure-api.net'
+      }
+      if (nextClientId !== undefined) updatePayload.clientId = nextClientId
+      if (hasNewClientSecret) updatePayload.password = nextClientSecret
+      if (hasNewSubscriptionKey) updatePayload.apiKey = nextSubscriptionKey
+      if (nextTenantId !== undefined) metadata.tenantId = nextTenantId
+      if (nextServerId !== undefined) metadata.serverId = nextServerId
+      if (nextAccountNumber !== undefined) metadata.accountNumber = nextAccountNumber
+      updatePayload.metadata = metadata
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'movin'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'movin',
+        apiBase: nextApiBase || 'https://newco-apim-test.azure-api.net',
+        clientName: 'Movin',
+        apiKey: hasNewSubscriptionKey ? nextSubscriptionKey : '',
+        clientId: nextClientId || '',
+        username: '',
+        password: hasNewClientSecret ? nextClientSecret : '',
+        webhookSecret: '',
+        metadata: {
+          tenantId: nextTenantId || '',
+          serverId: nextServerId || '',
+          accountNumber: nextAccountNumber || '',
+        },
+      })
+    }
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        apiKey: courier_credentials.apiKey,
+        clientId: courier_credentials.clientId,
+        password: courier_credentials.password,
+        metadata: courier_credentials.metadata,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'movin'))
+      .limit(1)
+
+    const metadata = saved?.metadata && typeof saved.metadata === 'object' ? saved.metadata : {}
+    const savedSubscriptionKey = saved?.apiKey || ''
+
+    res.json({
+      success: true,
+      message: 'Movin credentials updated successfully',
+      data: {
+        provider: 'movin',
+        apiBase: saved?.apiBase || 'https://newco-apim-test.azure-api.net',
+        tenantId: String((metadata as any).tenantId || (metadata as any).tenant_id || '').trim(),
+        serverId: String((metadata as any).serverId || (metadata as any).server_id || '').trim(),
+        clientId: saved?.clientId || '',
+        accountNumber: String(
+          (metadata as any).accountNumber || (metadata as any).account_number || '',
+        ).trim(),
+        hasClientSecret: Boolean((saved?.password || '').trim()),
+        hasSubscriptionKey: Boolean(savedSubscriptionKey.trim()),
+        subscriptionKeyMasked: maskCourierCredential(savedSubscriptionKey),
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update Movin credentials' })
   }
 }
 

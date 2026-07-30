@@ -39,6 +39,7 @@ import {
   useUpdateDtdcCredentials,
   useUpdateEkartCredentials,
   useUpdateInnofulfillCredentials,
+  useUpdateMovinCredentials,
   useUpdateXpressbeesAwbRange,
   useUpdateXpressbeesCredentials,
 } from 'hooks/useCouriers'
@@ -71,6 +72,7 @@ const CourierCredentials = () => {
   const updateDtdc = useUpdateDtdcCredentials()
   const updateEkart = useUpdateEkartCredentials()
   const updateInnofulfill = useUpdateInnofulfillCredentials()
+  const updateMovin = useUpdateMovinCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
   const updateXpressbeesAwbRange = useUpdateXpressbeesAwbRange()
 
@@ -209,6 +211,15 @@ const CourierCredentials = () => {
     apiKey: '',
     trackingToken: '',
   })
+  const [movinForm, setMovinForm] = useState({
+    apiBase: 'https://newco-apim-test.azure-api.net',
+    tenantId: '',
+    serverId: '',
+    clientId: '',
+    clientSecret: '',
+    subscriptionKey: '',
+    accountNumber: '',
+  })
   const [xpressbeesForm, setXpressbeesForm] = useState({
     apiBase: '',
     username: '',
@@ -285,6 +296,17 @@ const CourierCredentials = () => {
         pickupVendorCode: data.dtdc.pickupVendorCode || '',
         apiKey: '',
         trackingToken: '',
+      })
+    }
+    if (data?.movin) {
+      setMovinForm({
+        apiBase: data.movin.apiBase || 'https://newco-apim-test.azure-api.net',
+        tenantId: data.movin.tenantId || '',
+        serverId: data.movin.serverId || '',
+        clientId: data.movin.clientId || '',
+        clientSecret: '',
+        subscriptionKey: '',
+        accountNumber: data.movin.accountNumber || '',
       })
     }
     if (data?.xpressbees) {
@@ -1096,6 +1118,37 @@ const CourierCredentials = () => {
     )
   }
 
+  const handleSaveMovin = () => {
+    updateMovin.mutate(
+      {
+        apiBase: movinForm.apiBase,
+        tenantId: movinForm.tenantId,
+        serverId: movinForm.serverId,
+        clientId: movinForm.clientId,
+        accountNumber: movinForm.accountNumber,
+        ...(movinForm.clientSecret ? { clientSecret: movinForm.clientSecret } : {}),
+        ...(movinForm.subscriptionKey ? { subscriptionKey: movinForm.subscriptionKey } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Movin credentials updated', status: 'success' })
+          setMovinForm((prev) => ({
+            ...prev,
+            clientSecret: '',
+            subscriptionKey: '',
+          }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update Movin credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSaveXpressbees = () => {
     updateXpressbees.mutate(
       {
@@ -1434,6 +1487,165 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Send LTL Password Reset
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">Movin B2B</Text>
+              <Badge
+                colorScheme={
+                  data?.movin?.apiBase &&
+                  data?.movin?.tenantId &&
+                  data?.movin?.serverId &&
+                  data?.movin?.clientId &&
+                  data?.movin?.accountNumber &&
+                  data?.movin?.hasClientSecret &&
+                  data?.movin?.hasSubscriptionKey
+                    ? 'green'
+                    : 'orange'
+                }
+              >
+                {data?.movin?.apiBase &&
+                data?.movin?.tenantId &&
+                data?.movin?.serverId &&
+                data?.movin?.clientId &&
+                data?.movin?.accountNumber &&
+                data?.movin?.hasClientSecret &&
+                data?.movin?.hasSubscriptionKey
+                  ? 'Configured'
+                  : 'Missing credentials'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={movinForm.apiBase}
+                onChange={(e) => setMovinForm((prev) => ({ ...prev, apiBase: e.target.value }))}
+                placeholder="https://newco-apim-test.azure-api.net"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Movin API gateway URL. Use the sandbox or production API Base URL shared in the
+                Movin onboarding document.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Tenant ID</FormLabel>
+              <Input
+                value={movinForm.tenantId}
+                onChange={(e) => setMovinForm((prev) => ({ ...prev, tenantId: e.target.value }))}
+                placeholder="Azure tenant ID from Movin"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Azure OAuth tenant ID used in the token URL:
+                login.microsoftonline.com/tenant-id/oauth2/v2.0/token.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Server ID</FormLabel>
+              <Input
+                value={movinForm.serverId}
+                onChange={(e) => setMovinForm((prev) => ({ ...prev, serverId: e.target.value }))}
+                placeholder="Server/Application ID from Movin"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Movin server/application ID used to build the OAuth scope as server-id/.default.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Client ID</FormLabel>
+              <Input
+                value={movinForm.clientId}
+                onChange={(e) => setMovinForm((prev) => ({ ...prev, clientId: e.target.value }))}
+                placeholder="OAuth client ID shared by Movin"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                OAuth client_id provided by Movin during account onboarding.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Client Secret</FormLabel>
+              <Input
+                type="password"
+                value={movinForm.clientSecret}
+                onChange={(e) =>
+                  setMovinForm((prev) => ({ ...prev, clientSecret: e.target.value }))
+                }
+                placeholder={
+                  data?.movin?.hasClientSecret
+                    ? 'Leave blank to keep existing client secret'
+                    : 'OAuth client secret shared by Movin'
+                }
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                OAuth client_secret used with client_credentials token generation. Leave blank to
+                keep the saved secret.
+              </Text>
+              {data?.movin?.hasClientSecret && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Client secret already configured on Movin.
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Subscription Key</FormLabel>
+              <Input
+                type="password"
+                value={movinForm.subscriptionKey}
+                onChange={(e) =>
+                  setMovinForm((prev) => ({ ...prev, subscriptionKey: e.target.value }))
+                }
+                placeholder={
+                  data?.movin?.subscriptionKeyMasked ||
+                  'Ocp-Apim-Subscription-Key shared by Movin'
+                }
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Movin API subscription key sent to the API gateway for shipment, pickup, tracking,
+                label, EPOD, and EPOP requests.
+              </Text>
+              {!!data?.movin?.subscriptionKeyMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current subscription key: {data.movin.subscriptionKeyMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Movin Account Number</FormLabel>
+              <Input
+                value={movinForm.accountNumber}
+                onChange={(e) =>
+                  setMovinForm((prev) => ({ ...prev, accountNumber: e.target.value }))
+                }
+                placeholder="Account number shared by Movin"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Customer account number allocated by Movin. It is required in shipment and pickup
+                payloads to identify the billing account.
+              </Text>
+            </FormControl>
+
+            <Text fontSize="xs" color="gray.500">
+              Keep the sandbox base URL while testing. Switch to the production base URL only after
+              Movin confirms the production credentials and account number.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveMovin}
+              isLoading={updateMovin.isPending}
+              alignSelf="flex-start"
+            >
+              Save Movin Credentials
             </Button>
           </VStack>
         </Box>

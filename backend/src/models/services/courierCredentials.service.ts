@@ -11,6 +11,7 @@ export type ServiceProviderId =
   | 'shadowfax'
   | 'innofulfill'
   | 'dtdc'
+  | 'movin'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -108,6 +109,16 @@ export type DtdcConfig = {
   pickupVendorCode?: string
 }
 
+export type MovinConfig = {
+  apiBase?: string
+  tenantId?: string
+  serverId?: string
+  clientId?: string
+  clientSecret?: string
+  subscriptionKey?: string
+  accountNumber?: string
+}
+
 export type CourierConfig =
   | DelhiveryConfig
   | SmartshipConfig
@@ -118,6 +129,7 @@ export type CourierConfig =
   | ShadowfaxConfig
   | InnofulfillConfig
   | DtdcConfig
+  | MovinConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -153,6 +165,7 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = [
   'shadowfax',
   'innofulfill',
   'dtdc',
+  'movin',
 ]
 
 const normalize = (val?: string | null) => String(val || '').trim()
@@ -204,6 +217,13 @@ export const isCourierCredentialRowConfigured = (
     return Boolean(apiKey || (username && password && tenantId && userId))
   }
   if (normalizedProvider === 'dtdc') return Boolean(apiKey)
+  if (normalizedProvider === 'movin') {
+    const tenantId = metadataValue(row, 'tenantId', 'tenant_id')
+    const serverId = metadataValue(row, 'serverId', 'server_id')
+    const subscriptionKey = metadataValue(row, 'subscriptionKey', 'subscription_key')
+    const accountNumber = metadataValue(row, 'accountNumber', 'account_number')
+    return Boolean(row.apiBase && tenantId && serverId && clientId && password && subscriptionKey && accountNumber)
+  }
   if (normalizedProvider === 'amazon') {
     const accessToken = metadataValue(row, 'accessToken')
     const refreshToken = metadataValue(row, 'refreshToken') || apiKey
@@ -253,6 +273,17 @@ const configuredProvidersFromEnvironment = () => {
   ) providers.add('innofulfill')
   if (normalize(process.env.DTDC_ACCESS_TOKEN) || normalize(process.env.DTDC_API_KEY)) {
     providers.add('dtdc')
+  }
+  if (
+    normalize(process.env.MOVIN_API_BASE) &&
+    normalize(process.env.MOVIN_TENANT_ID) &&
+    normalize(process.env.MOVIN_SERVER_ID) &&
+    normalize(process.env.MOVIN_CLIENT_ID) &&
+    normalize(process.env.MOVIN_CLIENT_SECRET) &&
+    normalize(process.env.MOVIN_SUBSCRIPTION_KEY) &&
+    normalize(process.env.MOVIN_ACCOUNT_NUMBER)
+  ) {
+    providers.add('movin')
   }
   return providers
 }
@@ -359,6 +390,21 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       hubCode: normalize((metadata.hubCode as string) || (metadata.hub_code as string) || ''),
       pickupVendorCode: normalize(
         (metadata.pickupVendorCode as string) || (metadata.pickup_vendor_code as string) || '',
+      ),
+    }
+    return cfg
+  }
+
+  if (provider === 'movin') {
+    const cfg: MovinConfig = {
+      apiBase: normalize(row.apiBase),
+      tenantId: normalize((metadata.tenantId as string) || (metadata.tenant_id as string) || ''),
+      serverId: normalize((metadata.serverId as string) || (metadata.server_id as string) || ''),
+      clientId: normalize(row.clientId),
+      clientSecret: normalize(row.password),
+      subscriptionKey: normalize(row.apiKey),
+      accountNumber: normalize(
+        (metadata.accountNumber as string) || (metadata.account_number as string) || '',
       ),
     }
     return cfg
