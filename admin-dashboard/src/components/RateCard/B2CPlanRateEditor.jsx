@@ -112,9 +112,31 @@ const buildInitialState = (zones, existing) => {
       ),
     };
   });
+  const rtoSlabCount = Math.max(
+    1,
+    ...zones.map(
+      (zone) => existing?.zone_slabs?.[zone.name]?.rto?.length || 0
+    )
+  );
+  const rtoSlabs = Array.from({ length: rtoSlabCount }, (_, index) => {
+    const sample = zones
+      .map((zone) => existing?.zone_slabs?.[zone.name]?.rto?.[index])
+      .find(Boolean);
+    return {
+      minWeight: sample?.weight_from ?? "",
+      maxWeight: sample?.weight_to ?? "",
+      rates: Object.fromEntries(
+        zones.map((zone) => [
+          zone.code,
+          existing?.zone_slabs?.[zone.name]?.rto?.[index]?.rate ?? "",
+        ])
+      ),
+    };
+  });
   const config = existing?.b2c_config || {};
   return {
     slabs,
+    rtoSlabs,
     additions:
       Array.isArray(config.additionRules) && config.additionRules.length
         ? config.additionRules
@@ -150,6 +172,17 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
           : slab
       ),
     }));
+  const updateRtoSlab = (index, field, value, zoneCode) =>
+    setState((current) => ({
+      ...current,
+      rtoSlabs: current.rtoSlabs.map((slab, slabIndex) =>
+        slabIndex === index
+          ? zoneCode
+            ? { ...slab, rates: { ...slab.rates, [zoneCode]: value } }
+            : { ...slab, [field]: value }
+          : slab
+      ),
+    }));
   const updateAddition = (index, field, value, zoneCode) =>
     setState((current) => ({
       ...current,
@@ -173,10 +206,24 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
           weight_to: slab.maxWeight || null,
           rate: slab.rates[zone.code],
         }));
-      zoneSlabs[zone.name] = { forward: slabs };
-      rates[zone.name] = { forward: slabs[0]?.rate ?? "" };
+      const rtoSlabs = state.rtoSlabs
+        .filter((slab) => slab.rates[zone.code] !== "")
+        .map((slab) => ({
+          weight_from: slab.minWeight,
+          weight_to: slab.maxWeight || null,
+          rate: slab.rates[zone.code],
+        }));
+      zoneSlabs[zone.name] = { forward: slabs, rto: rtoSlabs };
+      rates[zone.name] = {
+        forward: slabs[0]?.rate ?? "",
+        rto: rtoSlabs[0]?.rate ?? "",
+      };
     });
-    if (!Object.values(zoneSlabs).some((entry) => entry.forward.length)) {
+    if (
+      !Object.values(zoneSlabs).some(
+        (entry) => entry.forward.length || entry.rto.length
+      )
+    ) {
       toast({ title: "Add at least one zone rate", status: "warning" });
       return;
     }
@@ -273,7 +320,7 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
               }))
             }
           >
-            Add New
+            Add Forward Row
           </Button>
           <Button
             size="sm"
@@ -369,6 +416,102 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
                       setState((current) => ({
                         ...current,
                         slabs: current.slabs.filter(
+                          (_, itemIndex) => itemIndex !== index
+                        ),
+                      }))
+                    }
+                  >
+                    Delete
+                  </Button>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </TableContainer>
+
+      <Flex justify="space-between" align="center" mt={6} mb={3} gap={3} wrap="wrap">
+        <Box>
+          <Text fontWeight="700" fontSize="sm">
+            RTO Charge Slabs
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            Add return-to-origin charges in the same slab format as forward rates.
+          </Text>
+        </Box>
+        <Button
+          size="xs"
+          variant="outline"
+          colorScheme="purple"
+          leftIcon={<AddIcon />}
+          onClick={() =>
+            setState((current) => ({
+              ...current,
+              rtoSlabs: [...current.rtoSlabs, blankSlab(zones)],
+            }))
+          }
+        >
+          Add RTO Row
+        </Button>
+      </Flex>
+      <TableContainer border="1px solid" borderColor="gray.100">
+        <Table size="sm">
+          <Thead>
+            <Tr>
+              <Th>Min Weight(kg)</Th>
+              <Th>Max Weight(kg)</Th>
+              {zones.map((zone) => (
+                <Th key={zone.id || zone.code}>
+                  <ZoneHeading zone={zone} />
+                </Th>
+              ))}
+              <Th>Action</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {state.rtoSlabs.map((slab, index) => (
+              <Tr key={index}>
+                <Td>
+                  <Input
+                    size="sm"
+                    type="number"
+                    value={slab.minWeight}
+                    onChange={(event) =>
+                      updateRtoSlab(index, "minWeight", event.target.value)
+                    }
+                  />
+                </Td>
+                <Td>
+                  <Input
+                    size="sm"
+                    type="number"
+                    value={slab.maxWeight}
+                    onChange={(event) =>
+                      updateRtoSlab(index, "maxWeight", event.target.value)
+                    }
+                  />
+                </Td>
+                {zones.map((zone) => (
+                  <Td key={zone.code}>
+                    <Input
+                      size="sm"
+                      type="number"
+                      value={slab.rates[zone.code]}
+                      onChange={(event) =>
+                        updateRtoSlab(index, null, event.target.value, zone.code)
+                      }
+                    />
+                  </Td>
+                ))}
+                <Td>
+                  <Button
+                    size="xs"
+                    variant="link"
+                    colorScheme="red"
+                    onClick={() =>
+                      setState((current) => ({
+                        ...current,
+                        rtoSlabs: current.rtoSlabs.filter(
                           (_, itemIndex) => itemIndex !== index
                         ),
                       }))
