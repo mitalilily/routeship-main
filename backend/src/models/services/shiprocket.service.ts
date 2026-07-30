@@ -113,6 +113,7 @@ import { DelhiveryService } from './couriers/delhivery.service'
 import { DtdcService } from './couriers/dtdc.service'
 import { EkartService } from './couriers/ekart.service'
 import { InnofulfillCourierService } from './couriers/innofulfill.service'
+import { MovinService, normalizeMovinServiceType } from './couriers/movin.service'
 import { ShadowfaxService } from './couriers/shadowfax.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
@@ -6005,7 +6006,9 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         if (!courierRow) continue
         const integrationType = rate.serviceProvider?.toLowerCase() || 'unknown'
         const supportsLiveBooking =
-          integrationType === 'shadowfax' || integrationType === 'delhivery'
+          integrationType === 'shadowfax' ||
+          integrationType === 'delhivery' ||
+          integrationType === 'movin'
 
         courierMap.set(rate.courierId, {
           id: courierRow.id,
@@ -6021,7 +6024,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           can_book: supportsLiveBooking,
           booking_blocked_reason: supportsLiveBooking
             ? null
-            : 'B2B booking is currently available for Delhivery and Shadowfax only. Configure other providers for pricing, but use Delhivery or Shadowfax to book.',
+            : 'B2B booking is currently available for Delhivery, Shadowfax, and Movin only. Configure other providers for pricing, but use a supported courier to book.',
           provider_serviceability:
             integrationType === 'shadowfax'
               ? {
@@ -6029,6 +6032,12 @@ export const fetchAvailableCouriersWithRatesB2B = async (
                   service_mode: requestedShadowfaxService,
                   shipping_mode: requestedShadowfaxService,
                 }
+              : integrationType === 'movin'
+                ? {
+                    mode: 'surface',
+                    service_mode: normalizeMovinServiceType(courierRow.name),
+                    shipping_mode: normalizeMovinServiceType(courierRow.name),
+                  }
               : null,
           courier_option_key: makeCourierIdentityKey({
             id: courierRow.id,
@@ -10164,10 +10173,10 @@ export const createB2BShipmentService = async (
     pickupDetails = normalizeJsonValue(params.pickup) ?? pickupDetails
   }
 
-  if (!['shadowfax', 'delhivery'].includes(effectiveIntegrationType)) {
+  if (!['shadowfax', 'delhivery', 'movin'].includes(effectiveIntegrationType)) {
     throw new HttpError(
       400,
-      'B2B shipment booking is currently implemented for Delhivery and Shadowfax only.',
+      'B2B shipment booking is currently implemented for Delhivery, Shadowfax, and Movin only.',
     )
   }
 
@@ -10351,7 +10360,9 @@ export const createB2BShipmentService = async (
           ? normalizeShadowfaxForwardModeValue(params.shadowfax_forward_mode || 'marketplace')
           : effectiveIntegrationType === 'delhivery'
             ? 'ltl'
-            : null,
+            : effectiveIntegrationType === 'movin'
+              ? 'b2b'
+              : null,
       provider_service:
         effectiveIntegrationType === 'shadowfax'
           ? normalizeShadowfaxServiceModeValue(
@@ -10362,7 +10373,14 @@ export const createB2BShipmentService = async (
             )
           : effectiveIntegrationType === 'delhivery'
             ? normalizedFreightMode
-            : null,
+            : effectiveIntegrationType === 'movin'
+              ? normalizeMovinServiceType(
+                  (params as any).provider_service,
+                  params.shipping_mode,
+                  params.transport_speed,
+                  params.courier_partner,
+                )
+              : null,
       provider_last_status: 'pending',
       created_at: new Date(),
       updated_at: new Date(),
@@ -11115,6 +11133,190 @@ export const createB2BShipmentService = async (
           provider_meta: {
             ...baseProviderMeta,
             error: error?.message || 'Delhivery B2B shipment creation failed',
+          },
+          updated_at: new Date(),
+        } as any)
+        .where(eq(b2b_orders.id, pendingOrder.id))
+
+      throw error
+    }
+  }
+
+  if (effectiveIntegrationType === 'movin') {
+    const movinServiceType = normalizeMovinServiceType(
+      (params as any).provider_service,
+      params.shipping_mode,
+      params.transport_speed,
+      params.courier_partner,
+    )
+    let shipmentRequest: Record<string, any> | null = null
+    let shipmentResponse: any = null
+    let pickupRequest: Record<string, any> | null = null
+    let pickupResponse: any = null
+    let pickupWarning: string | null = null
+    let labelResponse: any = null
+
+    try {
+      const movin = new MovinService()
+      shipmentRequest = await movin.buildB2BShipmentPayload(payload, {
+        boxes,
+        shipmentValue,
+        codAmount,
+        serviceType: movinServiceType,
+        communicationEmail:
+          resolvedPickupWarehouse?.contactEmail ||
+          (payload.consignee as any)?.email ||
+          'support@routeship.in',
+      })
+      shipmentResponse = await movin.createShipment(shipmentRequest)
+      const shipmentUniqueId = String(
+        shipmentRequest?.payload?.[0]?.shipment?.shipment_unique_id || normalizedOrderNumber,
+      )
+      const shipmentResult = movin.extractShipmentResult(shipmentResponse, shipmentUniqueId)
+      const primaryAwb = shipmentResult.parentShipmentNumber || shipmentResult.packageNumbers[0] || ''
+
+      if (!primaryAwb) {
+        throw new HttpError(502, 'Movin shipment creation did not return a shipment number.')
+      }
+
+      try {
+        labelResponse = await movin.getLabel({
+          shipment_number: primaryAwb,
+          label_type: 'A4',
+        })
+      } catch (labelError: any) {
+        labelResponse = {
+          status: 'failed',
+          error: labelError?.message || 'Movin label generation failed',
+        }
+      }
+
+      try {
+        pickupRequest = await movin.buildPickupPayload(payload, movinServiceType)
+        pickupResponse = await movin.createPickup(pickupRequest)
+      } catch (pickupError: any) {
+        pickupWarning = pickupError?.message || 'Movin pickup creation failed after shipment creation.'
+      }
+
+      const labelUrl =
+        typeof labelResponse?.response === 'string'
+          ? labelResponse.response
+          : typeof labelResponse?.label === 'string'
+            ? labelResponse.label
+            : typeof labelResponse?.url === 'string'
+              ? labelResponse.url
+              : null
+      const pickupRequestNumber = String(
+        pickupResponse?.data?.pickup_request_number ||
+          pickupResponse?.pickup_request_number ||
+          pickupResponse?.response?.pickup_request_number ||
+          '',
+      ).trim()
+      const stableStatus = pickupWarning ? 'manifested' : 'pickup_requested'
+      const updatedPickupDetails = {
+        ...(typeof pickupDetails === 'object' && pickupDetails ? pickupDetails : {}),
+        pickup_date: pickupRequest?.pickup_date || normalizedPickupDate || null,
+        pickup_time: pickupRequest?.pickup_time_start || normalizedPickupTime || null,
+        pickup_request_number: pickupRequestNumber || null,
+      }
+
+      await db
+        .update(b2b_orders)
+        .set({
+          integration_type: 'movin',
+          order_status: stableStatus,
+          order_id: primaryAwb,
+          shipment_id: primaryAwb,
+          awb_number: primaryAwb,
+          courier_partner: params.courier_partner || 'Movin',
+          courier_id: courierId ?? null,
+          label: labelUrl ? labelUrl.slice(0, 500) : null,
+          manifest: pickupRequestNumber || primaryAwb,
+          courier_cost: params?.courier_cost ?? chargesBreakdown?.total ?? null,
+          weight: package_weight,
+          length: package_length || null,
+          breadth: package_breadth || null,
+          height: package_height || null,
+          volumetric_weight: Number(totalVolumetricWeight || 0) || null,
+          charged_weight: package_weight,
+          pickup_details: updatedPickupDetails as any,
+          provider_reference: primaryAwb,
+          provider_request_id: pickupRequestNumber || primaryAwb,
+          provider_mode: 'b2b',
+          provider_service: movinServiceType,
+          provider_last_status: stableStatus,
+          provider_meta: {
+            ...baseProviderMeta,
+            service_type: movinServiceType,
+            shipment_request: shipmentRequest,
+            shipment_response: shipmentResponse,
+            shipment_result: shipmentResult,
+            label_response: labelResponse,
+            pickup_request: pickupWarning
+              ? {
+                  status: 'failed',
+                  error: pickupWarning,
+                  request: pickupRequest,
+                }
+              : {
+                  status: 'accepted',
+                  request: pickupRequest,
+                  response: pickupResponse,
+                },
+          },
+          updated_at: new Date(),
+        } as any)
+        .where(eq(b2b_orders.id, pendingOrder.id))
+
+      sendWebhookEvent(userId, 'order.created', {
+        order_id: pendingOrder.id,
+        order_number: normalizedOrderNumber,
+        awb_number: primaryAwb,
+        status: stableStatus,
+        courier_partner: params.courier_partner || 'Movin',
+        courier_id: courierId ?? null,
+        shipment_id: primaryAwb,
+        integration_type: 'movin',
+        payment_type: params.payment_type,
+        created_at: new Date().toISOString(),
+        order_type: 'b2b',
+      }).catch((err) => {
+        console.error('Failed to send B2B Movin order.created webhook:', err)
+      })
+
+      return {
+        order: {
+          id: pendingOrder.id,
+          order_number: normalizedOrderNumber,
+          awb_number: primaryAwb,
+          provider_reference: primaryAwb,
+          provider_request_id: pickupRequestNumber || primaryAwb,
+        },
+        shipment: {
+          shipment: shipmentResponse,
+          shipment_result: shipmentResult,
+          label: labelResponse,
+          pickup_request: pickupResponse,
+          pickup_request_error: pickupWarning || undefined,
+        },
+      }
+    } catch (error: any) {
+      await db
+        .update(b2b_orders)
+        .set({
+          integration_type: 'movin',
+          order_status: 'failed',
+          provider_last_status: 'booking_failed',
+          provider_mode: 'b2b',
+          provider_service: movinServiceType,
+          provider_meta: {
+            ...baseProviderMeta,
+            service_type: movinServiceType,
+            ...(shipmentRequest ? { shipment_request: shipmentRequest } : {}),
+            ...(shipmentResponse ? { shipment_response: shipmentResponse } : {}),
+            ...(pickupRequest ? { pickup_request: pickupRequest } : {}),
+            ...(pickupResponse ? { pickup_response: pickupResponse } : {}),
+            error: error?.message || 'Movin B2B shipment creation failed',
           },
           updated_at: new Date(),
         } as any)
