@@ -24,13 +24,16 @@ import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
 import { useImportShippingRates, useShippingRates } from 'hooks/useCouriers'
 import { useZones } from 'hooks/useZones'
-import { fetchAllCouriers } from 'services/courier.service'
+import { fetchAllCouriersList } from 'services/courier.service'
 import { PlansService } from 'services/plan.service'
 
 const RateCard = () => {
   const toast = useToast()
   const { zones } = useZones()
-  const { data: courierList } = useQuery({ queryKey: ['all-couriers'], queryFn: fetchAllCouriers })
+  const { data: courierList = [] } = useQuery({
+    queryKey: ['all-couriers', { businessType: 'b2c' }],
+    queryFn: () => fetchAllCouriersList({ businessType: 'b2c' }),
+  })
   const { data: plans = [], isLoading: plansLoading } = useQuery({
     queryKey: ['plans', { businessType: 'b2c', status: 'active' }],
     queryFn: () => PlansService.getPlans({ businessType: 'b2c', status: 'active' }),
@@ -55,6 +58,11 @@ const RateCard = () => {
 
   const openEditModal = (row) => {
     setSelectedRate(row)
+    setModalOpen(true)
+  }
+
+  const openAddModal = () => {
+    setSelectedRate(null)
     setModalOpen(true)
   }
 
@@ -86,7 +94,9 @@ const RateCard = () => {
     const normalize = (s) => s?.trim().toLowerCase().replace(/\s+/g, ' ').replace(/_/g, ' ') ?? ''
 
     const rows = allCouriers.map((courier) => {
-      const row = existingData?.find((r) => normalize(r.courier_name) === normalize(courier)) || {}
+      const courierName = courier?.name || courier
+      const row =
+        existingData?.find((r) => normalize(r.courier_name) === normalize(courierName)) || {}
 
       const zoneValues = allZones.flatMap((zone) => {
         const zoneRates = row.rates?.[zone.name] || {}
@@ -98,7 +108,7 @@ const RateCard = () => {
 
       return [
         row?.id,
-        courier,
+        courierName,
         ...zoneValues,
         row.cod_charges != null ? `₹${row.cod_charges}` : '',
         row.cod_percent != null ? `${row.cod_percent}%` : '',
@@ -271,7 +281,11 @@ const RateCard = () => {
         key: 'courier_name',
         label: 'Courier',
         type: 'multiselect',
-        options: courierList?.map((name) => ({ label: name, value: name })) || [],
+        options:
+          courierList?.map((courier) => ({
+            label: courier?.name || courier,
+            value: courier?.name || courier,
+          })) || [],
       },
       {
         key: 'mode',
@@ -313,6 +327,9 @@ const RateCard = () => {
       <Grid templateColumns="3fr 2fr" width="100%" gap={4} mb={4} alignItems="center">
         <TableFilters filters={filterOptions} values={filters} onApply={setFilters} />
         <Flex justify="flex-end" gap={2}>
+          <Button size="sm" colorScheme="green" onClick={openAddModal}>
+            Add Rate Card
+          </Button>
           <Button
             size="sm"
             colorScheme="pink"
@@ -357,6 +374,10 @@ const RateCard = () => {
         onClose={() => setModalOpen(false)}
         data={selectedRate}
         zones={zones}
+        businessType="b2c"
+        planId={filters.planId}
+        couriers={courierList ?? []}
+        existingRates={data ?? []}
         onSave={handleSaveRates}
       />
 

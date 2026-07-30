@@ -465,7 +465,6 @@ const getStoredRtoCharge = (order: any) =>
 
 async function resolveRtoCharge(order: any): Promise<number> {
   const storedCharge = getStoredRtoCharge(order)
-  if (storedCharge > 0) return storedCharge
 
   const courierId = Number(order.courier_id ?? 0)
   const originPincode = order.pickup_details?.pincode
@@ -485,7 +484,7 @@ async function resolveRtoCharge(order: any): Promise<number> {
     breadthCm <= 0 ||
     heightCm <= 0
   ) {
-    return 0
+    return storedCharge
   }
 
   try {
@@ -504,10 +503,11 @@ async function resolveRtoCharge(order: any): Promise<number> {
       isReverse: true,
     })
 
-    return Number(rate.freight ?? 0) || 0
+    const rtoRate = Number(rate.freight ?? 0) || 0
+    return rtoRate > 0 ? rtoRate : storedCharge
   } catch (err) {
     console.error(`⚠️ Failed to resolve RTO rate from plan table for ${order.order_number}:`, err)
-    return 0
+    return storedCharge
   }
 }
 

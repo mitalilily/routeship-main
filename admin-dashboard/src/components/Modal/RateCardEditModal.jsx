@@ -41,6 +41,24 @@ const B2C_CHARGE_FIELDS = [
   'Critical Delivery Charge Per Kg',
 ]
 
+const B2C_CONFIG_FIELD_MAP = {
+  'FSC Percentage': 'fscPercentage',
+  'Minimum COD Charge': 'minimumCodCharge',
+  'COD Charge Percentage': 'codChargePercentage',
+  'To Pay Charge': 'toPayCharge',
+  'Minimum RAS Charge': 'minimumRasCharge',
+  'RAS Charge Per Kg': 'rasChargePerKg',
+  'Minimum Critical Pickup Charge': 'minimumCriticalPickupCharge',
+  'Critical Pickup Charge Per Kg': 'criticalPickupChargePerKg',
+  'Minimum Critical Delivery Charge': 'minimumCriticalDeliveryCharge',
+  'Critical Delivery Charge Per Kg': 'criticalDeliveryChargePerKg',
+}
+
+const buildB2CAdditionalChargeForm = (config = {}) =>
+  Object.fromEntries(
+    B2C_CHARGE_FIELDS.map((label) => [label, config?.[B2C_CONFIG_FIELD_MAP[label]] ?? '']),
+  )
+
 export const RateCardEditModal = ({
   isOpen,
   onClose,
@@ -85,9 +103,13 @@ export const RateCardEditModal = ({
       other_charges: data?.other_charges ?? '',
       mode: data?.mode ?? '',
       zone_slabs: {},
-      use_shipping_charge_api: Boolean(data?.use_shipping_charge_api),
-      additional_charges: data?.additional_charges || {},
-      addition_rules: data?.addition_rules || [{ rule_type: 'Additional Step', from_kg: '0.50', step_kg: '0.50', label: 'Additional 500 GM' }],
+      use_shipping_charge_api: Boolean(
+        data?.b2c_config?.useShippingChargeApi ?? data?.use_shipping_charge_api,
+      ),
+      additional_charges:
+        data?.additional_charges || buildB2CAdditionalChargeForm(data?.b2c_config || {}),
+      addition_rules: data?.b2c_config?.additionRules ||
+        data?.addition_rules || [{ rule_type: 'Additional Step', from_kg: '0.50', step_kg: '0.50', label: 'Additional 500 GM' }],
     }
 
     zones.forEach((zone) => {
@@ -220,6 +242,26 @@ export const RateCardEditModal = ({
       use_shipping_charge_api: form.use_shipping_charge_api,
       additional_charges: form.additional_charges,
       addition_rules: form.addition_rules,
+      b2c_config: isB2C
+        ? {
+            useShippingChargeApi: form.use_shipping_charge_api,
+            fscPercentage: form.additional_charges?.['FSC Percentage'],
+            minimumCodCharge: form.additional_charges?.['Minimum COD Charge'],
+            codChargePercentage: form.additional_charges?.['COD Charge Percentage'],
+            toPayCharge: form.additional_charges?.['To Pay Charge'],
+            minimumRasCharge: form.additional_charges?.['Minimum RAS Charge'],
+            rasChargePerKg: form.additional_charges?.['RAS Charge Per Kg'],
+            minimumCriticalPickupCharge:
+              form.additional_charges?.['Minimum Critical Pickup Charge'],
+            criticalPickupChargePerKg:
+              form.additional_charges?.['Critical Pickup Charge Per Kg'],
+            minimumCriticalDeliveryCharge:
+              form.additional_charges?.['Minimum Critical Delivery Charge'],
+            criticalDeliveryChargePerKg:
+              form.additional_charges?.['Critical Delivery Charge Per Kg'],
+            additionRules: form.addition_rules,
+          }
+        : undefined,
       businessType,
     }
 
