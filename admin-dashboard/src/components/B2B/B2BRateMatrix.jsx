@@ -310,13 +310,44 @@ const B2BRateMatrix = ({
     setImportFile(file)
   }
 
-  // Sample CSV headers for template download
-  // Use first zone if available, otherwise use placeholder
-  const sampleCSVHeaders = [
+  const fallbackSampleZones = [
+    { code: 'N1', name: 'North One' },
+    { code: 'N2', name: 'North Two' },
+    { code: 'S1', name: 'South One' },
+  ]
+  const sampleZones = zones.length >= 2 ? zones.slice(0, 3) : fallbackSampleZones
+  const emptyTemplateRows = [
     {
-      origin_zone_code: zones.length > 0 ? zones[0].code : 'N1',
-      destination_zone_code: zones.length > 0 ? zones[0].code : 'N1',
-      rate_per_kg: '100',
+      origin_zone_code: sampleZones[0]?.code || 'N1',
+      destination_zone_code: sampleZones[1]?.code || 'N2',
+      rate_per_kg: '',
+    },
+    {
+      origin_zone_code: sampleZones[1]?.code || 'N2',
+      destination_zone_code: sampleZones[2]?.code || 'S1',
+      rate_per_kg: '',
+    },
+    {
+      origin_zone_code: sampleZones[2]?.code || 'S1',
+      destination_zone_code: sampleZones[0]?.code || 'N1',
+      rate_per_kg: '',
+    },
+  ]
+  const filledSampleRows = [
+    {
+      origin_zone_code: sampleZones[0]?.code || 'N1',
+      destination_zone_code: sampleZones[1]?.code || 'N2',
+      rate_per_kg: '18.50',
+    },
+    {
+      origin_zone_code: sampleZones[1]?.code || 'N2',
+      destination_zone_code: sampleZones[2]?.code || 'S1',
+      rate_per_kg: '24.75',
+    },
+    {
+      origin_zone_code: sampleZones[2]?.code || 'S1',
+      destination_zone_code: sampleZones[0]?.code || 'N1',
+      rate_per_kg: '21.00',
     },
   ]
 
@@ -569,14 +600,24 @@ const B2BRateMatrix = ({
         title="Import B2B Rates from CSV"
         size="xl"
         action={
-          <DownloadSampleCSVButton
-            headers={sampleCSVHeaders}
-            filename={`b2b_rates_template_${new Date().toISOString().split('T')[0]}.csv`}
-            buttonText="Download Template"
-            size="sm"
-            colorScheme="blue"
-            tooltip="Download a sample CSV file with the correct format"
-          />
+          <HStack spacing={2}>
+            <DownloadSampleCSVButton
+              headers={emptyTemplateRows}
+              filename={`b2b_rate_card_template_${new Date().toISOString().split('T')[0]}.csv`}
+              buttonText="Blank Template"
+              size="sm"
+              colorScheme="blue"
+              tooltip="Download a blank B2B rate-card CSV template"
+            />
+            <DownloadSampleCSVButton
+              headers={filledSampleRows}
+              filename={`b2b_rate_card_filled_sample_${new Date().toISOString().split('T')[0]}.csv`}
+              buttonText="Filled Sample"
+              size="sm"
+              colorScheme="green"
+              tooltip="Download a filled test CSV with example rates"
+            />
+          </HStack>
         }
         footer={
           <HStack spacing={3}>
@@ -604,14 +645,33 @@ const B2BRateMatrix = ({
         <VStack spacing={4} align="stretch">
           <Box p={4} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
             <Text fontSize="sm" fontWeight="semibold" color="blue.700" mb={2}>
-              CSV Format Requirements:
+              Simple CSV Format
             </Text>
             <VStack align="stretch" spacing={1} fontSize="xs" color="blue.600">
+              <Text>Required columns: origin_zone_code, destination_zone_code, rate_per_kg</Text>
+              <Text>Use the exact B2B zone code shown in the matrix header, for example N1, N2, S1.</Text>
+              <Text>Enter only numbers in rate_per_kg, for example 18.50. Do not add Rs or currency symbols.</Text>
+              <Text>Each row updates one origin to destination zone pair for the selected plan and courier.</Text>
+            </VStack>
+            <VStack display="none">
               <Text>• Columns: Origin Zone, Destination Zone, Rate Per Kg</Text>
               <Text>• Zone names must match existing zone names exactly</Text>
               <Text>• Rate Per Kg should be a number only (no currency symbols)</Text>
               <Text>• Empty cells will be treated as null/not set</Text>
             </VStack>
+          </Box>
+
+          <Box p={3} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.200">
+            <Text fontSize="xs" color="gray.600" fontWeight="semibold" mb={1}>
+              Example
+            </Text>
+            <Text fontSize="xs" color="gray.600" fontFamily="mono">
+              origin_zone_code,destination_zone_code,rate_per_kg
+            </Text>
+            <Text fontSize="xs" color="gray.600" fontFamily="mono">
+              {filledSampleRows[0].origin_zone_code},{filledSampleRows[0].destination_zone_code},
+              {filledSampleRows[0].rate_per_kg}
+            </Text>
           </Box>
 
           <Box

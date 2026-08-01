@@ -32,6 +32,7 @@ import B2BRateMatrix from '../../components/B2B/B2BRateMatrix'
 import B2BSurchargeManagement from '../../components/B2B/B2BSurchargeManagement'
 import HolidayCalendar from '../../components/B2B/HolidayCalendar'
 import { b2bAdminService } from '../../services/b2bAdmin.service'
+import ZonesManagement from '../Zones/ZonesManagement'
 
 const B2BRateCardManagement = () => {
   const bgColor = useColorModeValue('white', 'gray.800')
@@ -142,6 +143,17 @@ const B2BRateCardManagement = () => {
                   fontWeight="medium"
                 >
                   <Icon as={IconFileSpreadsheet} mr={2} boxSize={4} />
+                  Zones
+                </Tab>
+                <Tab
+                  _selected={{
+                    color: 'blue.600',
+                    borderColor: 'blue.500',
+                    borderBottomColor: 'transparent',
+                  }}
+                  fontWeight="medium"
+                >
+                  <Icon as={IconReceipt} mr={2} boxSize={4} />
                   Rate Matrix
                 </Tab>
                 <Tab
@@ -192,6 +204,9 @@ const B2BRateCardManagement = () => {
             </Box>
 
             <TabPanels>
+              <TabPanel px={6} py={6}>
+                <ZonesManagement defaultBusinessType="B2B" />
+              </TabPanel>
               <TabPanel px={6} py={6}>
                 <Box mb={4}>
                   <Text fontSize="sm" color="gray.600">

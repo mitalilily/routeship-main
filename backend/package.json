@@ -38,6 +38,7 @@
     "seed:international-fedex-basic": "tsx src/scripts/seedInternationalFedexBasicRates.ts",
     "check:rate-card-features": "tsx src/scripts/checkRateCardFeatures.ts",
     "seed:locations": "tsx src/scripts/seedLocations.ts locations.xlsx",
+    "seed:b2b-zones": "tsx src/scripts/seedB2BZones.ts",
     "import:b2b-oda": "tsx src/scripts/importB2BOdaPincodes.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",

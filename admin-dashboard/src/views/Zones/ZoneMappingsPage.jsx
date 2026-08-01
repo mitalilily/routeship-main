@@ -520,6 +520,11 @@ const ZoneMappingsPage = () => {
       {/* Mappings Table */}
       <GenericTable
         title="Mappings"
+        titleActions={
+          <Button leftIcon={<EditIcon />} colorScheme="brand" size="sm" onClick={openAddModal}>
+            {isB2B ? 'Add Pincode' : 'Add Mapping'}
+          </Button>
+        }
         page={page}
         sortByComponent={
           <Flex gap={2} align="center">
@@ -600,15 +605,13 @@ const ZoneMappingsPage = () => {
         }
         renderActions={(row) => (
           <Flex gap={2}>
-            {!isB2B && (
-              <IconButton
-                aria-label="Edit"
-                icon={<EditIcon />}
-                size="sm"
-                colorScheme="yellow"
-                onClick={() => openEditModal(row)}
-              />
-            )}
+            <IconButton
+              aria-label="Edit"
+              icon={<EditIcon />}
+              size="sm"
+              colorScheme="yellow"
+              onClick={() => openEditModal(row)}
+            />
             <IconButton
               aria-label="Delete"
               icon={<DeleteIcon />}
@@ -869,11 +872,18 @@ const ZoneMappingsPage = () => {
         </CustomModal>
       )}
 
-      {!isB2B && (
-        <CustomModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title={isEdit ? 'Edit Mapping' : 'Add Mapping'}
+      <CustomModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={
+          isB2B
+            ? isEdit
+              ? 'Edit B2B Pincode Mapping'
+              : 'Add B2B Pincode Mapping'
+            : isEdit
+            ? 'Edit Mapping'
+            : 'Add Mapping'
+        }
           size="xl"
           footer={
             <HStack justify="space-between" w="100%">
@@ -889,9 +899,9 @@ const ZoneMappingsPage = () => {
               <Button
                 colorScheme="blue"
                 onClick={handleSaveMapping}
-                isLoading={createMapping.isPending}
+                isLoading={isEdit ? updateMapping.isPending : createMapping.isPending}
               >
-                {isEdit ? 'Update' : 'Save Mapping'}
+                {isEdit ? 'Update' : isB2B ? 'Save Pincode' : 'Save Mapping'}
               </Button>
             </HStack>
           }
@@ -990,7 +1000,6 @@ const ZoneMappingsPage = () => {
             )}
           </Stack>
         </CustomModal>
-      )}
 
         <CustomModal
           isOpen={isImportModalOpen}

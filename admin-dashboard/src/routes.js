@@ -58,6 +58,7 @@ import AdminWallets from 'views/Wallets/AdminWallets'
 import AdminDisputeManagement from 'views/WeightReconciliation/AdminDisputeManagement'
 import AdminWeightReconciliationDashboard from 'views/WeightReconciliation/AdminWeightReconciliationDashboard'
 import ZoneMappingsPage from 'views/Zones/ZoneMappingsPage'
+import ZonesManagement from 'views/Zones/ZonesManagement'
 
 const HolidayManagement = lazy(() => import('views/B2B/HolidayManagement'))
 const AdditionalChargeMasters = lazy(() => import('views/RateCard/AdditionalChargeMasters'))
@@ -264,6 +265,17 @@ const dashRoutes = [
         component: () => (
           <AdminRoute>
             <ServiceProviders />
+          </AdminRoute>
+        ),
+        layout: '/admin',
+      },
+      {
+        path: '/b2b-zones',
+        name: 'B2B Zones',
+        icon: <IoLocation />,
+        component: () => (
+          <AdminRoute>
+            <ZonesManagement defaultBusinessType="B2B" />
           </AdminRoute>
         ),
         layout: '/admin',
