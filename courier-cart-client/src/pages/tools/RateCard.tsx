@@ -182,41 +182,40 @@ const B2BClientTable = ({
           <CardContent>
             <Stack spacing={1}>
               <Typography variant="h6">{courier.courier_name}</Typography>
-              <Typography variant="body2">Min Weight: {courier.min_weight} kg</Typography>
               <Typography variant="body2">
-                COD: {INR_SYMBOL}
-                {courier.cod_charges ?? '0'} | {courier.cod_percent ?? '0'}%
-              </Typography>
-              <Typography variant="body2">
-                Other: {INR_SYMBOL}
-                {courier.other_charges ?? '0'}
+                Zone-to-zone B2B rates are shown per kg for the assigned plan.
               </Typography>
             </Stack>
 
             <Table size="small" sx={{ mt: 2 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Zone</TableCell>
-                  <TableCell>Forward (Per Kg)</TableCell>
-                  <TableCell>RTO (Per Kg)</TableCell>
-                  <TableCell>Min Weight</TableCell>
+                  <TableCell>Origin \ Destination</TableCell>
+                  {zones.map((zone) => (
+                    <TableCell key={zone.id || zone.code}>{zone.code || zone.name}</TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {zones.map((zone) => {
-                  const rates = courier.rates?.[zone.name] || {}
+                {zones.map((originZone) => {
                   return (
-                    <TableRow key={zone.code}>
-                      <TableCell>{zone.name}</TableCell>
-                      <TableCell>
-                        {INR_SYMBOL}
-                        {rates.forward_per_kg ?? 'NA'}
-                      </TableCell>
-                      <TableCell>
-                        {INR_SYMBOL}
-                        {rates.rto_per_kg ?? 'NA'}
-                      </TableCell>
-                      <TableCell>{rates.min_weight ?? courier.min_weight ?? 'NA'} kg</TableCell>
+                    <TableRow key={originZone.id || originZone.code}>
+                      <TableCell>{originZone.code || originZone.name}</TableCell>
+                      {zones.map((destinationZone) => {
+                        const matrixRates =
+                          (courier.rates as any)?.[originZone.name]?.[destinationZone.name] ||
+                          (courier.rates as any)?.[originZone.code]?.[destinationZone.code] ||
+                          {}
+                        const value = matrixRates.forward_per_kg ?? matrixRates.forward
+
+                        return (
+                          <TableCell key={destinationZone.id || destinationZone.code}>
+                            {value !== undefined && value !== null && value !== 'NA'
+                              ? `${INR_SYMBOL}${value}`
+                              : 'NA'}
+                          </TableCell>
+                        )
+                      })}
                     </TableRow>
                   )
                 })}

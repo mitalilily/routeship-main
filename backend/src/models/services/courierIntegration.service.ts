@@ -5,7 +5,7 @@ import { db } from '../client'
 import { couriers } from '../schema/couriers'
 import { courierSummary } from '../schema/courierSummary'
 import { b2cCourierRateConfigs, shippingRates } from '../schema/shippingRates'
-import { zones } from '../schema/zones'
+import { b2bZoneToZoneRates, zones } from '../schema/zones'
 import { getUserPlanId } from './plan.service'
 import {
   fetchShippingRateSlabs,
@@ -280,10 +280,130 @@ export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
   return result
 }
 
+const getUserB2BShippingRates = async (
+  userId: string,
+  filters: Omit<ShippingRateFilters, 'plan_id'> = {},
+) => {
+  const planId = await getUserPlanId(userId, 'b2b')
+
+  if (!planId) {
+    throw new Error('No active B2B plan found for this user')
+  }
+
+  const configuredProviders = [...(await getConfiguredCourierProviderSet())]
+    .map((provider) => provider.toLowerCase())
+  if (!configuredProviders.length) return []
+
+  const allB2BZones = await db
+    .select()
+    .from(zones)
+    .where(eq(zones.business_type, 'B2B'))
+    .orderBy(asc(zones.code))
+
+  const zoneById = new Map(allB2BZones.map((zone) => [zone.id, zone]))
+  const conditions: any[] = [eq(b2bZoneToZoneRates.plan_id, planId)]
+
+  const rows = await db
+    .select({
+      rate: b2bZoneToZoneRates,
+      courier: couriers,
+    })
+    .from(b2bZoneToZoneRates)
+    .innerJoin(
+      couriers,
+      and(
+        eq(couriers.id, b2bZoneToZoneRates.courier_id),
+        eq(couriers.serviceProvider, b2bZoneToZoneRates.service_provider),
+      ),
+    )
+    .where(and(...conditions))
+    .orderBy(asc(couriers.name), asc(b2bZoneToZoneRates.created_at))
+
+  const filteredRows = rows.filter((row) => {
+    const provider = String(row.rate.service_provider || '').toLowerCase()
+    const courierName = String(row.courier?.name || '').trim()
+    const enabledBusinessTypes = Array.isArray(row.courier?.businessType)
+      ? row.courier.businessType.map((type) => String(type).toLowerCase())
+      : []
+
+    if (!configuredProviders.includes(provider)) return false
+    if (row.courier && row.courier.isEnabled === false) return false
+    if (enabledBusinessTypes.length && !enabledBusinessTypes.includes('b2b')) return false
+    if (filters.courier_name?.length && !filters.courier_name.includes(courierName)) return false
+
+    return true
+  })
+
+  const grouped = new Map<string, any>()
+
+  for (const row of filteredRows) {
+    const originZone = zoneById.get(row.rate.origin_zone_id)
+    const destinationZone = zoneById.get(row.rate.destination_zone_id)
+    if (!originZone || !destinationZone || !row.rate.courier_id) continue
+
+    const provider = String(row.rate.service_provider || '').toLowerCase()
+    const key = `${row.rate.courier_id}_${provider}_${planId}`
+    const courierName = row.courier?.name || `Courier ${row.rate.courier_id}`
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        id: key,
+        courier_id: row.rate.courier_id,
+        courier_name: courierName,
+        service_provider: provider,
+        mode: row.courier?.name || provider,
+        business_type: 'b2b',
+        plan_id: planId,
+        min_weight: 0,
+        cod_charges: 0,
+        cod_percent: 0,
+        other_charges: 0,
+        rates: {},
+      })
+    }
+
+    const groupedRate = grouped.get(key)
+    groupedRate.rates[originZone.name] = groupedRate.rates[originZone.name] || {}
+    groupedRate.rates[originZone.name][destinationZone.name] = {
+      forward_per_kg: Number(row.rate.rate_per_kg),
+      forward: Number(row.rate.rate_per_kg),
+      rto_per_kg: 'NA',
+      min_weight: groupedRate.min_weight,
+      origin_zone_code: originZone.code,
+      destination_zone_code: destinationZone.code,
+    }
+    groupedRate.rates[originZone.code] = groupedRate.rates[originZone.code] || {}
+    groupedRate.rates[originZone.code][destinationZone.code] =
+      groupedRate.rates[originZone.name][destinationZone.name]
+
+    const zoneKeys = [
+      destinationZone.name,
+      destinationZone.code,
+      `Zone ${destinationZone.code}`,
+    ].filter(Boolean)
+
+    for (const zoneKey of zoneKeys) {
+      groupedRate.rates[zoneKey] = groupedRate.rates[zoneKey] || {}
+      groupedRate.rates[zoneKey].forward_per_kg = Number(row.rate.rate_per_kg)
+      groupedRate.rates[zoneKey].forward = Number(row.rate.rate_per_kg)
+      groupedRate.rates[zoneKey].rto_per_kg = groupedRate.rates[zoneKey].rto_per_kg ?? 'NA'
+      groupedRate.rates[zoneKey].min_weight = groupedRate.min_weight
+      groupedRate.rates[zoneKey].origin_zone_code = originZone.code
+      groupedRate.rates[zoneKey].destination_zone_code = destinationZone.code
+    }
+  }
+
+  return Array.from(grouped.values())
+}
+
 export const getUserShippingRates = async (
   userId: string,
   filters: Omit<ShippingRateFilters, 'plan_id'> = {},
 ) => {
+  if (filters.business_type === 'b2b') {
+    return getUserB2BShippingRates(userId, filters)
+  }
+
   const planId = await getUserPlanId(userId, 'b2c')
 
   if (!planId) {
