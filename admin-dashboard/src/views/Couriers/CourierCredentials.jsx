@@ -214,7 +214,7 @@ const CourierCredentials = () => {
     trackingToken: '',
   })
   const [movinForm, setMovinForm] = useState({
-    apiBase: 'https://newco-apim-test.azure-api.net',
+    apiBase: 'https://apim.iristransport.co.in',
     tenantId: '',
     serverId: '',
     clientId: '',
@@ -310,7 +310,7 @@ const CourierCredentials = () => {
     }
     if (data?.movin) {
       setMovinForm({
-        apiBase: data.movin.apiBase || 'https://newco-apim-test.azure-api.net',
+        apiBase: data.movin.apiBase || 'https://apim.iristransport.co.in',
         tenantId: data.movin.tenantId || '',
         serverId: data.movin.serverId || '',
         clientId: data.movin.clientId || '',
@@ -1724,7 +1724,7 @@ const CourierCredentials = () => {
               <Input
                 value={movinForm.apiBase}
                 onChange={(e) => setMovinForm((prev) => ({ ...prev, apiBase: e.target.value }))}
-                placeholder="https://newco-apim-test.azure-api.net"
+                placeholder="https://apim.iristransport.co.in"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Movin API gateway URL. Use the sandbox or production API Base URL shared in the

@@ -3,7 +3,7 @@ import { HttpError } from '../../../utils/classes'
 import { MovinConfig, getEffectiveCourierConfig } from '../courierCredentials.service'
 import type { ShipmentParams } from '../shiprocket.service'
 
-const MOVIN_SANDBOX_BASE_URL = 'https://newco-apim-test.azure-api.net'
+const MOVIN_DEFAULT_BASE_URL = 'https://apim.iristransport.co.in'
 const MOVIN_TOKEN_URL = (tenantId: string) =>
   `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/token`
 
@@ -139,7 +139,7 @@ export class MovinService {
   }
 
   private normalizeBaseUrl(value: unknown) {
-    return trimText(value, MOVIN_SANDBOX_BASE_URL).replace(/\/+$/, '') || MOVIN_SANDBOX_BASE_URL
+    return trimText(value, MOVIN_DEFAULT_BASE_URL).replace(/\/+$/, '') || MOVIN_DEFAULT_BASE_URL
   }
 
   private async ensureConfig(): Promise<MovinResolvedConfig> {

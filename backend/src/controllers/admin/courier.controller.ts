@@ -607,7 +607,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       },
       movin: {
         provider: 'movin',
-        apiBase: 'https://newco-apim-test.azure-api.net',
+        apiBase: 'https://apim.iristransport.co.in',
         tenantId: '',
         serverId: '',
         clientId: '',
@@ -780,7 +780,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         ).trim()
         acc.movin = {
           provider: 'movin',
-          apiBase: row.apiBase || 'https://newco-apim-test.azure-api.net',
+          apiBase: row.apiBase || 'https://apim.iristransport.co.in',
           tenantId,
           serverId,
           clientId: row.clientId || '',
@@ -2444,7 +2444,7 @@ export const updateMovinCredentialsController = async (req: Request, res: Respon
       const updatePayload: Record<string, any> = { updatedAt: new Date() }
 
       if (nextApiBase !== undefined) {
-        updatePayload.apiBase = nextApiBase || 'https://newco-apim-test.azure-api.net'
+        updatePayload.apiBase = nextApiBase || 'https://apim.iristransport.co.in'
       }
       if (nextClientId !== undefined) updatePayload.clientId = nextClientId
       if (hasNewClientSecret) updatePayload.password = nextClientSecret
@@ -2461,7 +2461,7 @@ export const updateMovinCredentialsController = async (req: Request, res: Respon
     } else {
       await db.insert(courier_credentials).values({
         provider: 'movin',
-        apiBase: nextApiBase || 'https://newco-apim-test.azure-api.net',
+        apiBase: nextApiBase || 'https://apim.iristransport.co.in',
         clientName: 'Movin',
         apiKey: hasNewSubscriptionKey ? nextSubscriptionKey : '',
         clientId: nextClientId || '',
@@ -2496,7 +2496,7 @@ export const updateMovinCredentialsController = async (req: Request, res: Respon
       message: 'Movin credentials updated successfully',
       data: {
         provider: 'movin',
-        apiBase: saved?.apiBase || 'https://newco-apim-test.azure-api.net',
+        apiBase: saved?.apiBase || 'https://apim.iristransport.co.in',
         tenantId: String((metadata as any).tenantId || (metadata as any).tenant_id || '').trim(),
         serverId: String((metadata as any).serverId || (metadata as any).server_id || '').trim(),
         clientId: saved?.clientId || '',
