@@ -11316,6 +11316,8 @@ export const createB2BShipmentService = async (
             ...(shipmentResponse ? { shipment_response: shipmentResponse } : {}),
             ...(pickupRequest ? { pickup_request: pickupRequest } : {}),
             ...(pickupResponse ? { pickup_response: pickupResponse } : {}),
+            ...(error?.providerStatus ? { provider_status: error.providerStatus } : {}),
+            ...(error?.providerResponse ? { provider_response: error.providerResponse } : {}),
             error: error?.message || 'Movin B2B shipment creation failed',
           },
           updated_at: new Date(),

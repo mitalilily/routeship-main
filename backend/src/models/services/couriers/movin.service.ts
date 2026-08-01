@@ -74,6 +74,52 @@ const splitAddressLines = (value: unknown, fallbackCity?: unknown, fallbackState
   }
 }
 
+const stringifyMovinValue = (value: unknown) => {
+  if (value === undefined || value === null) return ''
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+const collectMovinErrors = (value: unknown, errors: string[] = []): string[] => {
+  if (value === undefined || value === null) return errors
+  if (typeof value === 'string') {
+    const text = value.trim()
+    if (text) errors.push(text)
+    return errors
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    errors.push(String(value))
+    return errors
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectMovinErrors(item, errors))
+    return errors
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    for (const key of ['message', 'error', 'detail', 'description']) {
+      const text = stringifyMovinValue(record[key])
+      if (text) errors.push(text)
+    }
+    for (const nested of Object.values(record)) {
+      if (nested && typeof nested === 'object') collectMovinErrors(nested, errors)
+    }
+  }
+  return errors
+}
+
+const extractMovinErrorMessage = (data: unknown, fallback: string) => {
+  const messages = Array.from(new Set(collectMovinErrors(data).filter(Boolean)))
+  if (messages.length) return messages.slice(0, 6).join('; ')
+  const serialized = stringifyMovinValue(data)
+  return serialized || fallback
+}
+
 export const normalizeMovinServiceType = (...values: unknown[]) => {
   const raw = values.map((value) => trimText(value)).find(Boolean) || ''
   const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, ' ')
@@ -189,13 +235,22 @@ export class MovinService {
     const { client } = await this.http()
     const response = await client.post<T>(path, payload)
     if (response.status < 200 || response.status >= 300) {
-      throw new HttpError(
-        response.status || 502,
-        (response.data as any)?.message ||
-          (response.data as any)?.error ||
-          (response.data as any)?.detail ||
-          `Movin request failed for ${path}`,
+      const message = extractMovinErrorMessage(
+        response.data,
+        `Movin request failed for ${path}`,
       )
+      console.error('[Movin] API request failed', {
+        path,
+        status: response.status,
+        response: response.data,
+      })
+      const error = new HttpError(
+        response.status || 502,
+        message,
+      )
+      ;(error as any).providerResponse = response.data
+      ;(error as any).providerStatus = response.status
+      throw error
     }
     return response.data
   }
