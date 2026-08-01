@@ -13,6 +13,7 @@ import { memo, useEffect, useState } from 'react'
 import { useCouriers } from '../../hooks/useCouriers'
 import { b2bAdminService } from '../../services/b2bAdmin.service'
 import { PlansService } from '../../services/plan.service'
+import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 import B2BAdditionalChargesFilters from './B2BAdditionalChargesFilters'
 import ImportChargesModal from './ImportChargesModal'
 import { useB2BChargesForm } from './hooks/useB2BChargesForm'
@@ -47,7 +48,8 @@ const B2BAdditionalCharges = ({
     queryFn: () => PlansService.getPlans({ businessType: 'b2b', status: 'active' }),
   })
 
-  const { data: couriers = [] } = useCouriers({ businessType: 'b2b' })
+  const { data: rawCouriers = [] } = useCouriers({ businessType: 'b2b' })
+  const couriers = filterB2BRateCardCouriers(rawCouriers)
 
   useEffect(() => {
     if (planId || localPlanId || !b2bPlans.length) {
@@ -73,16 +75,8 @@ const B2BAdditionalCharges = ({
         const provider = String(courier.serviceProvider || courier.service_provider || '')
           .trim()
           .toLowerCase()
-        const name = String(courier.name || '').trim().toLowerCase()
-        return provider === 'delhivery' && name.includes('surface')
-      }) ||
-      couriers.find((courier) => {
-        const provider = String(courier.serviceProvider || courier.service_provider || '')
-          .trim()
-          .toLowerCase()
-        return provider === 'delhivery'
-      }) ||
-      couriers[0]
+        return provider === 'movin'
+      }) || couriers[0]
 
     if (preferredCourier) {
       const provider = preferredCourier.serviceProvider || preferredCourier.service_provider || ''

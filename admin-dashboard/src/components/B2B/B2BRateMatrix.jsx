@@ -40,6 +40,7 @@ import { BiUpload } from 'react-icons/bi'
 import { useCouriers } from '../../hooks/useCouriers'
 import { b2bAdminService } from '../../services/b2bAdmin.service'
 import { PlansService } from '../../services/plan.service'
+import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 import DownloadSampleCSVButton from '../CSV/DownloadSampleCSVButton'
 import CustomModal from '../Modal/CustomModal'
 
@@ -76,11 +77,12 @@ const B2BRateMatrix = ({
     queryFn: () => PlansService.getPlans({ businessType: 'b2b', status: 'active' }),
   })
 
-  const { data: couriers = [] } = useCouriers(
+  const { data: rawCouriers = [] } = useCouriers(
     isCourierScopeLocked
       ? { businessType: 'b2b', serviceProvider: propServiceProvider || undefined }
       : { businessType: 'b2b' },
   )
+  const couriers = filterB2BRateCardCouriers(rawCouriers)
 
   // Handle combined courier-service provider selection
   const handleCourierServiceChange = (value) => {
@@ -122,15 +124,8 @@ const B2BRateMatrix = ({
 
     const preferredCourier =
       couriers.find((courier) => {
-        const provider = String(courier.serviceProvider || courier.service_provider || '')
-          .trim()
-          .toLowerCase()
-        const name = String(courier.name || '').trim().toLowerCase()
-        return provider === 'delhivery' && name.includes('surface')
-      }) ||
-      couriers.find((courier) => {
         const provider = courier.serviceProvider || courier.service_provider || ''
-        return String(provider).trim().toLowerCase() === 'delhivery'
+        return String(provider).trim().toLowerCase() === 'movin'
       }) || couriers[0]
 
     if (preferredCourier) {

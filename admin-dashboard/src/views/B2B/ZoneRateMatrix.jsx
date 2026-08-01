@@ -30,6 +30,7 @@ import { useZones } from 'hooks/useZones'
 import { useState } from 'react'
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 import { useB2BZoneRates } from '../../hooks/useB2BZoneRates'
+import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 
 const STATIC_CHARGE_FIELDS = [
   'Docket Charge', 'Minimum ODA1 Charge', 'ODA1 Charge Per Kg', 'Minimum ODA2 Charge',
@@ -76,7 +77,8 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
     destinationZoneId: '',
   })
 
-  const { data: couriers = [] } = useCouriers()
+  const { data: rawCouriers = [] } = useCouriers({ businessType: 'b2b' })
+  const couriers = filterB2BRateCardCouriers(rawCouriers)
   const { zones: b2bZones = [] } = useZones('B2B', { include_global: true })
 
   const courierScope = buildCourierScope(filters.courierId, couriers)

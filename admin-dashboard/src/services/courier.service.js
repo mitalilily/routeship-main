@@ -419,7 +419,7 @@ export const updateMovinCredentials = async (payload) => {
 
 export const updateApptmyzCredentials = async (payload) => {
   const { data } = await api.put('/admin/couriers/credentials/apptmyz', payload)
-  if (!data?.success) throw new Error('Failed to update Apptmyz credentials')
+  if (!data?.success) throw new Error('Failed to update Ekart B2B/LTL credentials')
   return data.data
 }
 

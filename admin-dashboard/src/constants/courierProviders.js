@@ -6,5 +6,5 @@ export const COURIER_PROVIDER_OPTIONS = [
   { value: 'shadowfax', label: 'Shadowfax' },
   { value: 'amazon', label: 'Amazon Shipping' },
   { value: 'innofulfill', label: 'Shreemaruti' },
-  { value: 'apptmyz', label: 'Apptmyz' },
+  { value: 'apptmyz', label: 'Ekart B2B/LTL' },
 ]

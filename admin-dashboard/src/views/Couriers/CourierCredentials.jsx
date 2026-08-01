@@ -1181,7 +1181,7 @@ const CourierCredentials = () => {
       },
       {
         onSuccess: () => {
-          toast({ title: 'Apptmyz credentials updated', status: 'success' })
+          toast({ title: 'Ekart B2B/LTL credentials updated', status: 'success' })
           setApptmyzForm((prev) => ({
             ...prev,
             password: '',
@@ -1190,7 +1190,7 @@ const CourierCredentials = () => {
         },
         onError: (err) => {
           toast({
-            title: 'Failed to update Apptmyz credentials',
+            title: 'Failed to update Ekart B2B/LTL credentials',
             description: err?.message,
             status: 'error',
           })
@@ -1544,7 +1544,7 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center">
-              <Text fontWeight="semibold">Apptmyz Customer API</Text>
+              <Text fontWeight="semibold">Ekart B2B/LTL</Text>
               <Badge
                 colorScheme={
                   data?.apptmyz?.apiBase &&
@@ -1574,7 +1574,7 @@ const CourierCredentials = () => {
                 placeholder="http://103.73.191.220:8080/flipkart"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Base URL from the Apptmyz PDF. Use sandbox for testing and production once the
+                Base URL from the Ekart B2B/LTL API PDF. Use sandbox for testing and production once the
                 live customer account is approved.
               </Text>
             </FormControl>
@@ -1601,10 +1601,10 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setApptmyzForm((prev) => ({ ...prev, username: e.target.value }))
                 }
-                placeholder="Customer username from Apptmyz"
+                placeholder="Customer username from Ekart B2B/LTL"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Customer username created during Apptmyz onboarding. The PDF sandbox example uses
+                Customer username created during Ekart B2B/LTL onboarding. The PDF sandbox example uses
                 a customer code style username.
               </Text>
             </FormControl>
@@ -1624,7 +1624,7 @@ const CourierCredentials = () => {
                 }
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Plain customer password. RouteShip encrypts it with the Apptmyz RSA public key
+                Plain customer password. RouteShip encrypts it with the Ekart B2B/LTL RSA public key
                 before calling the token API.
               </Text>
               {data?.apptmyz?.hasPassword && (
@@ -1644,12 +1644,12 @@ const CourierCredentials = () => {
                 }
                 placeholder={
                   data?.apptmyz?.publicKeyMasked ||
-                  'Paste the Apptmyz public key from the API document'
+                  'Paste the Ekart B2B/LTL public key from the API document'
                 }
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
                 Public key used to RSA-encrypt the password for /api/customer/login. The PDF says
-                the same key is used for staging and production unless Apptmyz changes it.
+                the same key is used for staging and production unless Ekart B2B/LTL changes it.
               </Text>
               {!!data?.apptmyz?.publicKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
@@ -1668,7 +1668,7 @@ const CourierCredentials = () => {
                 placeholder="Optional bill-to/customer code"
               />
               <Text fontSize="xs" color="gray.500" mt={1}>
-                Optional customer or bill-to business code. Use it when Apptmyz maps multiple B2B
+                Optional customer or bill-to business code. Use it when Ekart B2B/LTL maps multiple B2B
                 codes to one login and asks you to send custCode in pickup requests.
               </Text>
             </FormControl>
@@ -1685,7 +1685,7 @@ const CourierCredentials = () => {
               isLoading={updateApptmyz.isPending}
               alignSelf="flex-start"
             >
-              Save Apptmyz Credentials
+              Save Ekart B2B/LTL Credentials
             </Button>
           </VStack>
         </Box>

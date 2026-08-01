@@ -20,6 +20,7 @@ import B2BSurchargeManagement from '../../../components/B2B/B2BSurchargeManageme
 import HolidayCalendar from '../../../components/B2B/HolidayCalendar'
 import { useCouriers } from '../../../hooks/useCouriers'
 import { PlansService } from '../../../services/plan.service'
+import { filterB2BRateCardCouriers } from '../../../utils/b2bCourierFilters'
 
 const B2BPricingContent = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700')
@@ -33,10 +34,8 @@ const B2BPricingContent = () => {
   const [selectedPlanId, setSelectedPlanId] = useState('')
 
   const [selectedCourierKey, setSelectedCourierKey] = useState('')
-  const { data: movinB2BCouriers = [] } = useCouriers({
-    businessType: 'b2b',
-    serviceProvider: 'movin',
-  })
+  const { data: rawB2BCouriers = [] } = useCouriers({ businessType: 'b2b' })
+  const b2bRateCardCouriers = filterB2BRateCardCouriers(rawB2BCouriers)
 
   // Default to the Basic B2B plan when available.
   useEffect(() => {
@@ -48,43 +47,50 @@ const B2BPricingContent = () => {
   }, [plans, selectedPlanId])
 
   useEffect(() => {
-    if (!movinB2BCouriers.length) {
+    if (!b2bRateCardCouriers.length) {
       if (selectedCourierKey) {
         setSelectedCourierKey('')
       }
       return
     }
 
-    const hasSelectedCourier = movinB2BCouriers.some((courier) => {
+    const hasSelectedCourier = b2bRateCardCouriers.some((courier) => {
       const provider = courier.serviceProvider || courier.service_provider || ''
       return `${courier.id}|${provider}` === selectedCourierKey
     })
 
     if (!hasSelectedCourier) {
       const preferredCourier =
-        movinB2BCouriers.find((courier) =>
+        b2bRateCardCouriers.find((courier) =>
           String(courier.name || '')
             .trim()
             .toLowerCase()
             .includes('standard'),
-        ) || movinB2BCouriers[0]
+        ) ||
+        b2bRateCardCouriers.find((courier) => {
+          const provider = String(courier.serviceProvider || courier.service_provider || '')
+            .trim()
+            .toLowerCase()
+          return provider === 'movin'
+        }) ||
+        b2bRateCardCouriers[0]
       const provider = preferredCourier.serviceProvider || preferredCourier.service_provider || ''
       setSelectedCourierKey(`${preferredCourier.id}|${provider}`)
     }
-  }, [movinB2BCouriers, selectedCourierKey])
+  }, [b2bRateCardCouriers, selectedCourierKey])
 
-  const selectedCourier = movinB2BCouriers.find((courier) => {
+  const selectedCourier = b2bRateCardCouriers.find((courier) => {
     const provider = courier.serviceProvider || courier.service_provider || ''
     return `${courier.id}|${provider}` === selectedCourierKey
   })
   const scopedCourierId = selectedCourier ? String(selectedCourier.id) : ''
   const scopedServiceProvider =
-    selectedCourier?.serviceProvider || selectedCourier?.service_provider || 'movin'
+    selectedCourier?.serviceProvider || selectedCourier?.service_provider || ''
 
   return (
     <Box>
       {/* Plan Selector - Simplified */}
-      {(plans?.length > 0 || movinB2BCouriers.length > 1) && (
+      {(plans?.length > 0 || b2bRateCardCouriers.length > 1) && (
         <Box mb={4} px={6} pt={4}>
           <HStack spacing={3} align="center">
             {plans?.length > 0 && (
@@ -105,17 +111,17 @@ const B2BPricingContent = () => {
                 </Select>
               </>
             )}
-            {movinB2BCouriers.length > 1 && (
+            {b2bRateCardCouriers.length > 1 && (
               <>
                 <Text fontSize="sm" fontWeight="medium" color="gray.700" minW="140px">
-                  Movin B2B Courier:
+                  B2B/LTL Courier:
                 </Text>
                 <Select
                   value={selectedCourierKey}
                   onChange={(e) => setSelectedCourierKey(e.target.value)}
                   maxW="320px"
                 >
-                  {movinB2BCouriers.map((courier) => {
+                  {b2bRateCardCouriers.map((courier) => {
                     const provider = courier.serviceProvider || courier.service_provider || ''
                     const courierKey = `${courier.id}|${provider}`
                     return (
@@ -132,11 +138,11 @@ const B2BPricingContent = () => {
         </Box>
       )}
 
-      {!movinB2BCouriers.length && (
+      {!b2bRateCardCouriers.length && (
         <Box px={6} pb={4}>
           <Text fontSize="sm" color="red.500">
-            No Movin B2B courier is configured yet. Sync or enable Movin couriers with B2B
-            business type to manage this rate card.
+            No B2B/LTL courier is configured yet. Sync or enable Movin, Ekart B2B/LTL, or
+            Delhivery LTL couriers with B2B business type to manage this rate card.
           </Text>
         </Box>
       )}

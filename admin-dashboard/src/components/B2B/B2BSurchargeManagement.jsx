@@ -45,6 +45,7 @@ import { useEffect, useState } from 'react'
 import { useCouriers } from '../../hooks/useCouriers'
 import { b2bAdminService } from '../../services/b2bAdmin.service'
 import { PlansService } from '../../services/plan.service'
+import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 import Card from '../Card/Card'
 import CardBody from '../Card/CardBody'
 import CardHeader from '../Card/CardHeader'
@@ -73,7 +74,8 @@ const B2BSurchargeManagement = ({
     queryKey: ['plans', { businessType: 'b2b', status: 'active' }],
     queryFn: () => PlansService.getPlans({ businessType: 'b2b', status: 'active' }),
   })
-  const { data: couriers = [] } = useCouriers({ businessType: 'b2b' })
+  const { data: rawCouriers = [] } = useCouriers({ businessType: 'b2b' })
+  const couriers = filterB2BRateCardCouriers(rawCouriers)
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   const hoverBg = useColorModeValue('gray.50', 'gray.700')
   const cardBg = useColorModeValue('white', 'gray.800')
@@ -102,16 +104,8 @@ const B2BSurchargeManagement = ({
         const provider = String(courier.serviceProvider || courier.service_provider || '')
           .trim()
           .toLowerCase()
-        const name = String(courier.name || '').trim().toLowerCase()
-        return provider === 'delhivery' && name.includes('surface')
-      }) ||
-      couriers.find((courier) => {
-        const provider = String(courier.serviceProvider || courier.service_provider || '')
-          .trim()
-          .toLowerCase()
-        return provider === 'delhivery'
-      }) ||
-      couriers[0]
+        return provider === 'movin'
+      }) || couriers[0]
 
     if (preferredCourier) {
       const provider = preferredCourier.serviceProvider || preferredCourier.service_provider || ''
@@ -462,7 +456,8 @@ const SurchargeModal = ({ isOpen, onClose, rule, courierId, serviceProvider, pla
   })
 
   // Fetch couriers for courier selection
-  const { data: couriers = [] } = useCouriers()
+  const { data: rawCouriers = [] } = useCouriers({ businessType: 'b2b' })
+  const couriers = filterB2BRateCardCouriers(rawCouriers)
 
   const [formData, setFormData] = useState({
     name: '',
