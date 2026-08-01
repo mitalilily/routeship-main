@@ -49,6 +49,7 @@
     "sync:delhivery-b2c-couriers": "tsx src/scripts/syncDelhiveryB2CCouriers.ts",
     "sync:delhivery-b2b-courier": "tsx src/scripts/syncDelhiveryB2BCourier.ts",
     "sync:movin-b2b-couriers": "tsx src/scripts/syncMovinB2BCouriers.ts",
+    "sync:apptmyz-b2b-couriers": "tsx src/scripts/syncApptmyzB2BCouriers.ts",
     "sync:ekart-couriers": "tsx src/scripts/syncEkartCouriers.ts",
     "sync:dtdc-couriers": "tsx src/scripts/syncDtdcCouriers.ts",
     "sync:innofulfill-couriers": "tsx src/scripts/syncInnofulfillCouriers.ts",

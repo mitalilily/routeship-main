@@ -8,6 +8,10 @@ const APPTMYZ_PRODUCTION_BASE_URL = 'https://ekart.apptmyz.com/flipkart'
 const DEFAULT_PUBLIC_KEY =
   'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh4OSBw4KDBWXL6/ryijo8FJG51yEIBYZGOVTn2zJs/EPGrh80l0QITyVOmV5667gKJwkcFezUMYS5JsMsPAs7CYZaigmd7rsVbfcjHBK4QP3xzfhVP2CHraS8CQptjSIEl2z0yiqHyq1jfNcXR1oyE6HXLS56sq6d3nVPI+NJrejQOq+TzlJcX9MbvMv0Z8bHA4cBCjOBlOA2+sVHtn2XkN6xe+TVZNFXNiWiKXCL57a8yGqipswt58EiYDON9l6w1I+xzL+2C9GH7Iq3iFOXMQ4TyEH6utlFoP4T703HDs41eh3G0/66601tNowxU0X4hWbGMwZRu0ZHkj+3z3TQIDAQAB'
 
+export const APPTMYZ_COURIERS = [
+  { id: 73001, name: 'Ekart B2B/LTL', service: 'B2B LTL' },
+] as const
+
 type TokenCache = {
   token: string
   expiresAt: number
