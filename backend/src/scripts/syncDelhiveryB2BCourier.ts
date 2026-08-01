@@ -55,6 +55,10 @@ const extractToken = (value: unknown): string => {
       const token = extractToken(record[key])
       if (token) return token
     }
+    for (const nested of Object.values(record)) {
+      const token = extractToken(nested)
+      if (token) return token
+    }
   }
   return ''
 }
