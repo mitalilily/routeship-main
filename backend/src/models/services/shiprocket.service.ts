@@ -51,6 +51,7 @@ import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { invoicePreferences } from '../schema/invoicePreferences'
+import { kyc } from '../schema/kyc'
 import { ndr_events } from '../schema/ndr'
 import { rto_events } from '../schema/rto'
 // import { shippingRate, shippingRateCard } from '../schema/shippingRateCard'
@@ -10436,7 +10437,8 @@ export const createB2BShipmentService = async (
     company: {
       name: params.consignee?.company_name || params.company?.name || '',
       gst: params.consignee?.gstin || params.company?.gst || '',
-    },
+      pan: (params.company as any)?.pan || (params.company as any)?.pan_number || '',
+    } as any,
     pickup: {
       warehouse_name:
         String(
@@ -10484,6 +10486,55 @@ export const createB2BShipmentService = async (
       ...(normalizedPickupDate ? { pickup_date: normalizedPickupDate } : {}),
       ...(normalizedPickupTime ? { pickup_time: normalizedPickupTime } : {}),
     },
+  }
+
+  try {
+    const [b2bProfile] = await db
+      .select({
+        businessName: sql<string>`COALESCE((${userProfiles.companyInfo} ->> 'businessName'), (${userProfiles.companyInfo} ->> 'brandName'), '')`,
+        companyGst: sql<string>`COALESCE((${userProfiles.companyInfo} ->> 'companyGst'), (${userProfiles.companyInfo} ->> 'companyGST'), (${userProfiles.companyInfo} ->> 'gstin'), (${userProfiles.gstDetails} ->> 'gstin'), '')`,
+        profilePan: sql<string>`COALESCE((${userProfiles.companyInfo} ->> 'panNumber'), (${userProfiles.companyInfo} ->> 'pan_number'), '')`,
+        kycGstin: kyc.gstin,
+        kycPan: kyc.panNumber,
+      })
+      .from(userProfiles)
+      .leftJoin(kyc, eq(kyc.userId, userProfiles.userId))
+      .where(eq(userProfiles.userId, userId))
+      .limit(1)
+
+    const resolvedCompanyName =
+      String(payload.company?.name || '').trim() ||
+      String(b2bProfile?.businessName || '').trim() ||
+      String(payload.pickup?.warehouse_name || '').trim()
+    const resolvedGst =
+      String(payload.company?.gst || '').trim() ||
+      String(payload.pickup?.gst_number || '').trim() ||
+      String(b2bProfile?.companyGst || '').trim() ||
+      String(b2bProfile?.kycGstin || '').trim()
+    const resolvedPan =
+      String((payload.company as any)?.pan || '').trim() ||
+      String((payload.company as any)?.pan_number || '').trim() ||
+      String((payload.pickup as any)?.pan_number || '').trim() ||
+      String((payload.pickup as any)?.pan || '').trim() ||
+      String(b2bProfile?.profilePan || '').trim() ||
+      String(b2bProfile?.kycPan || '').trim()
+
+    payload.company = {
+      ...(payload.company || {}),
+      name: resolvedCompanyName || payload.company?.name || '',
+      gst: resolvedGst,
+      ...(resolvedPan ? { pan: resolvedPan, pan_number: resolvedPan } : {}),
+    } as any
+    payload.pickup = {
+      ...(payload.pickup || {}),
+      ...(resolvedGst ? { gst_number: resolvedGst } : {}),
+      ...(resolvedPan ? { pan_number: resolvedPan } : {}),
+    } as any
+  } catch (profileErr: any) {
+    console.warn(
+      'Failed to resolve B2B billing tax metadata:',
+      profileErr?.message || profileErr,
+    )
   }
 
   if (effectiveIntegrationType === 'delhivery') {
@@ -10731,6 +10782,16 @@ export const createB2BShipmentService = async (
       const billingGst = String(payload.company?.gst || payload.pickup?.gst_number || '').trim()
       if (billingGst) {
         billingAddress.gst_number = billingGst
+      }
+      const billingPan = String(
+        (payload.company as any)?.pan ||
+          (payload.company as any)?.pan_number ||
+          (payload.pickup as any)?.pan_number ||
+          (payload.pickup as any)?.pan ||
+          '',
+      ).trim()
+      if (billingPan) {
+        billingAddress.pan_number = billingPan
       }
 
       const manifestDocumentFiles: Express.Multer.File[] = []
