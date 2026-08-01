@@ -1,7 +1,9 @@
-import { Button, Link, Stack, Typography } from '@mui/material'
+import { Button, Stack, Typography } from '@mui/material'
+import { saveAs } from 'file-saver'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import moment from 'moment'
+import { downloadBulkOrderDocumentsZip } from '../../../api/order.service'
 import { useB2BOrdersByUser, useGenerateManifest } from '../../../hooks/Orders/useOrders'
 import type { B2BOrder } from '../../../types/generic.types'
 import {
@@ -13,6 +15,7 @@ import StatusChip from '../../UI/chip/StatusChip'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
 import { OrderExpandedRow } from '../OrderExpandedRow'
+import { getArchiveFileNameFromHeaders } from '../bulkActionUtils'
 
 export const statusColorMap: Record<string, 'success' | 'pending' | 'error' | 'info'> = {
   delivered: 'success',
@@ -52,6 +55,7 @@ const B2BOrdersList = ({
   )
   const { mutate: triggerManifest, isPending: isGeneratingManifest } = useGenerateManifest()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
+  const [downloadingManifestOrderId, setDownloadingManifestOrderId] = useState<string | null>(null)
 
   const handleGenerateManifest = (order: B2BOrder) => {
     if (!order.awb_number) return
@@ -64,6 +68,23 @@ const B2BOrdersList = ({
         },
       },
     )
+  }
+
+  const handleDownloadManifest = async (order: B2BOrder) => {
+    const orderId = String(order.id || '')
+    if (!orderId) return
+
+    setDownloadingManifestOrderId(orderId)
+    try {
+      const { blob, headers } = await downloadBulkOrderDocumentsZip([orderId], 'manifest')
+      const archiveName = getArchiveFileNameFromHeaders(
+        headers,
+        `routeship-manifest-${order.order_number || order.awb_number || orderId}.zip`,
+      )
+      saveAs(blob, archiveName)
+    } finally {
+      setDownloadingManifestOrderId((current) => (current === orderId ? null : current))
+    }
   }
 
   const columns: Column<B2BOrder>[] = [
@@ -128,17 +149,20 @@ const B2BOrdersList = ({
         }
 
         if (row.manifest) {
+          const isDownloading = downloadingManifestOrderId === String(row.id)
           actions.push(
-            <Link
+            <Button
               key="view-manifest"
-              href={row.manifest}
-              target="_blank"
-              rel="noopener"
-              underline="hover"
-              onClick={(e) => e.stopPropagation()}
+              size="small"
+              variant="outlined"
+              disabled={isDownloading}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDownloadManifest(row)
+              }}
             >
-              View
-            </Link>,
+              {isDownloading ? 'Downloading...' : 'Manifest'}
+            </Button>,
           )
         }
 

@@ -1,6 +1,8 @@
 import { alpha, Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material'
+import { saveAs } from 'file-saver'
 import { useState } from 'react'
 import { FaFilePdf } from 'react-icons/fa'
+import { downloadBulkOrderDocumentsZip } from '../../api/order.service'
 import {
   MdInventory2,
   MdLocalShipping,
@@ -11,6 +13,7 @@ import {
 } from 'react-icons/md'
 import useEmployeePermissions from '../../hooks/User/useEmployeePermissions'
 import { usePresignedDownloadMutation } from '../../hooks/Uploads/usePresignedDownloadUrls'
+import { getArchiveFileNameFromHeaders } from './bulkActionUtils'
 import AWBLink from '../UI/AWBLink'
 import { toast } from '../UI/Toast'
 
@@ -50,6 +53,18 @@ export const OrderExpandedRow = ({ row, type = 'b2c' }: OrderExpandedRowProps) =
 
     try {
       setDownloadingKey(key)
+      if (type === 'b2b') {
+        const { blob, headers } = await downloadBulkOrderDocumentsZip([row.id], fileType)
+        const archiveName = getArchiveFileNameFromHeaders(
+          headers,
+          `routeship-${fileType}-${row.order_number || row.awb_number || row.id}.${
+            fileType === 'label' ? 'pdf' : 'zip'
+          }`,
+        )
+        saveAs(blob, archiveName)
+        return
+      }
+
       const urls = await mutateAsync({ keys: [key] })
       const url = Array.isArray(urls) ? urls[0] : urls
 

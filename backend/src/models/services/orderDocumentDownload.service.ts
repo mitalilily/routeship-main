@@ -9,8 +9,9 @@ import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { b2bOrderListSelect, b2cOrderListSelect } from './orderListSelects'
 import { getOrderLabelReference } from '../../utils/orderLabels'
-import { presignDownload } from './upload.service'
+import { downloadAndUploadToR2, presignDownload, presignUpload } from './upload.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
+import { DelhiveryService } from './couriers/delhivery.service'
 
 export type BulkDocumentType = 'label' | 'invoice' | 'manifest'
 
@@ -27,6 +28,10 @@ type OrderRow = {
   label?: string | null
   invoice_link?: string | null
   manifest?: string | null
+  provider_reference?: string | null
+  provider_request_id?: string | null
+  provider_meta?: Record<string, any> | null
+  user_id?: string | null
 }
 
 type PreparedDocumentEntry = {
@@ -83,6 +88,27 @@ const getDocumentReference = (order: OrderRow, type: BulkDocumentType) => {
   return normalizeDocumentReference(order.invoice_link)
 }
 
+const isDelhiveryB2BOrder = (order: OrderRow) =>
+  order.type === 'b2b' &&
+  (String(order.integration_type || '').trim().toLowerCase() === 'delhivery' ||
+    String(order.courier_partner || '').trim().toLowerCase().includes('delhivery'))
+
+const resolveDelhiveryLtlLrn = (order: OrderRow) =>
+  String(
+    order.provider_reference ||
+      order.provider_meta?.lrn ||
+      order.provider_meta?.manifest_status?.lrn ||
+      order.manifest ||
+      '',
+  ).trim()
+
+const isLikelyStorageReference = (value?: string | null) => {
+  const text = String(value || '').trim()
+  if (!text) return false
+  if (/^https?:\/\//i.test(text)) return true
+  return text.includes('/') && /\.pdf($|\?)/i.test(text)
+}
+
 const getDownloadFileName = (order: OrderRow, type: BulkDocumentType, source?: string | null) => {
   const baseName =
     sanitizeFileNameSegment(String(order.order_number || order.awb_number || `${order.type}-${order.id}`)) ||
@@ -111,6 +137,151 @@ const updateOrderLabelReference = async (order: OrderRow, labelKey: string) => {
   }
 
   await db.update(b2b_orders).set({ label: labelKey }).where(eq(b2b_orders.id, order.id))
+}
+
+const updateB2BOrderDocumentReference = async (
+  order: OrderRow,
+  documentType: BulkDocumentType,
+  key: string,
+) => {
+  if (documentType === 'label') {
+    await db.update(b2b_orders).set({ label: key }).where(eq(b2b_orders.id, order.id))
+    return
+  }
+
+  if (documentType === 'manifest') {
+    await db.update(b2b_orders).set({ manifest: key }).where(eq(b2b_orders.id, order.id))
+  }
+}
+
+const uploadBufferAsOrderDocument = async ({
+  buffer,
+  contentType,
+  fileName,
+  folderKey,
+  userId,
+}: {
+  buffer: Buffer
+  contentType: string
+  fileName: string
+  folderKey: string
+  userId: string
+}) => {
+  const { uploadUrl, key } = await presignUpload({
+    filename: fileName,
+    contentType,
+    userId,
+    folderKey,
+  })
+  const finalUploadUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+  const finalKey = Array.isArray(key) ? key[0] : key
+  if (!finalUploadUrl || !finalKey) {
+    throw new Error('Failed to prepare document upload')
+  }
+
+  await axios.put(finalUploadUrl, buffer, {
+    headers: { 'Content-Type': contentType },
+    timeout: 120000,
+  })
+
+  return finalKey
+}
+
+const bufferFromDelhiveryDocumentPayload = (value?: string | null) => {
+  const text = String(value || '').trim()
+  if (!text) return null
+
+  const dataUrlMatch = text.match(/^data:([^;]+);base64,(.+)$/i)
+  if (dataUrlMatch) {
+    return {
+      contentType: dataUrlMatch[1] || 'application/pdf',
+      buffer: Buffer.from(dataUrlMatch[2], 'base64'),
+    }
+  }
+
+  const compact = text.replace(/\s+/g, '')
+  if (compact.length >= 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    return {
+      contentType: 'application/pdf',
+      buffer: Buffer.from(compact, 'base64'),
+    }
+  }
+
+  return null
+}
+
+const materializeDelhiveryB2BDocument = async (
+  order: OrderRow,
+  documentType: BulkDocumentType,
+) => {
+  if (!isDelhiveryB2BOrder(order) || documentType === 'invoice') return null
+
+  const fullOrder = await fetchFullOrderForGeneration(order)
+  const mergedOrder = { ...order, ...(fullOrder || {}) } as OrderRow
+  const userId = String(mergedOrder.user_id || '').trim()
+  const lrn = resolveDelhiveryLtlLrn(mergedOrder)
+  if (!userId || !lrn) return null
+
+  const delhivery = new DelhiveryService()
+  const safeOrderName = sanitizeFileNameSegment(
+    String(mergedOrder.order_number || mergedOrder.awb_number || mergedOrder.id),
+  )
+
+  let key: string | null = null
+  if (documentType === 'label') {
+    const labelResult = await delhivery.getLtlShippingLabelUrls({ size: 'a4', lrn })
+    const labelPayload = labelResult.labelUrls[0]
+    if (!labelPayload) {
+      throw new Error('Delhivery LTL did not return a label URL yet')
+    }
+
+    if (/^https?:\/\//i.test(labelPayload)) {
+      key = await downloadAndUploadToR2({
+        url: labelPayload,
+        userId,
+        filename: `${safeOrderName || lrn}-label.pdf`,
+        folderKey: 'labels',
+        contentType: 'application/pdf',
+      })
+    } else {
+      const decoded = bufferFromDelhiveryDocumentPayload(labelPayload)
+      if (decoded?.buffer?.length) {
+        key = await uploadBufferAsOrderDocument({
+          buffer: decoded.buffer,
+          contentType: decoded.contentType || 'application/pdf',
+          fileName: `${safeOrderName || lrn}-label.pdf`,
+          folderKey: 'labels',
+          userId,
+        })
+      }
+    }
+  } else if (documentType === 'manifest') {
+    const lrCopy = await delhivery.getLtlLrCopy({ lrn })
+    const decoded = bufferFromDelhiveryDocumentPayload(lrCopy.pdfBase64 || lrCopy.pdfDataUrl)
+    if (!decoded?.buffer?.length) {
+      throw new Error('Delhivery LTL did not return an LR copy PDF yet')
+    }
+
+    key = await uploadBufferAsOrderDocument({
+      buffer: decoded.buffer,
+      contentType: decoded.contentType || lrCopy.contentType || 'application/pdf',
+      fileName: `${safeOrderName || lrn}-lr-copy.pdf`,
+      folderKey: 'manifests',
+      userId,
+    })
+  }
+
+  if (!key) return null
+  await updateB2BOrderDocumentReference(mergedOrder, documentType, key)
+  const resolved = await presignDownload(key, { checkExists: true })
+  const downloadUrl = Array.isArray(resolved) ? resolved[0] : resolved
+  if (!downloadUrl) return null
+
+  return {
+    fileName: getDownloadFileName(mergedOrder, documentType, key),
+    orderLabel: getOrderDocumentLabel(mergedOrder),
+    downloadUrl: String(downloadUrl),
+  } satisfies PreparedDocumentEntry
 }
 
 const resolveGeneratedLabelDownloadUrl = async (order: OrderRow) => {
@@ -199,6 +370,12 @@ const prepareArchiveEntries = async ({
   for (const order of orders) {
     const reference = getDocumentReference(order, documentType)
     if (!reference) {
+      const providerDocument = await materializeDelhiveryB2BDocument(order, documentType)
+      if (providerDocument) {
+        preparedEntries.push(providerDocument)
+        continue
+      }
+
       if (documentType === 'label') {
         try {
           preparedEntries.push(await resolveGeneratedLabelDownloadUrl(order))
@@ -211,6 +388,19 @@ const prepareArchiveEntries = async ({
 
       missingOrders.push(getOrderDocumentLabel(order))
       continue
+    }
+
+    if (isDelhiveryB2BOrder(order) && !isLikelyStorageReference(reference)) {
+      try {
+        const providerDocument = await materializeDelhiveryB2BDocument(order, documentType)
+        if (providerDocument) {
+          preparedEntries.push(providerDocument)
+          continue
+        }
+      } catch {
+        missingOrders.push(getOrderDocumentLabel(order))
+        continue
+      }
     }
 
     if (seenReferences.has(reference)) {
