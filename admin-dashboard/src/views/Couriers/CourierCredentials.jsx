@@ -40,6 +40,7 @@ import {
   useUpdateEkartCredentials,
   useUpdateInnofulfillCredentials,
   useUpdateMovinCredentials,
+  useUpdateApptmyzCredentials,
   useUpdateXpressbeesAwbRange,
   useUpdateXpressbeesCredentials,
 } from 'hooks/useCouriers'
@@ -73,6 +74,7 @@ const CourierCredentials = () => {
   const updateEkart = useUpdateEkartCredentials()
   const updateInnofulfill = useUpdateInnofulfillCredentials()
   const updateMovin = useUpdateMovinCredentials()
+  const updateApptmyz = useUpdateApptmyzCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
   const updateXpressbeesAwbRange = useUpdateXpressbeesAwbRange()
 
@@ -220,6 +222,14 @@ const CourierCredentials = () => {
     subscriptionKey: '',
     accountNumber: '',
   })
+  const [apptmyzForm, setApptmyzForm] = useState({
+    apiBase: 'http://103.73.191.220:8080/flipkart',
+    clientName: '',
+    username: '',
+    password: '',
+    publicKey: '',
+    customerCode: '',
+  })
   const [xpressbeesForm, setXpressbeesForm] = useState({
     apiBase: '',
     username: '',
@@ -307,6 +317,16 @@ const CourierCredentials = () => {
         clientSecret: '',
         subscriptionKey: '',
         accountNumber: data.movin.accountNumber || '',
+      })
+    }
+    if (data?.apptmyz) {
+      setApptmyzForm({
+        apiBase: data.apptmyz.apiBase || 'http://103.73.191.220:8080/flipkart',
+        clientName: data.apptmyz.clientName || '',
+        username: data.apptmyz.username || '',
+        password: '',
+        publicKey: '',
+        customerCode: data.apptmyz.customerCode || '',
       })
     }
     if (data?.xpressbees) {
@@ -1149,6 +1169,36 @@ const CourierCredentials = () => {
     )
   }
 
+  const handleSaveApptmyz = () => {
+    updateApptmyz.mutate(
+      {
+        apiBase: apptmyzForm.apiBase,
+        clientName: apptmyzForm.clientName,
+        username: apptmyzForm.username,
+        customerCode: apptmyzForm.customerCode,
+        ...(apptmyzForm.password ? { password: apptmyzForm.password } : {}),
+        ...(apptmyzForm.publicKey ? { publicKey: apptmyzForm.publicKey } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Apptmyz credentials updated', status: 'success' })
+          setApptmyzForm((prev) => ({
+            ...prev,
+            password: '',
+            publicKey: '',
+          }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update Apptmyz credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSaveXpressbees = () => {
     updateXpressbees.mutate(
       {
@@ -1487,6 +1537,155 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Send LTL Password Reset
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">Apptmyz Customer API</Text>
+              <Badge
+                colorScheme={
+                  data?.apptmyz?.apiBase &&
+                  data?.apptmyz?.username &&
+                  data?.apptmyz?.hasPassword &&
+                  data?.apptmyz?.hasPublicKey
+                    ? 'green'
+                    : 'orange'
+                }
+              >
+                {data?.apptmyz?.apiBase &&
+                data?.apptmyz?.username &&
+                data?.apptmyz?.hasPassword &&
+                data?.apptmyz?.hasPublicKey
+                  ? 'Configured'
+                  : 'Missing credentials'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={apptmyzForm.apiBase}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, apiBase: e.target.value }))
+                }
+                placeholder="http://103.73.191.220:8080/flipkart"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Base URL from the Apptmyz PDF. Use sandbox for testing and production once the
+                live customer account is approved.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Client Name</FormLabel>
+              <Input
+                value={apptmyzForm.clientName}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, clientName: e.target.value }))
+                }
+                placeholder="Internal account label"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Internal label for the account, such as the customer or business name. This is for
+                RouteShip admin reference.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Username</FormLabel>
+              <Input
+                value={apptmyzForm.username}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, username: e.target.value }))
+                }
+                placeholder="Customer username from Apptmyz"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Customer username created during Apptmyz onboarding. The PDF sandbox example uses
+                a customer code style username.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                value={apptmyzForm.password}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, password: e.target.value }))
+                }
+                placeholder={
+                  data?.apptmyz?.hasPassword
+                    ? 'Leave blank to keep existing password'
+                    : 'Plain password from Apptmyz'
+                }
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Plain customer password. RouteShip encrypts it with the Apptmyz RSA public key
+                before calling the token API.
+              </Text>
+              {data?.apptmyz?.hasPassword && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Password is already configured.
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>RSA Public Key</FormLabel>
+              <Input
+                type="password"
+                value={apptmyzForm.publicKey}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, publicKey: e.target.value }))
+                }
+                placeholder={
+                  data?.apptmyz?.publicKeyMasked ||
+                  'Paste the Apptmyz public key from the API document'
+                }
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Public key used to RSA-encrypt the password for /api/customer/login. The PDF says
+                the same key is used for staging and production unless Apptmyz changes it.
+              </Text>
+              {!!data?.apptmyz?.publicKeyMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current public key: {data.apptmyz.publicKeyMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Customer Code</FormLabel>
+              <Input
+                value={apptmyzForm.customerCode}
+                onChange={(e) =>
+                  setApptmyzForm((prev) => ({ ...prev, customerCode: e.target.value }))
+                }
+                placeholder="Optional bill-to/customer code"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Optional customer or bill-to business code. Use it when Apptmyz maps multiple B2B
+                codes to one login and asks you to send custCode in pickup requests.
+              </Text>
+            </FormControl>
+
+            <Text fontSize="xs" color="gray.500">
+              Integrated backend endpoints cover login, order create/edit/list, docket generation,
+              tracking, cancellation, serviceability, masters, appointments, pickup requests, and
+              webhook updates.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveApptmyz}
+              isLoading={updateApptmyz.isPending}
+              alignSelf="flex-start"
+            >
+              Save Apptmyz Credentials
             </Button>
           </VStack>
         </Box>

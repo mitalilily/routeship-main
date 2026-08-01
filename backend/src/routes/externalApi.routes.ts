@@ -6,6 +6,7 @@ import {
   updateApiKeyController,
 } from '../controllers/externalApi/apiKey.controller'
 import { generateManifestController } from '../controllers/externalApi/manifest.controller'
+import { apptmyzWebhookUpdatesController } from '../controllers/admin/apptmyz.controller'
 import { ekartWebhookHandler } from '../controllers/webhooks/ekart.webhook'
 import {
   getNdrEventsController,
@@ -70,6 +71,7 @@ router.post('/webhooks/:id/regenerate-secret', requireAuth, regenerateWebhookSec
 
 // Provider webhook (Ekart) for partners who want to post directly
 router.post('/webhook/ekart/track', ekartWebhookHandler)
+router.post('/webhook/apptmyz/updates', apptmyzWebhookUpdatesController)
 
 // ============================================================================
 // SHIPPING & SERVICEABILITY (Requires API Key)

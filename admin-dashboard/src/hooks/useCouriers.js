@@ -36,6 +36,7 @@ import {
   updateEkartCredentials,
   updateInnofulfillCredentials,
   updateMovinCredentials,
+  updateApptmyzCredentials,
   updateXpressbeesAwbRange,
   updateXpressbeesCredentials,
   updateCourierStatus,
@@ -336,6 +337,17 @@ export const useUpdateMovinCredentials = () => {
 
   return useMutation({
     mutationFn: updateMovinCredentials,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courierCredentials'])
+    },
+  })
+}
+
+export const useUpdateApptmyzCredentials = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateApptmyzCredentials,
     onSuccess: () => {
       queryClient.invalidateQueries(['courierCredentials'])
     },

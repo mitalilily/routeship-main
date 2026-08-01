@@ -39,6 +39,7 @@ import {
 } from '../../models/services/amazonShippingCredentials.service'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
 import { DtdcService } from '../../models/services/couriers/dtdc.service'
+import { ApptmyzService } from '../../models/services/couriers/apptmyz.service'
 import { readXlsxRows, xlsxRowsToRecords } from '../../utils/xlsx'
 import { getConfiguredCourierProviderSet } from '../../models/services/courierCredentials.service'
 
@@ -521,6 +522,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           'xpressbees',
           'dtdc',
           'movin',
+          'apptmyz',
         ]),
       )
 
@@ -613,6 +615,16 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         hasClientSecret: false,
         hasSubscriptionKey: false,
         subscriptionKeyMasked: '',
+      },
+      apptmyz: {
+        provider: 'apptmyz',
+        apiBase: 'http://103.73.191.220:8080/flipkart',
+        clientName: '',
+        username: '',
+        customerCode: '',
+        hasPassword: false,
+        hasPublicKey: false,
+        publicKeyMasked: '',
       },
     }
 
@@ -776,6 +788,22 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasClientSecret: Boolean((row.password || '').trim()),
           hasSubscriptionKey: Boolean(subscriptionKey.trim()),
           subscriptionKeyMasked: maskCourierCredential(subscriptionKey),
+        }
+      } else if (provider === 'apptmyz') {
+        const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {}
+        const publicKey = String((metadata as any).publicKey || (metadata as any).public_key || '').trim()
+        const customerCode = String(
+          (metadata as any).customerCode || (metadata as any).customer_code || '',
+        ).trim()
+        acc.apptmyz = {
+          provider: 'apptmyz',
+          apiBase: row.apiBase || 'http://103.73.191.220:8080/flipkart',
+          clientName: row.clientName || '',
+          username: row.username || '',
+          customerCode,
+          hasPassword: Boolean((row.password || '').trim()),
+          hasPublicKey: Boolean(publicKey),
+          publicKeyMasked: publicKey ? `${publicKey.slice(0, 10)}...${publicKey.slice(-10)}` : '',
         }
       }
       return acc
@@ -2483,6 +2511,104 @@ export const updateMovinCredentialsController = async (req: Request, res: Respon
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Movin credentials' })
+  }
+}
+
+export const updateApptmyzCredentialsController = async (req: Request, res: Response) => {
+  const { apiBase, clientName, username, password, publicKey, customerCode } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextClientName = typeof clientName === 'string' ? clientName.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextPassword = typeof password === 'string' ? password.trim() : undefined
+    const nextPublicKey = typeof publicKey === 'string' ? publicKey.trim() : undefined
+    const nextCustomerCode = typeof customerCode === 'string' ? customerCode.trim() : undefined
+    const hasNewPassword = typeof nextPassword === 'string' && nextPassword.length > 0
+    const hasNewPublicKey = typeof nextPublicKey === 'string' && nextPublicKey.length > 0
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id, metadata: courier_credentials.metadata })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'apptmyz'))
+      .limit(1)
+
+    if (existing) {
+      const metadata =
+        existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+          ? { ...existing.metadata }
+          : {}
+      const updatePayload: Record<string, any> = { updatedAt: new Date() }
+
+      if (nextApiBase !== undefined) {
+        updatePayload.apiBase = nextApiBase || 'http://103.73.191.220:8080/flipkart'
+      }
+      if (nextClientName !== undefined) updatePayload.clientName = nextClientName
+      if (nextUsername !== undefined) updatePayload.username = nextUsername
+      if (hasNewPassword) updatePayload.password = nextPassword
+      if (hasNewPublicKey) metadata.publicKey = nextPublicKey
+      if (nextCustomerCode !== undefined) metadata.customerCode = nextCustomerCode
+      updatePayload.metadata = metadata
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'apptmyz'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'apptmyz',
+        apiBase: nextApiBase || 'http://103.73.191.220:8080/flipkart',
+        clientName: nextClientName || '',
+        apiKey: '',
+        clientId: '',
+        username: nextUsername || '',
+        password: hasNewPassword ? nextPassword : '',
+        webhookSecret: '',
+        metadata: {
+          publicKey: hasNewPublicKey ? nextPublicKey : '',
+          customerCode: nextCustomerCode || '',
+        },
+      })
+    }
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        clientName: courier_credentials.clientName,
+        username: courier_credentials.username,
+        password: courier_credentials.password,
+        metadata: courier_credentials.metadata,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'apptmyz'))
+      .limit(1)
+
+    const metadata = saved?.metadata && typeof saved.metadata === 'object' ? saved.metadata : {}
+    const savedPublicKey = String((metadata as any).publicKey || (metadata as any).public_key || '').trim()
+
+    ApptmyzService.clearCachedConfig()
+
+    res.json({
+      success: true,
+      message: 'Apptmyz credentials updated successfully',
+      data: {
+        provider: 'apptmyz',
+        apiBase: saved?.apiBase || 'http://103.73.191.220:8080/flipkart',
+        clientName: saved?.clientName || '',
+        username: saved?.username || '',
+        customerCode: String(
+          (metadata as any).customerCode || (metadata as any).customer_code || '',
+        ).trim(),
+        hasPassword: Boolean((saved?.password || '').trim()),
+        hasPublicKey: Boolean(savedPublicKey),
+        publicKeyMasked: savedPublicKey
+          ? `${savedPublicKey.slice(0, 10)}...${savedPublicKey.slice(-10)}`
+          : '',
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update Apptmyz credentials' })
   }
 }
 

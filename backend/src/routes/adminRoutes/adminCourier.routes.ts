@@ -34,10 +34,26 @@ import {
   updateEkartCredentialsController,
   updateInnofulfillCredentialsController,
   updateMovinCredentialsController,
+  updateApptmyzCredentialsController,
   updateXpressbeesAwbRangeController,
   updateXpressbeesCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
+import {
+  apptmyzCancelOrdersController,
+  apptmyzCancelReasonsController,
+  apptmyzCreateOrderController,
+  apptmyzCreatePickupRequestsController,
+  apptmyzDeliverySlotsController,
+  apptmyzGenerateDocketsController,
+  apptmyzGenerateTokenController,
+  apptmyzListOrdersController,
+  apptmyzServiceabilityController,
+  apptmyzTrackOrdersController,
+  apptmyzTruckTypesController,
+  apptmyzUpdateDeliveryAppointmentController,
+  apptmyzUpdateOrderDetailsController,
+} from '../../controllers/admin/apptmyz.controller'
 import {
   createEkartWebhookController,
   estimateEkartPricingController,
@@ -227,6 +243,55 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateMovinCredentialsController,
+)
+router.put(
+  '/credentials/apptmyz',
+  requireAuth,
+  isAdminMiddleware,
+  updateApptmyzCredentialsController,
+)
+router.post('/credentials/apptmyz/login', requireAuth, isAdminMiddleware, apptmyzGenerateTokenController)
+router.post('/credentials/apptmyz/orders', requireAuth, isAdminMiddleware, apptmyzCreateOrderController)
+router.get(
+  '/credentials/apptmyz/dockets/:travelMode/:count',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzGenerateDocketsController,
+)
+router.post('/credentials/apptmyz/track', requireAuth, isAdminMiddleware, apptmyzTrackOrdersController)
+router.get(
+  '/credentials/apptmyz/orders/:startDate/:endDate',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzListOrdersController,
+)
+router.post('/credentials/apptmyz/cancel', requireAuth, isAdminMiddleware, apptmyzCancelOrdersController)
+router.get('/credentials/apptmyz/cancel-reasons', requireAuth, isAdminMiddleware, apptmyzCancelReasonsController)
+router.get('/credentials/apptmyz/delivery-slots', requireAuth, isAdminMiddleware, apptmyzDeliverySlotsController)
+router.get('/credentials/apptmyz/truck-types', requireAuth, isAdminMiddleware, apptmyzTruckTypesController)
+router.get(
+  '/credentials/apptmyz/serviceability/:pincode',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzServiceabilityController,
+)
+router.post(
+  '/credentials/apptmyz/appointments/delivery',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzUpdateDeliveryAppointmentController,
+)
+router.post(
+  '/credentials/apptmyz/orders/edit',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzUpdateOrderDetailsController,
+)
+router.post(
+  '/credentials/apptmyz/pickup-requests',
+  requireAuth,
+  isAdminMiddleware,
+  apptmyzCreatePickupRequestsController,
 )
 router.get(
   '/credentials/ekart/serviceability/bulk/:type',

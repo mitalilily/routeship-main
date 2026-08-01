@@ -12,6 +12,7 @@ export type ServiceProviderId =
   | 'innofulfill'
   | 'dtdc'
   | 'movin'
+  | 'apptmyz'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -119,6 +120,15 @@ export type MovinConfig = {
   accountNumber?: string
 }
 
+export type ApptmyzConfig = {
+  apiBase?: string
+  clientName?: string
+  username?: string
+  password?: string
+  publicKey?: string
+  customerCode?: string
+}
+
 export type CourierConfig =
   | DelhiveryConfig
   | SmartshipConfig
@@ -130,6 +140,7 @@ export type CourierConfig =
   | InnofulfillConfig
   | DtdcConfig
   | MovinConfig
+  | ApptmyzConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -166,6 +177,7 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = [
   'innofulfill',
   'dtdc',
   'movin',
+  'apptmyz',
 ]
 
 const normalize = (val?: string | null) => String(val || '').trim()
@@ -223,6 +235,10 @@ export const isCourierCredentialRowConfigured = (
     const subscriptionKey = metadataValue(row, 'subscriptionKey', 'subscription_key')
     const accountNumber = metadataValue(row, 'accountNumber', 'account_number')
     return Boolean(row.apiBase && tenantId && serverId && clientId && password && subscriptionKey && accountNumber)
+  }
+  if (normalizedProvider === 'apptmyz') {
+    const publicKey = metadataValue(row, 'publicKey', 'public_key')
+    return Boolean(row.apiBase && username && password && publicKey)
   }
   if (normalizedProvider === 'amazon') {
     const accessToken = metadataValue(row, 'accessToken')
@@ -284,6 +300,13 @@ const configuredProvidersFromEnvironment = () => {
     normalize(process.env.MOVIN_ACCOUNT_NUMBER)
   ) {
     providers.add('movin')
+  }
+  if (
+    normalize(process.env.APPTMYZ_API_BASE) &&
+    normalize(process.env.APPTMYZ_USERNAME) &&
+    normalize(process.env.APPTMYZ_PASSWORD)
+  ) {
+    providers.add('apptmyz')
   }
   return providers
 }
@@ -406,6 +429,18 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       accountNumber: normalize(
         (metadata.accountNumber as string) || (metadata.account_number as string) || '',
       ),
+    }
+    return cfg
+  }
+
+  if (provider === 'apptmyz') {
+    const cfg: ApptmyzConfig = {
+      apiBase: normalize(row.apiBase),
+      clientName: normalize(row.clientName),
+      username: normalize(row.username),
+      password: normalize(row.password),
+      publicKey: normalize((metadata.publicKey as string) || (metadata.public_key as string) || ''),
+      customerCode: normalize((metadata.customerCode as string) || (metadata.customer_code as string) || ''),
     }
     return cfg
   }
