@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { and, asc, desc, eq, gte, ilike, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { ShippingRateFilters } from '../../controllers/admin/courier.controller'
 import { db } from '../client'
 import { couriers } from '../schema/couriers'
@@ -301,7 +301,9 @@ const getUserB2BShippingRates = async (
     .orderBy(asc(zones.code))
 
   const zoneById = new Map(allB2BZones.map((zone) => [zone.id, zone]))
-  const conditions: any[] = [eq(b2bZoneToZoneRates.plan_id, planId)]
+  const conditions: any[] = [
+    or(eq(b2bZoneToZoneRates.plan_id, planId), isNull(b2bZoneToZoneRates.plan_id)),
+  ]
 
   const rows = await db
     .select({
@@ -317,7 +319,11 @@ const getUserB2BShippingRates = async (
       ),
     )
     .where(and(...conditions))
-    .orderBy(asc(couriers.name), asc(b2bZoneToZoneRates.created_at))
+    .orderBy(
+      asc(couriers.name),
+      sql`case when ${b2bZoneToZoneRates.plan_id} = ${planId} then 1 else 0 end`,
+      asc(b2bZoneToZoneRates.created_at),
+    )
 
   const filteredRows = rows.filter((row) => {
     const provider = String(row.rate.service_provider || '').toLowerCase()
