@@ -232,7 +232,7 @@ const materializeDelhiveryB2BDocument = async (
     const labelResult = await delhivery.getLtlShippingLabelUrls({ size: 'a4', lrn })
     const labelPayload = labelResult.labelUrls[0]
     if (!labelPayload) {
-      throw new Error('Delhivery LTL did not return a label URL yet')
+      return null
     }
 
     if (/^https?:\/\//i.test(labelPayload)) {
@@ -370,7 +370,12 @@ const prepareArchiveEntries = async ({
   for (const order of orders) {
     const reference = getDocumentReference(order, documentType)
     if (!reference) {
-      const providerDocument = await materializeDelhiveryB2BDocument(order, documentType)
+      let providerDocument: PreparedDocumentEntry | null = null
+      try {
+        providerDocument = await materializeDelhiveryB2BDocument(order, documentType)
+      } catch {
+        providerDocument = null
+      }
       if (providerDocument) {
         preparedEntries.push(providerDocument)
         continue
@@ -398,8 +403,20 @@ const prepareArchiveEntries = async ({
           continue
         }
       } catch {
-        missingOrders.push(getOrderDocumentLabel(order))
-        continue
+        if (documentType !== 'label') {
+          missingOrders.push(getOrderDocumentLabel(order))
+          continue
+        }
+      }
+
+      if (documentType === 'label') {
+        try {
+          preparedEntries.push(await resolveGeneratedLabelDownloadUrl(order))
+          continue
+        } catch {
+          missingOrders.push(getOrderDocumentLabel(order))
+          continue
+        }
       }
     }
 
