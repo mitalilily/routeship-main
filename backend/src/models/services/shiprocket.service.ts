@@ -10905,10 +10905,25 @@ export const createB2BShipmentService = async (
         billing_address: billingAddress,
       }
 
-      manifestSubmission = await delhivery.createLtlManifest(
-        manifestPayload,
-        manifestDocumentFiles,
-      )
+      try {
+        manifestSubmission = await delhivery.createLtlManifest(
+          manifestPayload,
+          manifestDocumentFiles,
+        )
+      } catch (manifestError: any) {
+        const manifestErrorMessage = String(manifestError?.message || '').toLowerCase()
+        if (!manifestErrorMessage.includes('fop/fod')) {
+          throw manifestError
+        }
+
+        const accountDefaultFreightPayload = { ...manifestPayload }
+        delete (accountDefaultFreightPayload as any).freight_mode
+        manifestSubmission = await delhivery.createLtlManifest(
+          accountDefaultFreightPayload,
+          manifestDocumentFiles,
+        )
+        freightMode = 'account_default'
+      }
       jobId = String((manifestSubmission as any)?.jobId || '').trim()
       if (!jobId) {
         throw new HttpError(502, 'Delhivery LTL manifest did not return a job ID.')
