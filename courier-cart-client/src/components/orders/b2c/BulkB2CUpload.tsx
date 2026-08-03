@@ -1570,7 +1570,7 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
                   bgcolor: '#fff',
                 }}
               >
-                Download Color-Coded Format
+                Download Sample CSV
               </Button>
               <Button
                 component="label"
