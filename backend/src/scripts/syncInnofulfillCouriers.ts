@@ -13,6 +13,7 @@ const DEFAULT_EXTRA_RATE = 10
 const DEFAULT_EXTRA_WEIGHT_UNIT_KG = 1
 const DEFAULT_COD_CHARGES = 10
 const DEFAULT_COD_PERCENT = 2
+const REMOVED_INNOFULFILL_COURIER_IDS = [6103]
 
 const INNOFULFILL_COURIERS = [
   {
@@ -28,13 +29,6 @@ const INNOFULFILL_COURIERS = [
     mode: 'air',
     carrierName: 'innofulfill_ecomm',
     carrierId: '30d5f835-a63a-4125-b095-93b3098e4e3d',
-  },
-  {
-    id: 6103,
-    name: 'Shreemaruti Hyperlocal',
-    mode: 'hyperlocal',
-    carrierName: 'innofulfillHyperlocal',
-    carrierId: '',
   },
 ] as const
 
@@ -239,6 +233,35 @@ const upsertCredentials = async (
 }
 
 const upsertCouriers = async (client: PoolClient) => {
+  await client.query(
+    `delete from shipping_rate_slabs
+     where shipping_rate_id in (
+       select id
+       from shipping_rates
+       where lower(coalesce(service_provider, '')) = $1
+         and courier_id = any($2::int[])
+     )`,
+    [SERVICE_PROVIDER, REMOVED_INNOFULFILL_COURIER_IDS],
+  )
+  await client.query(
+    `delete from shipping_rates
+     where lower(coalesce(service_provider, '')) = $1
+       and courier_id = any($2::int[])`,
+    [SERVICE_PROVIDER, REMOVED_INNOFULFILL_COURIER_IDS],
+  )
+  await client.query(
+    `delete from routeship_b2c_courier_rate_configs
+     where lower(coalesce(service_provider, '')) = $1
+       and courier_id = any($2::int[])`,
+    [SERVICE_PROVIDER, REMOVED_INNOFULFILL_COURIER_IDS],
+  )
+  await client.query(
+    `delete from couriers
+     where lower("serviceProvider") = $1
+       and id = any($2::int[])`,
+    [SERVICE_PROVIDER, REMOVED_INNOFULFILL_COURIER_IDS],
+  )
+
   for (const courier of INNOFULFILL_COURIERS) {
     await client.query(
       `insert into couriers (id, name, "serviceProvider", "isEnabled", business_type, created_at, updated_at)
