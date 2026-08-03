@@ -10054,11 +10054,66 @@ export const createB2BShipmentService = async (
       .trim()
       .toLowerCase() === 'true' ||
     String(params.is_insurance ?? '').trim() === '1'
-  const normalizedOrderNumber = await ensureUniqueMerchantOrderNumber(
-    db as any,
-    userId,
-    params.order_number,
+  const normalizedOrderNumberInput =
+    typeof params.order_number === 'string' ? params.order_number.trim() : ''
+  if (!normalizedOrderNumberInput) {
+    throw new HttpError(400, 'Order ID is required.')
+  }
+
+  const normalizedOrderNumberKey = normalizedOrderNumberInput.toLowerCase()
+  const [existingB2COrder, existingB2BOrder] = await Promise.all([
+    db
+      .select({ id: b2c_orders.id, orderStatus: b2c_orders.order_status })
+      .from(b2c_orders)
+      .where(
+        and(
+          eq(b2c_orders.user_id, userId),
+          sql`lower(trim(${b2c_orders.order_number})) = ${normalizedOrderNumberKey}`,
+        ),
+      )
+      .limit(1),
+    db
+      .select({
+        id: b2b_orders.id,
+        orderStatus: b2b_orders.order_status,
+        providerLastStatus: b2b_orders.provider_last_status,
+      })
+      .from(b2b_orders)
+      .where(
+        and(
+          eq(b2b_orders.user_id, userId),
+          sql`lower(trim(${b2b_orders.order_number})) = ${normalizedOrderNumberKey}`,
+        ),
+      )
+      .limit(1),
+  ])
+
+  if (existingB2COrder[0]) {
+    throw new HttpError(
+      409,
+      `Order ID "${normalizedOrderNumberInput}" already exists for this merchant. Please use a unique Order ID.`,
+    )
+  }
+
+  const retryableExistingB2BOrder = existingB2BOrder[0]
+  const existingStatus = String(retryableExistingB2BOrder?.orderStatus || '').toLowerCase()
+  const existingProviderStatus = String(
+    retryableExistingB2BOrder?.providerLastStatus || '',
+  ).toLowerCase()
+  const canRetryExistingB2BOrder = Boolean(
+    retryableExistingB2BOrder &&
+      ['failed', 'pending'].includes(existingStatus) &&
+      ['booking_failed', 'pending', ''].includes(existingProviderStatus),
   )
+
+  if (retryableExistingB2BOrder && !canRetryExistingB2BOrder) {
+    throw new HttpError(
+      409,
+      `Order ID "${normalizedOrderNumberInput}" already exists for this merchant. Please use a unique Order ID.`,
+    )
+  }
+
+  const normalizedOrderNumber = normalizedOrderNumberInput
 
   const inferredBoxes = Array.isArray(params.boxes)
     ? params.boxes
@@ -10307,10 +10362,7 @@ export const createB2BShipmentService = async (
   const b2bStoredCodCharges = chargesBreakdown ? 0 : Number(params.cod_charges ?? 0)
 
   // 1️⃣ Insert local B2B order as 'pending'
-  const [pendingOrder] = await db
-    .insert(b2b_orders)
-    .values({
-      id: randomUUID(),
+  const pendingOrderValues = {
       order_number: normalizedOrderNumber,
       order_date: params?.order_date,
       order_amount: shipmentValue,
@@ -10383,10 +10435,23 @@ export const createB2BShipmentService = async (
                 )
               : null,
       provider_last_status: 'pending',
-      created_at: new Date(),
       updated_at: new Date(),
-    } as any)
-    .returning({ id: b2b_orders.id })
+    } as any
+
+  const [pendingOrder] = canRetryExistingB2BOrder
+    ? await db
+        .update(b2b_orders)
+        .set(pendingOrderValues)
+        .where(eq(b2b_orders.id, retryableExistingB2BOrder!.id))
+        .returning({ id: b2b_orders.id })
+    : await db
+        .insert(b2b_orders)
+        .values({
+          id: randomUUID(),
+          ...pendingOrderValues,
+          created_at: new Date(),
+        } as any)
+        .returning({ id: b2b_orders.id })
 
   const boxes = inferredBoxes
 
