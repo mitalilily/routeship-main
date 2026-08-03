@@ -1950,7 +1950,7 @@ export const calculateB2BRate = async (params: {
   const hasSpecialDelivery =
     isCsd || destination.isMall || checkSpecialDeliveryKeywords(params.deliveryAddress)
 
-  const normalizedFreightMode = String(params.freightMode || 'fod')
+  const normalizedFreightMode = String(params.freightMode || 'fop')
     .trim()
     .toLowerCase()
 
@@ -1977,7 +1977,7 @@ export const calculateB2BRate = async (params: {
     volumetricWeight,
     invoiceValue: params.invoiceValue ?? 0,
     baseFreight,
-    freightMode: normalizedFreightMode || 'fod',
+    freightMode: normalizedFreightMode || 'fop',
   }
 
   let runningTotal = baseFreight

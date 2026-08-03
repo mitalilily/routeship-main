@@ -5777,7 +5777,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         : 'surface'
     const pieceCountRaw = Number((params as any).pieceCount ?? (params as any).piece_count ?? 1)
     const pieceCount = Number.isFinite(pieceCountRaw) && pieceCountRaw > 0 ? pieceCountRaw : 1
-    const requestedFreightMode = String((params as any).freight_mode || 'fod')
+    const requestedFreightMode = String((params as any).freight_mode || 'fop')
       .trim()
       .toLowerCase()
     const normalizedFreightMode = requestedFreightMode === 'fop' ? 'fop' : 'fod'
@@ -10257,7 +10257,7 @@ export const createB2BShipmentService = async (
       : params.rov_type === 'none'
         ? 'none'
         : 'owner'
-  const requestedFreightMode = String((params as any).freight_mode || '')
+  const requestedFreightMode = String((params as any).freight_mode || 'fop')
     .trim()
     .toLowerCase()
   const normalizedFreightMode = requestedFreightMode === 'fop' ? 'fop' : 'fod'
@@ -10654,7 +10654,7 @@ export const createB2BShipmentService = async (
     let lrn = ''
     let awbs: string[] = []
     let pickupLocationName = ''
-    let freightMode = 'fod'
+    let freightMode = 'fop'
     let pickupDate = ''
     let pickupTime = ''
     let totalPackageCount = 1
@@ -10776,13 +10776,13 @@ export const createB2BShipmentService = async (
             : undefined
 
       const requestedFreightMode = String(
-        (params as any).freight_mode || (payload as any).freight_mode || '',
+        (params as any).freight_mode || (payload as any).freight_mode || 'fop',
       )
         .trim()
         .toLowerCase()
       freightMode = requestedFreightMode === 'fop' || requestedFreightMode === 'fod'
         ? requestedFreightMode
-        : 'fod'
+        : 'fop'
       const pickupDateRaw =
         payload.pickup?.pickup_date || normalizedPickupDate || params.order_date || new Date().toISOString()
       const pickupTimeRaw = payload.pickup?.pickup_time || normalizedPickupTime || getDefaultPickupTime()

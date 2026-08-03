@@ -1,10 +1,7 @@
 import { Alert, Box, Grid, Paper, Stack, Typography, alpha } from '@mui/material'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import { FaWeightHanging } from 'react-icons/fa'
-import {
-  B2C_MIN_CHARGEABLE_WEIGHT_GRAMS,
-  B2C_MIN_CHARGEABLE_WEIGHT_KG,
-} from '../../../utils/constants'
+import { B2C_MIN_CHARGEABLE_WEIGHT_KG } from '../../../utils/constants'
 import CustomInput from '../../UI/inputs/CustomInput'
 import type { B2CFormData } from './B2COrderForm'
 
@@ -12,10 +9,9 @@ const ACCENT = '#FE6502'
 const TEXT_PRIMARY = '#17171A'
 const TEXT_MUTED = '#496189'
 
-const formatWeightDisplay = (grams: number) => {
-  if (!Number.isFinite(grams) || grams <= 0) return '-'
-  if (grams < 1000) return `${Math.round(grams).toLocaleString('en-IN')} g`
-  return `${(grams / 1000).toFixed(2)} kg`
+const formatWeightDisplay = (kg: number) => {
+  if (!Number.isFinite(kg) || kg <= 0) return '-'
+  return `${kg.toFixed(2)} kg`
 }
 
 const PackageDimensionsForm = () => {
@@ -26,14 +22,12 @@ const PackageDimensionsForm = () => {
   const breadth = useWatch({ control, name: 'breadth' }) || 0
   const height = useWatch({ control, name: 'height' }) || 0
 
-  const actualWeightGrams = Number(weight) || 0
-  const actualWeightKg = actualWeightGrams / 1000
+  const actualWeightKg = Number(weight) || 0
   const volumetricWeightKg = (Number(length) * Number(breadth) * Number(height)) / 5000
-  const volumetricWeightGrams = Math.round(Math.max(volumetricWeightKg, 0) * 1000)
-  const chargedWeightGrams = Math.max(
-    actualWeightGrams,
-    volumetricWeightGrams,
-    B2C_MIN_CHARGEABLE_WEIGHT_GRAMS,
+  const chargedWeightKg = Math.max(
+    actualWeightKg,
+    volumetricWeightKg,
+    B2C_MIN_CHARGEABLE_WEIGHT_KG,
   )
 
   const fields = ['weight', 'length', 'breadth', 'height'] as const
@@ -56,7 +50,7 @@ const PackageDimensionsForm = () => {
           },
         }}
       >
-        Note: The minimum chargeable weight is {B2C_MIN_CHARGEABLE_WEIGHT_KG.toFixed(2)} Kg
+        Note: The minimum chargeable weight is {B2C_MIN_CHARGEABLE_WEIGHT_KG.toFixed(2)} kg
       </Alert>
 
       <Grid container spacing={0.9}>
@@ -75,7 +69,7 @@ const PackageDimensionsForm = () => {
                   label={
                     key.charAt(0).toUpperCase() +
                     key.slice(1) +
-                    (key === 'weight' ? ' (g)' : ' (cm)')
+                    (key === 'weight' ? ' (kg)' : ' (cm)')
                   }
                   type="number"
                   required
@@ -111,7 +105,7 @@ const PackageDimensionsForm = () => {
           Package Weight Summary
         </Typography>
         <Typography variant="caption" sx={{ color: TEXT_MUTED, mb: 0.55, display: 'block', fontSize: '0.68rem' }}>
-          {`Chargeable weight is calculated as max of actual, volumetric, or minimum weight (${B2C_MIN_CHARGEABLE_WEIGHT_GRAMS} g)`}
+          {`Chargeable weight is calculated as max of actual, volumetric, or minimum weight (${B2C_MIN_CHARGEABLE_WEIGHT_KG.toFixed(2)} kg)`}
         </Typography>
 
         <Grid container spacing={0.65}>
@@ -129,10 +123,7 @@ const PackageDimensionsForm = () => {
                 ACTUAL WEIGHT
               </Typography>
               <Typography variant="body2" fontWeight={800} sx={{ color: TEXT_PRIMARY, mt: 0.2 }}>
-                {formatWeightDisplay(actualWeightGrams)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: TEXT_MUTED }}>
-                {actualWeightKg.toFixed(2)} kg
+                {formatWeightDisplay(actualWeightKg)}
               </Typography>
             </Paper>
           </Grid>
@@ -151,7 +142,7 @@ const PackageDimensionsForm = () => {
                 VOLUMETRIC WEIGHT
               </Typography>
               <Typography variant="body2" fontWeight={800} sx={{ color: TEXT_PRIMARY, mt: 0.2 }}>
-                {formatWeightDisplay(volumetricWeightGrams)}
+                {formatWeightDisplay(volumetricWeightKg)}
               </Typography>
               <Typography variant="caption" sx={{ color: TEXT_MUTED }}>
                 L×B×H ÷ 5000
@@ -182,21 +173,21 @@ const PackageDimensionsForm = () => {
                   }}
                 >
                   <Typography variant="caption" fontWeight={700} sx={{ color: ACCENT }}>
-                    {chargedWeightGrams === B2C_MIN_CHARGEABLE_WEIGHT_GRAMS
+                    {chargedWeightKg === B2C_MIN_CHARGEABLE_WEIGHT_KG
                       ? 'MIN'
-                      : chargedWeightGrams === actualWeightGrams
+                      : chargedWeightKg === actualWeightKg
                       ? 'ACTUAL'
                       : 'VOLUMETRIC'}
                   </Typography>
                 </Box>
               </Stack>
               <Typography variant="body2" fontWeight={800} sx={{ color: TEXT_PRIMARY, mt: 0.2 }}>
-                {formatWeightDisplay(chargedWeightGrams)}
+                {formatWeightDisplay(chargedWeightKg)}
               </Typography>
               <Typography variant="caption" sx={{ color: TEXT_MUTED }}>
-                {chargedWeightGrams === B2C_MIN_CHARGEABLE_WEIGHT_GRAMS
+                {chargedWeightKg === B2C_MIN_CHARGEABLE_WEIGHT_KG
                   ? 'Minimum weight applied'
-                  : chargedWeightGrams === actualWeightGrams
+                  : chargedWeightKg === actualWeightKg
                   ? 'Based on actual weight'
                   : 'Based on dimensions'}
               </Typography>

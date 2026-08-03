@@ -187,7 +187,7 @@ const sampleRows = [
     product_3_quantity: '',
     product_3_discount: '',
     product_3_tax_rate: '',
-    weight: '500',
+    weight: '0.5',
     length: '22',
     breadth: '18',
     height: '3',
@@ -2527,7 +2527,7 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <TextField
                     fullWidth
-                    label="Weight (g)"
+                    label="Weight (kg)"
                     value={editDraft.weight}
                     onChange={(event) => setEditDraft({ ...editDraft, weight: event.target.value })}
                   />

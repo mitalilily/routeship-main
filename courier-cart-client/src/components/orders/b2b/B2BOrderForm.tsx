@@ -131,8 +131,8 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
   // Determine default order type based on enabled payment options
   const getDefaultOrderType = (): 'prepaid' | 'cod' => {
     if (!paymentOptions) return 'prepaid' // Default fallback
-    if (paymentOptions.codEnabled) return 'cod'
     if (paymentOptions.prepaidEnabled) return 'prepaid'
+    if (paymentOptions.codEnabled) return 'cod'
     return 'prepaid' // Final fallback
   }
 
@@ -160,7 +160,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
       breadth: 0,
       height: 0,
       orderType: getDefaultOrderType(),
-      freightMode: 'fod',
+      freightMode: 'fop',
       rovType: 'owner',
       orderAmount: 0,
       codAmount: 0,
@@ -197,11 +197,11 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
         (orderType === 'prepaid' && paymentOptions.prepaidEnabled)
 
       if (!isCurrentTypeEnabled) {
-        const newOrderType = paymentOptions.codEnabled
-          ? 'cod'
-          : paymentOptions.prepaidEnabled
+        const newOrderType = paymentOptions.prepaidEnabled
           ? 'prepaid'
-          : 'prepaid'
+          : paymentOptions.codEnabled
+            ? 'cod'
+            : 'prepaid'
         setValue('orderType', newOrderType)
       }
     }
@@ -263,7 +263,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
         order_number: normalizedOrderId,
         order_date: data.orderDate,
         payment_type: data.orderType,
-        freight_mode: data.freightMode || 'fod',
+        freight_mode: data.freightMode || 'fop',
         rov_type: data.rovType || 'owner',
         order_amount: shipmentValue,
         cod_amount: codCollectableAmount,

@@ -71,7 +71,7 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
     if (shipmentType !== 'b2b') return
     if (currentFreightMode === 'fop' || currentFreightMode === 'fod') return
 
-    setFormValue('freightMode', 'fod')
+    setFormValue('freightMode', 'fop')
   }, [currentFreightMode, setFormValue, shipmentType])
 
   useEffect(() => {
@@ -231,7 +231,7 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
             render={({ field }) => (
               <CustomSelect
                 label="Freight Mode"
-                value={field.value || 'fod'}
+                value={field.value || 'fop'}
                 onSelect={(value) => field.onChange(value)}
                 items={b2bFreightModes}
                 helperText="Used for Delhivery LTL bookings."
