@@ -5,13 +5,17 @@ const sanitizeString = (value: unknown): string => {
   return String(value).trim()
 }
 
-const hasExplicitTimezoneOffset = (value: string) => /(?:z|[+-]\d{2}:?\d{2})$/i.test(value.trim())
-
 export const parseDelhiveryTrackingTimestamp = (value: unknown): Date | unknown => {
   const raw = sanitizeString(value)
-  if (!raw || hasExplicitTimezoneOffset(raw)) return value
+  if (!raw) return value
 
-  const normalized = raw.replace('T', ' ').trim()
+  // Delhivery scan timestamps represent India local time in practice. Some API
+  // responses still append "Z"/offset text, which makes browsers shift the
+  // displayed time by +5:30 if treated as true UTC.
+  const normalized = raw
+    .replace('T', ' ')
+    .replace(/\s*(?:z|[+-]\d{2}:?\d{2})$/i, '')
+    .trim()
   const isoLike = normalized.match(
     /^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/,
   )
