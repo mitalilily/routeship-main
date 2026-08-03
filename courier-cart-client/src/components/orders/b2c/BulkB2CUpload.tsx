@@ -885,11 +885,17 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
 
   const handleDownloadSample = () => {
     const headers = Object.keys(sampleRows[0])
+    const borderXml = `
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2EF"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2EF"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2EF"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2EF"/>
+      </Borders>`
     const headerCells = headers
       .map((header) => {
         const isMandatory = mandatorySampleHeaders.has(header)
-        const background = isMandatory ? '#16A34A' : '#DC2626'
-        return `<th style="background:${background};color:#ffffff;font-weight:700;border:1px solid #d9e2ef;padding:8px;text-align:left;">${escapeHtml(header)}</th>`
+        return `<Cell ss:StyleID="${isMandatory ? 'mandatoryHeader' : 'optionalHeader'}"><Data ss:Type="String">${escapeHtml(header)}</Data></Cell>`
       })
       .join('')
     const dataRows = sampleRows
@@ -897,28 +903,74 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
         const cells = headers
           .map(
             (header) =>
-              `<td style="border:1px solid #d9e2ef;padding:8px;mso-number-format:'\\@';">${escapeHtml(
+              `<Cell ss:StyleID="sampleCell"><Data ss:Type="String">${escapeHtml(
                 row[header as keyof (typeof sampleRows)[number]],
-              )}</td>`,
+              )}</Data></Cell>`,
           )
           .join('')
-        return `<tr>${cells}</tr>`
+        return `<Row>${cells}</Row>`
       })
       .join('')
-    const legendRow = `<tr><td colspan="${headers.length}" style="padding:8px;font-weight:700;">Green headers are mandatory. Red headers are optional and can be left empty.</td></tr>`
-    const workbook = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-  </head>
-  <body>
-    <table>
-      ${legendRow}
-      <tr>${headerCells}</tr>
+    const columns = headers.map(() => '<Column ss:AutoFitWidth="0" ss:Width="145"/>').join('')
+    const blankLegendCells = Array.from({ length: Math.max(headers.length - 2, 0) })
+      .map(() => '<Cell ss:StyleID="sampleCell"><Data ss:Type="String"></Data></Cell>')
+      .join('')
+    const workbook = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:html="http://www.w3.org/TR/REC-html40">
+  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+    <Title>RouteShip B2C Bulk Upload Sample</Title>
+  </DocumentProperties>
+  <Styles>
+    <Style ss:ID="mandatoryHeader">
+      <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#16A34A" ss:Pattern="Solid"/>
+      ${borderXml}
+    </Style>
+    <Style ss:ID="optionalHeader">
+      <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#DC2626" ss:Pattern="Solid"/>
+      ${borderXml}
+    </Style>
+    <Style ss:ID="legendMandatory">
+      <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#16A34A" ss:Pattern="Solid"/>
+      ${borderXml}
+    </Style>
+    <Style ss:ID="legendOptional">
+      <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#DC2626" ss:Pattern="Solid"/>
+      ${borderXml}
+    </Style>
+    <Style ss:ID="sampleCell">
+      <NumberFormat ss:Format="@"/>
+      ${borderXml}
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="B2C Bulk Upload">
+    <Table>
+      ${columns}
+      <Row>
+        <Cell ss:StyleID="legendMandatory"><Data ss:Type="String">Green headings = mandatory</Data></Cell>
+        <Cell ss:StyleID="legendOptional"><Data ss:Type="String">Red headings = optional</Data></Cell>
+        ${blankLegendCells}
+      </Row>
+      <Row>${headerCells}</Row>
       ${dataRows}
-    </table>
-  </body>
-</html>`
+    </Table>
+    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+      <FreezePanes/>
+      <FrozenNoSplit/>
+      <SplitHorizontal>2</SplitHorizontal>
+      <TopRowBottomPane>2</TopRowBottomPane>
+      <ActivePane>2</ActivePane>
+    </WorksheetOptions>
+  </Worksheet>
+</Workbook>`
     const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
