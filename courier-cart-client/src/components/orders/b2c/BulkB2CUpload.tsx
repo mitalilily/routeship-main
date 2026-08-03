@@ -180,6 +180,13 @@ const sampleRows = [
     product_2_quantity: '1',
     product_2_discount: '0',
     product_2_tax_rate: '12',
+    product_3_name: '',
+    product_3_sku: '',
+    product_3_hsn_code: '',
+    product_3_price: '',
+    product_3_quantity: '',
+    product_3_discount: '',
+    product_3_tax_rate: '',
     weight: '500',
     length: '22',
     breadth: '18',
@@ -191,6 +198,33 @@ const sampleRows = [
     order_discount: '0',
   },
 ]
+
+const mandatorySampleHeaders = new Set([
+  'warehouse_name',
+  'order_id',
+  'buyer_name',
+  'buyer_phone',
+  'address',
+  'city',
+  'state',
+  'pincode',
+  'order_type',
+  'product_1_name',
+  'product_1_price',
+  'product_1_quantity',
+  'weight',
+  'length',
+  'breadth',
+  'height',
+])
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 const parseNumber = (value: string | number | undefined, fallback = 0) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : fallback
@@ -850,11 +884,45 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
   }
 
   const handleDownloadSample = () => {
-    const csv = Papa.unparse(sampleRows)
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const headers = Object.keys(sampleRows[0])
+    const headerCells = headers
+      .map((header) => {
+        const isMandatory = mandatorySampleHeaders.has(header)
+        const background = isMandatory ? '#16A34A' : '#DC2626'
+        return `<th style="background:${background};color:#ffffff;font-weight:700;border:1px solid #d9e2ef;padding:8px;text-align:left;">${escapeHtml(header)}</th>`
+      })
+      .join('')
+    const dataRows = sampleRows
+      .map((row) => {
+        const cells = headers
+          .map(
+            (header) =>
+              `<td style="border:1px solid #d9e2ef;padding:8px;mso-number-format:'\\@';">${escapeHtml(
+                row[header as keyof (typeof sampleRows)[number]],
+              )}</td>`,
+          )
+          .join('')
+        return `<tr>${cells}</tr>`
+      })
+      .join('')
+    const legendRow = `<tr><td colspan="${headers.length}" style="padding:8px;font-weight:700;">Green headers are mandatory. Red headers are optional and can be left empty.</td></tr>`
+    const workbook = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <table>
+      ${legendRow}
+      <tr>${headerCells}</tr>
+      ${dataRows}
+    </table>
+  </body>
+</html>`
+    const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = 'sample-b2c-bulk-upload.csv'
+    link.download = 'sample-b2c-bulk-upload-color-coded.xls'
     link.click()
     URL.revokeObjectURL(link.href)
   }
@@ -1450,7 +1518,7 @@ export default function BulkB2CUpload({ onClose }: { onClose?: () => void }) {
                   bgcolor: '#fff',
                 }}
               >
-                Download Sample CSV
+                Download Color-Coded Format
               </Button>
               <Button
                 component="label"
