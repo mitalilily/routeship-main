@@ -84,7 +84,7 @@ export type B2BFormData = {
   courierCost?: number | null // Estimated courier cost from serviceability (what platform pays courier)
   forwardCharges?: number
   otherCharges?: number
-  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry'
+  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'movin'
   amazonRequestToken?: string | null
   amazonRateId?: string | null
   amazonServiceId?: string | null
@@ -182,7 +182,12 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
   const prepaidAmount = Number(watch('prepaidAmount') || 0)
   const codAmount = Number(watch('codAmount') || 0)
   const orderType = watch('orderType')
+  const integrationType = watch('integrationType')
+  const courierPartner = watch('courierPartner')
   const lastSuggestedCodAmountRef = useRef<number | null>(null)
+  const isMovinCourier =
+    String(integrationType || '').toLowerCase() === 'movin' ||
+    String(courierPartner || '').toLowerCase().includes('movin')
 
   // Ensure orderType is valid based on payment options
   useEffect(() => {
@@ -201,6 +206,13 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
       }
     }
   }, [paymentOptions, orderType, setValue])
+
+  useEffect(() => {
+    if (!isMovinCourier || orderType === 'prepaid') return
+
+    setValue('orderType', 'prepaid', { shouldValidate: true })
+    setValue('codAmount', 0, { shouldValidate: true })
+  }, [isMovinCourier, orderType, setValue])
 
   // Calculate subtotal from invoices
   const subtotal = (watch('invoices') || []).reduce(
@@ -231,6 +243,17 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
         methods.setError('codAmount', {
           type: 'manual',
           message: 'Amount to collect is required for COD orders',
+        })
+        return
+      }
+
+      const selectedMovinCourier =
+        String(data.integrationType || '').toLowerCase() === 'movin' ||
+        String(data.courierPartner || '').toLowerCase().includes('movin')
+      if (selectedMovinCourier && data.orderType === 'cod') {
+        methods.setError('orderType', {
+          type: 'manual',
+          message: 'Movin B2B currently supports prepaid shipments only.',
         })
         return
       }

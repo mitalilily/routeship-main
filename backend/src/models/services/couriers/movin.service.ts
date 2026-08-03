@@ -310,6 +310,13 @@ export class MovinService {
     serviceType?: string
     communicationEmail?: string
   }) {
+    if (Number(options.codAmount || 0) > 0) {
+      throw new HttpError(
+        400,
+        'Movin B2B currently supports prepaid shipments only. Please book this shipment as prepaid.',
+      )
+    }
+
     const config = await this.ensureConfig()
     const pickup = params.pickup || {}
     const pickupRecord = pickup as Record<string, any>
@@ -405,7 +412,7 @@ export class MovinService {
             email_notification: 'Yes',
             mobile_notification: 'Yes',
             add_adult_signature: 'No',
-            cash_on_delivery: options.codAmount > 0 ? 'Yes' : 'No',
+            cash_on_delivery: 'No',
           },
           package: packageRows.slice(0, 300),
         },
