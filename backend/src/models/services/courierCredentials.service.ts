@@ -237,8 +237,7 @@ export const isCourierCredentialRowConfigured = (
     return Boolean(row.apiBase && tenantId && serverId && clientId && password && subscriptionKey && accountNumber)
   }
   if (normalizedProvider === 'apptmyz') {
-    const publicKey = metadataValue(row, 'publicKey', 'public_key')
-    return Boolean(row.apiBase && username && password && publicKey)
+    return Boolean(row.apiBase && username && password)
   }
   if (normalizedProvider === 'amazon') {
     const accessToken = metadataValue(row, 'accessToken')

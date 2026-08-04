@@ -58,11 +58,16 @@ export class ApptmyzService {
   }
 
   private formatPublicKey(publicKey: string) {
-    const normalized = publicKey
+    const normalizedInput = this.trim(publicKey, DEFAULT_PUBLIC_KEY)
+    let normalized = normalizedInput
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/\s+/g, '')
       .trim()
+
+    if (!/^[A-Za-z0-9+/=]+$/.test(normalized) || normalized.length < 200) {
+      normalized = DEFAULT_PUBLIC_KEY
+    }
 
     return [
       '-----BEGIN PUBLIC KEY-----',
@@ -73,13 +78,20 @@ export class ApptmyzService {
 
   encryptPassword(password: string) {
     const key = this.formatPublicKey(this.publicKey)
-    return publicEncrypt(
-      {
-        key,
-        padding: constants.RSA_PKCS1_PADDING,
-      },
-      Buffer.from(password),
-    ).toString('base64')
+    try {
+      return publicEncrypt(
+        {
+          key,
+          padding: constants.RSA_PKCS1_PADDING,
+        },
+        Buffer.from(password),
+      ).toString('base64')
+    } catch (error: any) {
+      throw new HttpError(
+        400,
+        `Ekart B2B/LTL public key is invalid. Please save the RSA public key from the Ekart API document. (${error?.code || error?.message || 'key decode failed'})`,
+      )
+    }
   }
 
   private extractMessage(data: any, fallback: string) {
