@@ -73,7 +73,7 @@ export type B2CFormData = {
   height: number
   orderId: string
   orderDate: string
-  orderType: 'prepaid' | 'cod'
+  orderType: 'prepaid' | 'cod' | 'reverse'
   courierPartner: string
   shippingCharges?: number
   transactionFee?: number
@@ -99,7 +99,7 @@ export type B2CFormData = {
   pickupLocationId?: string
   pickupLocationPincode?: string
   pickupLocationName?: string
-  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill'
+  integrationType?: 'delhivery' | 'ekart' | 'shadowfax' | 'xpressbees' | 'amazon' | 'icarry' | 'innofulfill' | 'dtdc'
   shippingMode?: string | null
   pickupAddress?: string
   pickupLocationPOCName?: string
@@ -176,13 +176,15 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
   const discount = Number(watch('discount') || 0)
   const prepaidAmount = Number(watch('prepaidAmount') || 0)
   const orderType = watch('orderType') || getDefaultOrderType()
+  const isReverseOrder = orderType === 'reverse'
 
   // Ensure orderType is valid based on payment options
   useEffect(() => {
     if (paymentOptions && orderType) {
       const isCurrentTypeEnabled =
         (orderType === 'cod' && paymentOptions.codEnabled) ||
-        (orderType === 'prepaid' && paymentOptions.prepaidEnabled)
+        (orderType === 'prepaid' && paymentOptions.prepaidEnabled) ||
+        orderType === 'reverse'
 
       if (!isCurrentTypeEnabled) {
         const newOrderType = paymentOptions.prepaidEnabled
@@ -194,6 +196,15 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
       }
     }
   }, [paymentOptions, orderType, setValue])
+
+  useEffect(() => {
+    if (!isReverseOrder) return
+
+    setValue('prepaidAmount', 0)
+    setValue('transactionFee', 0)
+    setValue('giftWrap', 0)
+    setValue('courierCod', 0)
+  }, [isReverseOrder, setValue])
 
   const subtotal = fields.reduce(
     (sum, _, idx) =>
@@ -221,6 +232,21 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
   // Includes: subtotal + item tax + shipping + transaction_fee + gift_wrap - discount
   const totalOrderValue = productTotalWithTax + shippingCharges + transactionFee + giftWrap - discount
   const totalCollectable = totalOrderValue - prepaidAmount
+
+  const setOrderFlow = (flow: 'forward' | 'reverse') => {
+    const nextOrderType = flow === 'reverse' ? 'reverse' : getDefaultOrderType()
+    setValue('orderType', nextOrderType, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    setValue('orderId', `${flow === 'reverse' ? 'REV' : 'ORD'}-${Date.now()}`, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    setCurrentStep(0)
+  }
 
   useEffect(() => {
     setValue('courierPartner', '')
@@ -270,26 +296,31 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
       let amazonServiceId = data.amazonServiceId ?? undefined
       let amazonCarrierId = data.amazonCarrierId ?? undefined
       const shipmentPaymentType = data.orderType
+      const isReverseOrder = shipmentPaymentType === 'reverse'
       const packageWeightForBooking = data.weight
 
       if (data.integrationType === 'amazon' && (!amazonRequestToken || !amazonRateId)) {
         try {
+          const reverseDestinationPincode =
+            data.isRtoSame === false && data.rtoLocationPincode
+              ? data.rtoLocationPincode
+              : data.pickupLocationPincode
           const refreshedCouriers = await fetchAvailableCouriers({
-            origin: data.pickupLocationPincode,
-            destination: data.pincode,
-            pickupId: data.pickupLocationId,
-            pickupName: data.pickupLocationName,
-            pickupPhone: data.pickupLocationPOCPhone,
-            pickupAddress: data.pickupAddress,
-            pickupCity: data.pickupCity,
-            pickupState: data.pickupState,
-            deliveryName: data.buyerName,
-            deliveryPhone: data.buyerPhone,
-            deliveryAddress: data.address,
-            deliveryCity: data.city,
-            deliveryState: data.state,
+            origin: isReverseOrder ? data.pincode : data.pickupLocationPincode,
+            destination: isReverseOrder ? reverseDestinationPincode : data.pincode,
+            pickupId: isReverseOrder ? undefined : data.pickupLocationId,
+            pickupName: isReverseOrder ? data.buyerName : data.pickupLocationName,
+            pickupPhone: isReverseOrder ? data.buyerPhone : data.pickupLocationPOCPhone,
+            pickupAddress: isReverseOrder ? data.address : data.pickupAddress,
+            pickupCity: isReverseOrder ? data.city : data.pickupCity,
+            pickupState: isReverseOrder ? data.state : data.pickupState,
+            deliveryName: isReverseOrder ? data.pickupLocationName : data.buyerName,
+            deliveryPhone: isReverseOrder ? data.pickupLocationPOCPhone : data.buyerPhone,
+            deliveryAddress: isReverseOrder ? data.pickupAddress : data.address,
+            deliveryCity: isReverseOrder ? data.pickupCity : data.city,
+            deliveryState: isReverseOrder ? data.pickupState : data.state,
             payment_type: shipmentPaymentType,
-            order_amount: totalCollectable,
+            order_amount: isReverseOrder ? undefined : totalCollectable,
             cod: shipmentPaymentType === 'cod' ? 1 : 0,
             weight: data.weight,
             length: data.length,
@@ -297,6 +328,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
             height: data.height,
             shipment_type: 'b2c',
             context: 'shipment_courier_selection',
+            isReverse: isReverseOrder,
           })
 
           const selectedCourierOptionKey = String(data.courierOptionKey ?? '')
@@ -347,6 +379,8 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
       const payload: CreateShipmentParams = {
         order_number: normalizedOrderId,
         payment_type: shipmentPaymentType,
+        isReverse: isReverseOrder,
+        request_auto_pickup: isReverseOrder ? 'Yes' : undefined,
         order_amount: productTotalWithTax,
         order_date: data?.orderDate,
         package_weight: packageWeightForBooking,
@@ -357,13 +391,13 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
         shipping_charges: Number(data?.shippingCharges ?? 0), // What seller charges customer
         freight_charges: Number(data?.forwardCharges ?? 0), // What platform charges seller (based on rate card)
         courier_cost: data?.courierCost ? Number(data.courierCost) : undefined, // Estimated courier cost from serviceability (what platform pays courier)
-        prepaid_amount: data?.prepaidAmount,
+        prepaid_amount: isReverseOrder ? 0 : data?.prepaidAmount,
         is_rto_different: data?.isRtoSame ? 'no' : 'yes',
         discount: data.discount ?? 0,
         integration_type: data?.integrationType,
         shipping_mode: data?.shippingMode ?? undefined,
-        transaction_fee: data?.transactionFee,
-        gift_wrap: data?.giftWrap,
+        transaction_fee: isReverseOrder ? 0 : data?.transactionFee,
+        gift_wrap: isReverseOrder ? 0 : data?.giftWrap,
         consignee: {
           name: data.buyerName,
           address: data.address,
@@ -565,6 +599,75 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
             {/* Step content */}
             {currentStep === 0 && (
               <Stack gap={0.75} mb={0.75}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'stretch', sm: 'center' }}
+                  gap={1}
+                >
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight={800}
+                      sx={{ color: TEXT_PRIMARY, fontSize: '1rem' }}
+                    >
+                      {isReverseOrder ? 'Create Reverse Order' : 'Create Forward Order'}
+                    </Typography>
+                    <Typography sx={{ color: TEXT_MUTED, fontSize: '0.82rem', mt: 0.2 }}>
+                      {isReverseOrder
+                        ? 'DTO flow: pickup from customer, then return to your selected warehouse.'
+                        : 'Forward flow: pickup from your warehouse, then deliver to the customer.'}
+                    </Typography>
+                  </Box>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      p: 0.35,
+                      borderRadius: '999px',
+                      border: `1px solid ${alpha('#0B6F7A', 0.16)}`,
+                      bgcolor: '#F4F7FB',
+                      alignSelf: { xs: 'stretch', sm: 'center' },
+                    }}
+                  >
+                    <Button
+                      type="button"
+                      onClick={() => setOrderFlow('forward')}
+                      variant={!isReverseOrder ? 'contained' : 'text'}
+                      sx={{
+                        flex: { xs: 1, sm: 'initial' },
+                        px: 2.4,
+                        borderRadius: '999px',
+                        fontWeight: 800,
+                        color: !isReverseOrder ? '#fff' : TEXT_PRIMARY,
+                        bgcolor: !isReverseOrder ? '#087785' : 'transparent',
+                        '&:hover': {
+                          bgcolor: !isReverseOrder ? '#087785' : alpha('#087785', 0.08),
+                        },
+                      }}
+                    >
+                      Forward Order
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setOrderFlow('reverse')}
+                      variant={isReverseOrder ? 'contained' : 'text'}
+                      sx={{
+                        flex: { xs: 1, sm: 'initial' },
+                        px: 2.4,
+                        borderRadius: '999px',
+                        fontWeight: 800,
+                        color: isReverseOrder ? '#fff' : TEXT_PRIMARY,
+                        bgcolor: isReverseOrder ? '#087785' : 'transparent',
+                        '&:hover': {
+                          bgcolor: isReverseOrder ? '#087785' : alpha('#087785', 0.08),
+                        },
+                      }}
+                    >
+                      Reverse Pickup
+                    </Button>
+                  </Stack>
+                </Stack>
+
                 {/* Order Information */}
                 <Box>
                   <Stack direction="row" alignItems="center" gap={0.6} sx={{ mb: 0.4 }}>
@@ -574,7 +677,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                       fontWeight={800}
                       sx={{ color: TEXT_PRIMARY, fontSize: '0.86rem' }}
                     >
-                      Order Information
+                      {isReverseOrder ? 'Reverse Order Details' : 'Order Information'}
                     </Typography>
                   </Stack>
                   <Box
@@ -586,7 +689,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                       background: '#f9f9f9',
                     }}
                   >
-                    <OrderDetailsForm />
+                    <OrderDetailsForm hideOrderType />
                   </Box>
                 </Box>
 
@@ -604,7 +707,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                             fontWeight={700}
                             sx={{ color: TEXT_PRIMARY, fontSize: '0.84rem' }}
                           >
-                            Recipient Details
+                            {isReverseOrder ? 'Customer Pickup Details' : 'Recipient Details'}
                           </Typography>
                         </Stack>
                         <Box
@@ -653,7 +756,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   fontSize: '0.74rem',
                                 }}
                               >
-                                Products
+                                {isReverseOrder ? 'Return Items' : 'Products'}
                               </Typography>
                               <PackageDetailsForm
                                 append={append}
@@ -731,7 +834,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                     {...field}
                                     fullWidth
                                     type="number"
-                                    label="Shipping Charge"
+                                    label={isReverseOrder ? 'Return Shipping Charge' : 'Shipping Charge'}
                                     size="small"
                                     variant="outlined"
                                     InputProps={{
@@ -1029,7 +1132,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                                   variant="body2"
                                   sx={{ color: ACCENT, fontWeight: 800, fontSize: '0.8rem' }}
                                 >
-                                  Amount Collectable
+                                  {isReverseOrder ? 'Return Item Value' : 'Amount Collectable'}
                                 </Typography>
                                 <Typography
                                   sx={{ color: ACCENT, fontWeight: 800, fontSize: '0.9rem' }}
@@ -1049,7 +1152,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                               fontWeight={700}
                               sx={{ color: TEXT_PRIMARY, fontSize: '0.84rem' }}
                             >
-                              Pickup Information
+                              {isReverseOrder ? 'Return Location' : 'Pickup Information'}
                             </Typography>
                           </Stack>
                           <Box

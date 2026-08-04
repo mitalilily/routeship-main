@@ -17,6 +17,7 @@ const generateOrderId = () => `ORD-${Date.now()}`
 const allOrderTypes = [
   { key: 'prepaid', label: 'Prepaid' },
   { key: 'cod', label: 'Cash on Delivery' },
+  { key: 'reverse', label: 'Reverse Pickup' },
 ]
 const b2bFreightModes = [
   { key: 'fop', label: 'Bill to Client' },
@@ -27,7 +28,13 @@ const b2bRovTypes = [
   { key: 'courier', label: 'ROV by Courier' },
 ]
 
-const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2c' }) => {
+const OrderDetailsForm = ({
+  shipmentType = 'b2c',
+  hideOrderType = false,
+}: {
+  shipmentType?: 'b2b' | 'b2c'
+  hideOrderType?: boolean
+}) => {
   const {
     control,
     clearErrors,
@@ -45,14 +52,20 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
 
   // Filter order types based on payment options settings
   const orderTypes = useMemo(() => {
-    if (!paymentOptions) return allOrderTypes
+    const baseTypes =
+      shipmentType === 'b2c'
+        ? allOrderTypes
+        : allOrderTypes.filter((type) => type.key !== 'reverse')
 
-    return allOrderTypes.filter((type) => {
+    if (!paymentOptions) return baseTypes
+
+    return baseTypes.filter((type) => {
+      if (type.key === 'reverse') return true
       if (type.key === 'cod') return paymentOptions.codEnabled
       if (type.key === 'prepaid') return paymentOptions.prepaidEnabled
       return true
     })
-  }, [paymentOptions])
+  }, [paymentOptions, shipmentType])
 
   const currentOrderType = watch('orderType')
   const currentOrderId = String(watch('orderId') || '').trim()
@@ -60,7 +73,7 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
   const setFormValue = setValue as any
   const currentFreightMode = String(watchFormValue('freightMode') || '').trim().toLowerCase()
   const currentRovType = String(watchFormValue('rovType') || '').trim().toLowerCase()
-  const fieldWidth = shipmentType === 'b2b' ? 3 : 4
+  const fieldWidth = shipmentType === 'b2b' ? 3 : hideOrderType ? 6 : 4
 
   useEffect(() => {
     setValue('orderId', generateOrderId())
@@ -135,16 +148,17 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
 
   // If current order type is disabled, reset to first available option
   useEffect(() => {
-    if (paymentOptions && currentOrderType) {
+    if (!hideOrderType && paymentOptions && currentOrderType) {
       const isCurrentTypeEnabled =
         (currentOrderType === 'cod' && paymentOptions.codEnabled) ||
-        (currentOrderType === 'prepaid' && paymentOptions.prepaidEnabled)
+        (currentOrderType === 'prepaid' && paymentOptions.prepaidEnabled) ||
+        (shipmentType === 'b2c' && currentOrderType === 'reverse')
 
       if (!isCurrentTypeEnabled && orderTypes.length > 0) {
         setValue('orderType', orderTypes[0].key as 'prepaid' | 'cod')
       }
     }
-  }, [paymentOptions, currentOrderType, orderTypes, setValue])
+  }, [hideOrderType, paymentOptions, currentOrderType, orderTypes, setValue])
 
   return (
     <Grid container spacing={0.65}>
@@ -202,26 +216,28 @@ const OrderDetailsForm = ({ shipmentType = 'b2c' }: { shipmentType?: 'b2b' | 'b2
         />
       </Grid>
 
-      <Grid size={{ xs: 12, md: fieldWidth }}>
-        <Controller
-          name="orderType"
-          control={control}
-          rules={{ required: 'Order Type is required' }}
-          render={({ field }) => (
-            <CustomSelect
-              required
-              label="Order Type"
-              value={field.value || ''}
-              onSelect={(value) => field.onChange(value)}
-              items={orderTypes}
-              helperText={(errors?.orderType?.message as string) || 'Select type'}
-              error={!!errors?.orderType}
-              topMargin={false}
-              dense
-            />
-          )}
-        />
-      </Grid>
+      {!hideOrderType && (
+        <Grid size={{ xs: 12, md: fieldWidth }}>
+          <Controller
+            name="orderType"
+            control={control}
+            rules={{ required: 'Order Type is required' }}
+            render={({ field }) => (
+              <CustomSelect
+                required
+                label="Order Type"
+                value={field.value || ''}
+                onSelect={(value) => field.onChange(value)}
+                items={orderTypes}
+                helperText={(errors?.orderType?.message as string) || 'Select type'}
+                error={!!errors?.orderType}
+                topMargin={false}
+                dense
+              />
+            )}
+          />
+        </Grid>
+      )}
 
       {shipmentType === 'b2b' && (
         <Grid size={{ xs: 12, md: fieldWidth }}>

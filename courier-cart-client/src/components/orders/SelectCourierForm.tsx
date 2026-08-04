@@ -49,6 +49,13 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const deliveryAddressLine = watch('address') ?? ''
   const deliveryCity = watch('city') ?? ''
   const deliveryState = watch('state') ?? ''
+  const rtoPincode = watchFormValue('rtoLocationPincode') ?? ''
+  const rtoName = watchFormValue('rtoLocationName') ?? ''
+  const rtoPhone = watchFormValue('rtoLocationPOCPhone') ?? ''
+  const rtoAddressLine = watchFormValue('rtoAddress') ?? ''
+  const rtoCity = watchFormValue('rtoCity') ?? ''
+  const rtoState = watchFormValue('rtoState') ?? ''
+  const isRtoSame = watchFormValue('isRtoSame') !== false
   const length = watch('length') ?? 0
   const breadth = watch('breadth') ?? 0
   const height = watch('height') ?? 0
@@ -73,20 +80,31 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const gstAmount = Number(watchFormValue('gstAmount') || 0)
   const walletDebitAmount = Number(watchFormValue('walletDebitAmount') || 0)
   const formOrderAmount = Math.max(0, toMoney(watchFormValue('orderAmount')))
-  const activeRateKey = 'forward'
-  const effectivePaymentType: 'cod' | 'prepaid' = orderType
-  const originPincode = pickupPincode
-  const destinationPincode = deliveryPincode
-  const originName = pickupName
-  const originPhone = pickupPhone
-  const originAddressLine = pickupAddressLine
-  const originCity = pickupCity
-  const originState = pickupState
-  const destinationName = buyerName
-  const destinationPhone = buyerPhone
-  const destinationAddressLine = deliveryAddressLine
-  const destinationCity = deliveryCity
-  const destinationState = deliveryState
+  const isReverseOrder = shipment_type === 'b2c' && orderType === 'reverse'
+  const activeRateKey = isReverseOrder ? 'rto' : 'forward'
+  const effectivePaymentType: 'cod' | 'prepaid' | 'reverse' = isReverseOrder
+    ? 'reverse'
+    : orderType === 'cod'
+      ? 'cod'
+      : 'prepaid'
+  const returnPincode = !isRtoSame && rtoPincode ? rtoPincode : pickupPincode
+  const returnName = !isRtoSame && rtoName ? rtoName : pickupName
+  const returnPhone = !isRtoSame && rtoPhone ? rtoPhone : pickupPhone
+  const returnAddressLine = !isRtoSame && rtoAddressLine ? rtoAddressLine : pickupAddressLine
+  const returnCity = !isRtoSame && rtoCity ? rtoCity : pickupCity
+  const returnState = !isRtoSame && rtoState ? rtoState : pickupState
+  const originPincode = isReverseOrder ? deliveryPincode : pickupPincode
+  const destinationPincode = isReverseOrder ? returnPincode : deliveryPincode
+  const originName = isReverseOrder ? buyerName : pickupName
+  const originPhone = isReverseOrder ? buyerPhone : pickupPhone
+  const originAddressLine = isReverseOrder ? deliveryAddressLine : pickupAddressLine
+  const originCity = isReverseOrder ? deliveryCity : pickupCity
+  const originState = isReverseOrder ? deliveryState : pickupState
+  const destinationName = isReverseOrder ? returnName : buyerName
+  const destinationPhone = isReverseOrder ? returnPhone : buyerPhone
+  const destinationAddressLine = isReverseOrder ? returnAddressLine : deliveryAddressLine
+  const destinationCity = isReverseOrder ? returnCity : deliveryCity
+  const destinationState = isReverseOrder ? returnState : deliveryState
 
   // COMPUTE TOTAL WEIGHT AND PRICE
   let totalWeight = 0
@@ -147,7 +165,8 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
     Number(totalWeight) > 0 &&
     (shipment_type !== 'b2c' ||
       (Number(length) > 0 && Number(breadth) > 0 && Number(height) > 0))
-  const hasRequiredOrderAmount = shipment_type !== 'b2c' || courierPayloadOrderAmount > 0
+  const hasRequiredOrderAmount =
+    shipment_type !== 'b2c' || isReverseOrder || courierPayloadOrderAmount > 0
   const canFetchCouriers = Boolean(
     originPincode && destinationPincode && hasRequiredPackageDetails && hasRequiredOrderAmount,
   )
@@ -160,7 +179,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
     pickupPincode: originPincode,
     deliveryPincode: destinationPincode,
     pickupName: originName,
-    pickupId,
+    pickupId: isReverseOrder ? undefined : pickupId,
     pickupPhone: originPhone,
     pickupAddress: originAddressLine,
     pickupCity: originCity,
@@ -175,9 +194,10 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
     weight: totalWeight,
     cod,
     payment_type: effectivePaymentType,
-    orderAmount: courierPayloadOrderAmount,
+    orderAmount: isReverseOrder ? undefined : courierPayloadOrderAmount,
     shipmentType: shipment_type,
     enabled: canFetchCouriers,
+    isReverse: isReverseOrder,
     ...(shipment_type === 'b2c'
       ? {
           context: 'shipment_courier_selection',
@@ -289,7 +309,15 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   }, [availableCouriers, selectedCourierId, selectedCourierOptionKey, setFormValue, setValue])
 
   if (!canFetchCouriers) {
-    return <Typography>Fill pickup, delivery, package, and order value first to fetch couriers</Typography>
+    return (
+      <Typography>
+        Fill{' '}
+        {isReverseOrder
+          ? 'customer pickup, return location, and package details'
+          : 'pickup, delivery, package, and order value'}{' '}
+        first to fetch couriers
+      </Typography>
+    )
   }
   if (isLoading || isFetching)
     return (
@@ -320,7 +348,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   }
   const getCourierDisplayName = (courier: any) => courier?.displayName || courier?.name || 'Courier'
   const getActiveLocalRate = (courier: any) =>
-    courier?.localRates?.[activeRateKey] ?? courier?.localRates?.forward ?? {}
+    isReverseOrder ? courier?.localRates?.rto ?? {} : courier?.localRates?.forward ?? {}
   const getZoneDisplayName = (courier: any) => {
     const zone = courier?.approxZone || getActiveLocalRate(courier)
     const zoneName = String(zone?.name || '').trim()
@@ -401,7 +429,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
       : Math.max(0, selectedWalletDebitAmount || subtotal + gstCharge)
 
     const rows = [
-      { label: 'Base Freight', value: forwardCharge },
+      { label: isReverseOrder ? 'Reverse Freight' : 'Base Freight', value: forwardCharge },
       { label: 'COD Charges', value: codCharge, hide: effectivePaymentType !== 'cod' },
       ...(overheadRows.length ? overheadRows : [{ label: 'Other Charges Total', value: otherCharge }]),
       { label: 'Subtotal Before GST', value: subtotal, emphasized: true },
@@ -465,7 +493,9 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const getCourierDeliveryRank = (courier: unknown) => {
     const courierRecord = toRecord(courier)
     const ratesByType = toRecord(courierRecord.localRates)
-    const activeRates = toRecord(ratesByType[activeRateKey] ?? ratesByType.forward)
+    const activeRates = toRecord(
+      isReverseOrder ? ratesByType.rto : ratesByType[activeRateKey] ?? ratesByType.forward,
+    )
     const deliveryValues = [
       courierRecord.estimated_delivery_days,
       courierRecord.edd_days,
@@ -577,8 +607,8 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                   },
                   { label: 'Courier Options', value: String(availableCouriers.length) },
                   { label: 'Zone', value: shipmentZoneDisplay || '-' },
-                  { label: 'Pickup', value: originPincode || '-' },
-                  { label: 'Delivery', value: destinationPincode || '-' },
+                  { label: isReverseOrder ? 'Customer Pickup' : 'Pickup', value: originPincode || '-' },
+                  { label: isReverseOrder ? 'Return To' : 'Delivery', value: destinationPincode || '-' },
                 ].map((item) => (
                   <Grid key={item.label} size={{ xs: 6 }}>
                     <Box
@@ -707,7 +737,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
 
           <Paper sx={{ p: 1.25, borderRadius: 2, bgcolor: '#fff' }}>
             <Typography sx={{ fontWeight: 800, color: TEXT_PRIMARY }}>
-              Delivery Summary
+              {isReverseOrder ? 'Customer Pickup Summary' : 'Delivery Summary'}
             </Typography>
             <Stack spacing={0.75} sx={{ mt: 0.85 }}>
               <Stack direction="row" spacing={1.2} alignItems="flex-start">
@@ -744,18 +774,18 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
 
           <Paper sx={{ p: 1.25, borderRadius: 2, bgcolor: '#fff' }}>
             <Typography sx={{ fontWeight: 800, color: TEXT_PRIMARY }}>
-              Pickup Summary
+              {isReverseOrder ? 'Return Summary' : 'Pickup Summary'}
             </Typography>
             <Stack spacing={0.75} sx={{ mt: 0.85 }}>
               <Stack direction="row" spacing={1.2} alignItems="flex-start">
                 <BiCalendar color={ACCENT} size={18} />
                 <Box>
                   <Typography sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-                    {pickupName || 'Pickup Location'}
+                    {destinationName || pickupName || 'Pickup Location'}
                   </Typography>
                   <Typography sx={{ color: TEXT_SECONDARY, fontSize: 12 }}>
-                    {pickupAddressLine || '-'}, {pickupCity || '-'}, {pickupState || '-'} -{' '}
-                    {pickupPincode || '-'}
+                    {destinationAddressLine || '-'}, {destinationCity || '-'}, {destinationState || '-'} -{' '}
+                    {destinationPincode || '-'}
                   </Typography>
                 </Box>
               </Stack>
@@ -779,7 +809,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                     <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
                       <Chip
                         size="small"
-                        label={`Freight ${formatCurrency(getCourierForwardCharge(selectedCourierSummary))}`}
+                        label={`${isReverseOrder ? 'Reverse' : 'Freight'} ${formatCurrency(getCourierForwardCharge(selectedCourierSummary))}`}
                       />
                       <Chip
                         size="small"
@@ -1120,7 +1150,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
 
                     <Grid container spacing={0.65}>
                       {[
-                        ['Freight', formatCurrency(forwardCharge)] as [string, string],
+                        [isReverseOrder ? 'Reverse' : 'Freight', formatCurrency(forwardCharge)] as [string, string],
                         ...(effectivePaymentType === 'cod'
                           ? [['COD', formatCurrency(codCharge)] as [string, string]]
                           : []),
