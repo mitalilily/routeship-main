@@ -6010,7 +6010,8 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         const supportsLiveBooking =
           integrationType === 'shadowfax' ||
           integrationType === 'delhivery' ||
-          integrationType === 'movin'
+          integrationType === 'movin' ||
+          integrationType === 'apptmyz'
 
         courierMap.set(rate.courierId, {
           id: courierRow.id,
@@ -6026,7 +6027,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           can_book: supportsLiveBooking,
           booking_blocked_reason: supportsLiveBooking
             ? null
-            : 'B2B booking is currently available for Delhivery, Shadowfax, and Movin only. Configure other providers for pricing, but use a supported courier to book.',
+            : 'B2B booking is currently available for Delhivery, Shadowfax, Movin, and Ekart B2B/LTL only. Configure other providers for pricing, but use a supported courier to book.',
           provider_serviceability:
             integrationType === 'shadowfax'
               ? {
@@ -6040,7 +6041,13 @@ export const fetchAvailableCouriersWithRatesB2B = async (
                     service_mode: normalizeMovinServiceType(courierRow.name),
                     shipping_mode: normalizeMovinServiceType(courierRow.name),
                   }
-              : null,
+                : integrationType === 'apptmyz'
+                  ? {
+                      mode: 'surface',
+                      service_mode: 'B2B LTL',
+                      shipping_mode: 'surface',
+                    }
+                  : null,
           courier_option_key: makeCourierIdentityKey({
             id: courierRow.id,
             integration_type: integrationType || null,
