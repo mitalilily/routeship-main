@@ -28,6 +28,8 @@ const SUPPORTED_REVERSE_PROVIDERS = new Set([
   'xpressbees',
   'ekart',
   'amazon',
+  'innofulfill',
+  'dtdc',
 ])
 const REVERSE_ORIGINAL_TAG_PREFIX = 'reverse_original_id='
 
@@ -247,7 +249,7 @@ export default function ReversePickups() {
             Reverse Pickups
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Delhivery, Shadowfax, Xpressbees, Ekart, and Amazon reverse pickups are available.
+            Reverse pickups are available for all configured B2C couriers with RTO rates.
           </Typography>
         </Box>
 

@@ -22,6 +22,8 @@ const SUPPORTED_REVERSE_PROVIDERS = new Set([
   'xpressbees',
   'ekart',
   'amazon',
+  'innofulfill',
+  'dtdc',
 ])
 
 type ProductLike = {
@@ -175,7 +177,7 @@ export default function ReverseModal({
         setError(null)
 
         if (!isProviderSupported) {
-          throw new Error('Reverse pickup is available only for Delhivery, Shadowfax, Xpressbees, Ekart, and Amazon.')
+          throw new Error('Reverse pickup is available only for configured B2C couriers that have RTO rates.')
         }
 
         const [quoteRes, walletRes] = await Promise.all([

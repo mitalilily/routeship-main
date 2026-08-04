@@ -17,6 +17,8 @@ const REVERSE_PICKUP_SUPPORTED_PROVIDERS = new Set([
   'xpressbees',
   'ekart',
   'amazon',
+  'innofulfill',
+  'dtdc',
 ])
 
 const normalizeText = (value: unknown) => String(value ?? '').trim()

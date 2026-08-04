@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'))
 // Orders
 const Orders = lazy(() => import('../pages/orders/Orders'))
 const B2COrdersList = lazy(() => import('../components/orders/b2c/B2COrdersList'))
+const ReversePickups = lazy(() => import('../pages/orders/ReversePickups'))
 const B2bOrders = lazy(() => import('../pages/orders/B2bOrders'))
 const FtlOrders = lazy(() => import('../pages/orders/FtlOrders'))
 const InternationalOrders = lazy(() => import('../pages/orders/InternationalOrders'))
@@ -194,6 +195,14 @@ export default function AppRoutes() {
               element={
                 <RequireMerchantReady>
                   <B2COrdersList />
+                </RequireMerchantReady>
+              }
+            />
+            <Route
+              path="/orders/reverse"
+              element={
+                <RequireMerchantReady>
+                  <ReversePickups />
                 </RequireMerchantReady>
               }
             />

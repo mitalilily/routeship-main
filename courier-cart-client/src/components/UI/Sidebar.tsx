@@ -107,6 +107,11 @@ const navItems: NavItem[] = [
         icon: <FaUser size={ICON_SIZE_FA} />,
       },
       {
+        text: 'Reverse Pickups',
+        path: '/orders/reverse',
+        icon: <MdOutlineKeyboardReturn size={ICON_SIZE_MD} />,
+      },
+      {
         text: 'B2B Orders',
         path: '/orders/b2b/list',
         icon: <MdOutlineAddBusiness size={ICON_SIZE_MD} />,
