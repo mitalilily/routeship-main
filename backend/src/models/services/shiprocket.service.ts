@@ -114,6 +114,7 @@ import { DelhiveryService } from './couriers/delhivery.service'
 import { DtdcService } from './couriers/dtdc.service'
 import { EkartService } from './couriers/ekart.service'
 import { InnofulfillCourierService } from './couriers/innofulfill.service'
+import { ApptmyzService } from './couriers/apptmyz.service'
 import { MovinService, normalizeMovinServiceType } from './couriers/movin.service'
 import { ShadowfaxService } from './couriers/shadowfax.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
@@ -10229,10 +10230,10 @@ export const createB2BShipmentService = async (
     pickupDetails = normalizeJsonValue(params.pickup) ?? pickupDetails
   }
 
-  if (!['shadowfax', 'delhivery', 'movin'].includes(effectiveIntegrationType)) {
+  if (!['shadowfax', 'delhivery', 'movin', 'apptmyz'].includes(effectiveIntegrationType)) {
     throw new HttpError(
       400,
-      'B2B shipment booking is currently implemented for Delhivery, Shadowfax, and Movin only.',
+      'B2B shipment booking is currently implemented for Delhivery, Shadowfax, Movin, and Ekart B2B/LTL only.',
     )
   }
 
@@ -10415,6 +10416,8 @@ export const createB2BShipmentService = async (
             ? 'ltl'
             : effectiveIntegrationType === 'movin'
               ? 'b2b'
+              : effectiveIntegrationType === 'apptmyz'
+                ? 'b2b'
               : null,
       provider_service:
         effectiveIntegrationType === 'shadowfax'
@@ -10433,6 +10436,8 @@ export const createB2BShipmentService = async (
                   params.transport_speed,
                   params.courier_partner,
                 )
+              : effectiveIntegrationType === 'apptmyz'
+                ? 'B2B LTL'
               : null,
       provider_last_status: 'pending',
       updated_at: new Date(),
@@ -11460,6 +11465,319 @@ export const createB2BShipmentService = async (
             ...(error?.providerStatus ? { provider_status: error.providerStatus } : {}),
             ...(error?.providerResponse ? { provider_response: error.providerResponse } : {}),
             error: error?.message || 'Movin B2B shipment creation failed',
+          },
+          updated_at: new Date(),
+        } as any)
+        .where(eq(b2b_orders.id, pendingOrder.id))
+
+      throw error
+    }
+  }
+
+  if (effectiveIntegrationType === 'apptmyz') {
+    const apptmyzServiceType = 'B2B LTL'
+    let shipmentRequest: Record<string, any> | null = null
+    let shipmentResponse: any = null
+
+    const cleanApptmyzText = (value: unknown, fallback = '') => {
+      const text = String(value ?? fallback)
+        .normalize('NFKD')
+        .replace(/[^\x20-\x7E]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      return text || fallback
+    }
+
+    const formatApptmyzDate = (value: unknown) => {
+      const raw = String(value || '').trim()
+      if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw
+      const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
+      if (isoMatch) return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`
+
+      const parsed = raw ? new Date(raw) : new Date()
+      if (Number.isNaN(parsed.getTime())) {
+        const today = new Date()
+        return `${String(today.getDate()).padStart(2, '0')}-${String(
+          today.getMonth() + 1,
+        ).padStart(2, '0')}-${today.getFullYear()}`
+      }
+
+      return `${String(parsed.getDate()).padStart(2, '0')}-${String(
+        parsed.getMonth() + 1,
+      ).padStart(2, '0')}-${parsed.getFullYear()}`
+    }
+
+    const normalizeTravelMode = (...values: unknown[]) =>
+      values
+        .map((value) => String(value || '').trim().toUpperCase())
+        .find((value) => value.includes('AIR'))
+        ? 'AIR'
+        : 'ROAD'
+
+    try {
+      if (
+        !payload.pickup?.pincode ||
+        !payload.pickup?.address ||
+        !payload.pickup?.phone ||
+        !payload.consignee?.pincode ||
+        !payload.consignee?.address ||
+        !payload.consignee?.phone
+      ) {
+        throw new HttpError(
+          400,
+          'Ekart B2B/LTL requires complete pickup and consignee details before booking.',
+        )
+      }
+
+      const apptmyzBoxes = boxes.length
+        ? boxes
+        : [
+            {
+              length: package_length || 1,
+              breadth: package_breadth || 1,
+              height: package_height || 1,
+              weight: package_weight || 0.5,
+              quantity: 1,
+            },
+          ]
+
+      const invoiceNo =
+        cleanApptmyzText(primaryInvoice?.invoiceNumber || params.invoice_number, normalizedOrderNumber)
+          .slice(0, 30) || normalizedOrderNumber
+      const invoiceDate = formatApptmyzDate(primaryInvoice?.invoiceDate || params.invoice_date || params.order_date)
+      const invoiceAmount = Math.max(1, Number(invoiceValue || shipmentValue || 1))
+      const ewayBillNumber = cleanApptmyzText(
+        (params as any).ewaybill_number ||
+          (params as any).ewbn_number ||
+          (params as any).ewaybill ||
+          (params as any).ewbn ||
+          '',
+      )
+
+      const lbhData: Record<string, any>[] = []
+      for (const [boxIndex, box] of apptmyzBoxes.entries()) {
+        const quantity = Math.max(1, Math.floor(Number(box.quantity ?? 1) || 1))
+        for (let packetIndex = 0; packetIndex < quantity; packetIndex += 1) {
+          const actualWeight = Math.min(
+            70,
+            Math.max(0.1, Number((Number(box.weight ?? package_weight ?? 0.5) || 0.5).toFixed(2))),
+          )
+          lbhData.push({
+            packetCount: 1,
+            packetLength: String(Math.max(1, Math.round(Number(box.length ?? package_length ?? 1) || 1))),
+            packetWidth: String(Math.max(1, Math.round(Number(box.breadth ?? package_breadth ?? 1) || 1))),
+            packetHeight: String(Math.max(1, Math.round(Number(box.height ?? package_height ?? 1) || 1))),
+            packetNo: null,
+            customerPacketRefNo: cleanApptmyzText(
+              `${normalizedOrderNumber}-${boxIndex + 1}-${packetIndex + 1}`,
+            ).slice(0, 30),
+            actualWeight: String(actualWeight),
+            invoiceNo,
+            quantity: 1,
+          })
+        }
+      }
+
+      const grossWeight = Number(
+        lbhData
+          .reduce((sum, packet) => sum + Number(packet.actualWeight || 0), 0)
+          .toFixed(2),
+      )
+      const packetCount = lbhData.reduce((sum, packet) => sum + Number(packet.packetCount || 0), 0)
+      const material =
+        normalizedOrderItems
+          .map((item) => cleanApptmyzText(item?.name))
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(', ')
+          .slice(0, 100) || `B2B order ${normalizedOrderNumber}`
+      const travelMode = normalizeTravelMode(
+        (params as any).provider_service,
+        params.shipping_mode,
+        params.transport_speed,
+        params.courier_partner,
+      )
+
+      shipmentRequest = {
+        poNumber: cleanApptmyzText(normalizedOrderNumber).slice(0, 15),
+        travelMode,
+        grossWeight,
+        packetCount,
+        material,
+        deliveryAppointmentDate: null,
+        deliveryTimeSlot: null,
+        deliveryType: 0,
+        lbhData,
+        invoiceDetails: [
+          {
+            invoiceNo,
+            invoiceAmount,
+            ewbNo: ewayBillNumber || null,
+            invoiceDate,
+            ewbDate: null,
+            ewbValidTill: null,
+          },
+        ],
+        consignor: {
+          consignorCode:
+            cleanApptmyzText(
+              (params as any).consignor_code ||
+                (params as any).consignorCode ||
+                (pickupDetails as Record<string, any>)?.consignor_code ||
+                (pickupDetails as Record<string, any>)?.consignorCode ||
+                '',
+            ) || null,
+          consignorPincode: cleanApptmyzText(payload.pickup.pincode),
+          consignorName: cleanApptmyzText(
+            payload.company?.name || payload.pickup.warehouse_name || payload.pickup.name,
+            'RouteShip Pickup',
+          ).slice(0, 100),
+          address1: cleanApptmyzText(
+            [payload.pickup.address, payload.pickup.address_2].filter(Boolean).join(' '),
+          ).slice(0, 250),
+          city: cleanApptmyzText(payload.pickup.city, 'NA').slice(0, 50),
+          state: cleanApptmyzText(payload.pickup.state, 'NA').slice(0, 50),
+          contactName: cleanApptmyzText(payload.pickup.name || payload.pickup.warehouse_name, 'Pickup').slice(0, 100),
+          contactPhoneno: cleanApptmyzText(payload.pickup.phone).slice(0, 15),
+          email: cleanApptmyzText(resolvedPickupWarehouse?.contactEmail || 'support@routeship.in'),
+        },
+        consignee: {
+          consigneeCode:
+            cleanApptmyzText(
+              (params as any).consignee_code || (params as any).consigneeCode || '',
+            ) || null,
+          consigneePincode: cleanApptmyzText(payload.consignee.pincode),
+          consigneeName: cleanApptmyzText(
+            payload.consignee.company_name || payload.consignee.name,
+            'Consignee',
+          ).slice(0, 100),
+          address1: cleanApptmyzText(
+            [payload.consignee.address, payload.consignee.address_2].filter(Boolean).join(' '),
+          ).slice(0, 250),
+          city: cleanApptmyzText(payload.consignee.city, 'NA').slice(0, 50),
+          state: cleanApptmyzText(payload.consignee.state, 'NA').slice(0, 50),
+          contactName: cleanApptmyzText(payload.consignee.name, 'Consignee').slice(0, 100),
+          contactPhoneno: cleanApptmyzText(payload.consignee.phone).slice(0, 15),
+          email: cleanApptmyzText(payload.consignee.email || ''),
+        },
+        docketNo: null,
+        packetLbhUom: 'CM',
+        totalConsignmentValue: invoiceAmount,
+        ftlOrPtl: '0',
+        openBoxPickup: 0,
+        truckType: null,
+        invoicepdf: primaryInvoice?.invoiceFileUrl || null,
+      }
+
+      const apptmyz = new ApptmyzService()
+      shipmentResponse = await apptmyz.createOrder(shipmentRequest)
+      const responseData = shipmentResponse?.data || {}
+      const docketNo = cleanApptmyzText(
+        responseData?.docketNo || shipmentResponse?.docketNo || responseData?.docketNumber,
+      )
+
+      if (!docketNo) {
+        throw new HttpError(502, 'Ekart B2B/LTL order creation did not return a docket number.')
+      }
+
+      const labelUrl =
+        cleanApptmyzText(responseData?.labelsLink || responseData?.labelLink || responseData?.labelUrl) ||
+        null
+      const docketPdfUrl =
+        cleanApptmyzText(responseData?.docketPdfLink || responseData?.docketLink) || null
+      const pickupRegistrationId = cleanApptmyzText(responseData?.pickupRegistrationId || '')
+      const stableStatus = pickupRegistrationId ? 'pickup_requested' : 'shipment_booked'
+      const updatedPickupDetails = {
+        ...(typeof pickupDetails === 'object' && pickupDetails ? pickupDetails : {}),
+        pickup_registration_id: pickupRegistrationId || null,
+        pickup_pincode: responseData?.pickupPincode || payload.pickup.pincode || null,
+      }
+
+      await db
+        .update(b2b_orders)
+        .set({
+          integration_type: 'apptmyz',
+          order_status: stableStatus,
+          order_id: docketNo,
+          shipment_id: docketNo,
+          awb_number: docketNo,
+          courier_partner: params.courier_partner || 'Ekart B2B/LTL',
+          courier_id: courierId ?? null,
+          label: labelUrl ? labelUrl.slice(0, 500) : null,
+          manifest: docketPdfUrl ? docketPdfUrl.slice(0, 500) : null,
+          courier_cost: params?.courier_cost ?? chargesBreakdown?.total ?? null,
+          weight: package_weight,
+          length: package_length || null,
+          breadth: package_breadth || null,
+          height: package_height || null,
+          volumetric_weight: Number(totalVolumetricWeight || 0) || null,
+          charged_weight: package_weight,
+          pickup_details: updatedPickupDetails as any,
+          provider_reference: docketNo,
+          provider_request_id: pickupRegistrationId || docketNo,
+          provider_mode: 'b2b',
+          provider_service: apptmyzServiceType,
+          provider_last_status: stableStatus,
+          provider_meta: {
+            ...baseProviderMeta,
+            service_type: apptmyzServiceType,
+            shipment_request: shipmentRequest,
+            shipment_response: shipmentResponse,
+            docket_pdf_link: docketPdfUrl,
+            labels_link: labelUrl,
+            pickup_registration_id: pickupRegistrationId || null,
+          },
+          updated_at: new Date(),
+        } as any)
+        .where(eq(b2b_orders.id, pendingOrder.id))
+
+      sendWebhookEvent(userId, 'order.created', {
+        order_id: pendingOrder.id,
+        order_number: normalizedOrderNumber,
+        awb_number: docketNo,
+        status: stableStatus,
+        courier_partner: params.courier_partner || 'Ekart B2B/LTL',
+        courier_id: courierId ?? null,
+        shipment_id: docketNo,
+        integration_type: 'apptmyz',
+        payment_type: params.payment_type,
+        created_at: new Date().toISOString(),
+        order_type: 'b2b',
+      }).catch((err) => {
+        console.error('Failed to send B2B Ekart order.created webhook:', err)
+      })
+
+      return {
+        order: {
+          id: pendingOrder.id,
+          order_number: normalizedOrderNumber,
+          awb_number: docketNo,
+          provider_reference: docketNo,
+          provider_request_id: pickupRegistrationId || docketNo,
+        },
+        shipment: {
+          shipment: shipmentResponse,
+          label: labelUrl,
+          docket: docketPdfUrl,
+        },
+      }
+    } catch (error: any) {
+      await db
+        .update(b2b_orders)
+        .set({
+          integration_type: 'apptmyz',
+          order_status: 'failed',
+          provider_last_status: 'booking_failed',
+          provider_mode: 'b2b',
+          provider_service: apptmyzServiceType,
+          provider_meta: {
+            ...baseProviderMeta,
+            service_type: apptmyzServiceType,
+            ...(shipmentRequest ? { shipment_request: shipmentRequest } : {}),
+            ...(shipmentResponse ? { shipment_response: shipmentResponse } : {}),
+            ...(error?.providerStatus ? { provider_status: error.providerStatus } : {}),
+            ...(error?.providerResponse ? { provider_response: error.providerResponse } : {}),
+            error: error?.message || 'Ekart B2B/LTL shipment creation failed',
           },
           updated_at: new Date(),
         } as any)
