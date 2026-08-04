@@ -9112,8 +9112,13 @@ export const createB2CShipmentService = async (
         selectedRateCardId,
         selectedMaxSlabWeight,
         zoneIdOverride: params.zone_id ?? null,
-        originPincode: String(pickupPincode),
-        destinationPincode: String(destinationPincode),
+        originPincode: isReverseShipment
+          ? bookingDestinationPincode
+          : String(pickupPincode),
+        destinationPincode: isReverseShipment
+          ? normalizePincode(params.rto?.pincode ?? params.pickup?.pincode ?? bookingPickupPincode) ||
+            String(pickupPincode)
+          : String(destinationPincode),
         weightG: normalizeServiceabilityWeightToGrams(params.package_weight ?? params.weight ?? 0),
         lengthCm: Number(params.package_length ?? params.length ?? 0),
         breadthCm: Number(params.package_breadth ?? params.breadth ?? 0),

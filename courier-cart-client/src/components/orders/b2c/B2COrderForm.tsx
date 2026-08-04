@@ -419,15 +419,25 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
           pickup_date: data.pickupDate,
           pickup_time: data.pickupTime,
         },
-        ...(!data?.isRtoSame && {
+        ...((isReverseOrder || !data?.isRtoSame) && {
           rto: {
-            warehouse_name: data?.rtoLocationName ?? '',
-            address: data?.rtoAddress ?? '',
-            name: data?.rtoLocationPOCName ?? '',
-            phone: data?.rtoLocationPOCPhone ?? '',
-            city: data?.rtoCity ?? '',
-            state: data?.rtoState ?? '',
-            pincode: data?.rtoLocationPincode ?? '',
+            warehouse_name:
+              data?.isRtoSame === false ? data?.rtoLocationName ?? '' : data?.pickupLocationName ?? '',
+            address: data?.isRtoSame === false ? data?.rtoAddress ?? '' : data?.pickupAddress ?? '',
+            name:
+              data?.isRtoSame === false
+                ? data?.rtoLocationPOCName ?? ''
+                : data?.pickupLocationPOCName ?? '',
+            phone:
+              data?.isRtoSame === false
+                ? data?.rtoLocationPOCPhone ?? ''
+                : data?.pickupLocationPOCPhone ?? '',
+            city: data?.isRtoSame === false ? data?.rtoCity ?? '' : data?.pickupCity ?? '',
+            state: data?.isRtoSame === false ? data?.rtoState ?? '' : data?.pickupState ?? '',
+            pincode:
+              data?.isRtoSame === false
+                ? data?.rtoLocationPincode ?? ''
+                : data?.pickupLocationPincode ?? '',
           },
         }),
         order_items: data.products.map((p) => ({
