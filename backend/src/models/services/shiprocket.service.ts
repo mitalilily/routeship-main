@@ -17234,6 +17234,7 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
   let labelKey: string | null = null
   const uploadedLabelKeys: string[] = []
   const labelBuffers: Buffer[] = []
+  let documentSource: 'shipping_label_urls' | 'lr_copy_fallback' = 'shipping_label_urls'
   for (let index = 0; index < labelPayloads.length; index += 1) {
     const payload = String(labelPayloads[index] || '').trim()
     if (!payload) continue
@@ -17267,6 +17268,23 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
       userId,
     })
     uploadedLabelKeys.push(uploadedKey)
+  }
+
+  if (!uploadedLabelKeys.length) {
+    const lrCopy = await delhivery.getLtlLrCopy({ lrn: normalizedLrn })
+    const decoded = decodeBase64DocumentPayloadOutsideTransaction(lrCopy.pdfBase64 || lrCopy.pdfDataUrl)
+    if (decoded?.buffer?.length) {
+      documentSource = 'lr_copy_fallback'
+      labelBuffers.push(decoded.buffer)
+      const uploadedKey = await uploadBufferDocumentOutsideTransaction({
+        buffer: decoded.buffer,
+        contentType: decoded.contentType || lrCopy.contentType || 'application/pdf',
+        fileName: `${orderFileName}-delhivery-b2b-lr-copy-label.pdf`,
+        folderKey: 'labels',
+        userId,
+      })
+      uploadedLabelKeys.push(uploadedKey)
+    }
   }
 
   if (labelBuffers.length > 1) {
@@ -17304,6 +17322,7 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
       status: labelKey ? 'stored' : 'unavailable',
       lrn: normalizedLrn,
       size,
+      source: documentSource,
       label_key: labelKey,
       label_count: labelPayloads.length,
       stored_label_keys: uploadedLabelKeys,
