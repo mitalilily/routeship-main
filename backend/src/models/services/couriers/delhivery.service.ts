@@ -371,9 +371,10 @@ const extractDelhiveryLtlLabelPayloads = (value: unknown): string[] => {
     'base64',
     'image',
     'images',
+    'data',
   ])
 
-  return Array.from(
+  const payloads = Array.from(
     new Set(
       candidates
         .map((entry) => String(entry || '').trim())
@@ -385,6 +386,9 @@ const extractDelhiveryLtlLabelPayloads = (value: unknown): string[] => {
         ),
     ),
   )
+
+  const boxLabelPayloads = payloads.filter((entry) => /[?&]box_index=\d+/i.test(entry))
+  return boxLabelPayloads.length ? boxLabelPayloads : payloads
 }
 
 const DELHIVERY_LTL_LR_COPY_TYPES = [
