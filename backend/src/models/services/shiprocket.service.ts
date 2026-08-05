@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { randomUUID } from 'crypto'
+import { PDFDocument } from 'pdf-lib'
 import {
   and,
   asc,
@@ -11110,7 +11111,7 @@ export const createB2BShipmentService = async (
       }
 
       const stableStatus = pickupRequestWarning ? 'manifested' : 'pickup_requested'
-      const providerMeta = {
+      let providerMeta: Record<string, any> = {
         ...baseProviderMeta,
         warehouse_registration: warehouseRegistrationMeta,
         manifest_submission: manifestSubmission,
@@ -11136,6 +11137,48 @@ export const createB2BShipmentService = async (
               start_time: pickupTime,
               expected_package_count: totalPackageCount,
             },
+      }
+      let delhiveryB2BLabelKey: string | null = null
+      try {
+        const labelResult = await fetchAndStoreDelhiveryB2BLabelOutsideTransaction({
+          delhivery,
+          order: {
+            id: pendingOrder.id,
+            user_id: userId,
+            order_number: normalizedOrderNumber,
+            awb_number: primaryAwb,
+            provider_reference: lrn,
+            shipment_id: lrn,
+            manifest: lrn,
+            provider_meta: providerMeta,
+          } as any,
+          userId,
+          lrn,
+          size: 'a4',
+        })
+        delhiveryB2BLabelKey = labelResult?.labelKey ?? null
+        if (labelResult?.meta) {
+          providerMeta = {
+            ...providerMeta,
+            delhivery_ltl_labels: labelResult.meta,
+          }
+        }
+      } catch (labelError: any) {
+        providerMeta = {
+          ...providerMeta,
+          delhivery_ltl_labels: {
+            status: 'failed',
+            lrn,
+            size: 'a4',
+            error: labelError?.message || 'Delhivery B2B label fetch failed',
+            fetched_at: new Date().toISOString(),
+          },
+        }
+        console.warn('Failed to fetch Delhivery B2B label after manifestation:', {
+          order_number: normalizedOrderNumber,
+          lrn,
+          error: labelError?.message || labelError,
+        })
       }
 
       await db
@@ -11163,6 +11206,7 @@ export const createB2BShipmentService = async (
           provider_service: freightMode,
           provider_last_status: stableStatus,
           provider_meta: providerMeta,
+          ...(delhiveryB2BLabelKey ? { label: delhiveryB2BLabelKey } : {}),
           ...(generatedInvoiceAttachment?.key
             ? { invoice_link: normalizeToR2KeyOutsideTransaction(generatedInvoiceAttachment.key) }
             : {}),
@@ -17068,6 +17112,329 @@ const findLiveTrackingNdrEvent = (
   }
 
   return null
+}
+
+const sanitizeDocumentNameSegment = (value: unknown, fallback = 'document') =>
+  String(value || fallback)
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || fallback
+
+const decodeBase64DocumentPayloadOutsideTransaction = (value: unknown): {
+  buffer: Buffer
+  contentType: string
+} | null => {
+  const text = String(value || '').trim()
+  if (!text) return null
+
+  const dataUrlMatch = text.match(/^data:([^;]+);base64,(.+)$/i)
+  if (dataUrlMatch) {
+    return {
+      contentType: dataUrlMatch[1] || 'application/pdf',
+      buffer: Buffer.from(dataUrlMatch[2], 'base64'),
+    }
+  }
+
+  const compact = text.replace(/\s+/g, '')
+  if (compact.length >= 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    return {
+      contentType: 'application/pdf',
+      buffer: Buffer.from(compact, 'base64'),
+    }
+  }
+
+  return null
+}
+
+const uploadBufferDocumentOutsideTransaction = async ({
+  buffer,
+  contentType,
+  fileName,
+  folderKey,
+  userId,
+}: {
+  buffer: Buffer
+  contentType: string
+  fileName: string
+  folderKey: string
+  userId: string
+}) => {
+  const { uploadUrl, key } = await presignUpload({
+    filename: fileName,
+    contentType,
+    userId,
+    folderKey,
+  })
+  const finalUploadUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+  const finalKey = Array.isArray(key) ? key[0] : key
+  if (!finalUploadUrl || !finalKey) {
+    throw new Error('Failed to prepare document upload')
+  }
+
+  await axios.put(finalUploadUrl, buffer, {
+    headers: { 'Content-Type': contentType },
+    timeout: 120000,
+  })
+
+  return finalKey
+}
+
+const resolveDelhiveryB2BLrnFromOrder = (order: Partial<typeof b2b_orders.$inferSelect>) => {
+  const providerMeta =
+    order.provider_meta && typeof order.provider_meta === 'object' && !Array.isArray(order.provider_meta)
+      ? (order.provider_meta as Record<string, any>)
+      : {}
+
+  const candidates = [
+    order.provider_reference,
+    providerMeta.lrn,
+    providerMeta.manifest_status?.lrn,
+    providerMeta.manifest_submission?.lrn,
+    order.shipment_id,
+    order.order_id,
+    order.manifest,
+  ]
+
+  for (const candidate of candidates) {
+    const text = String(candidate || '').trim()
+    if (!text) continue
+    if (['processing', 'pending', 'unknown', 'null', 'undefined', 'n/a', 'na'].includes(text.toLowerCase())) {
+      continue
+    }
+    return text
+  }
+
+  return ''
+}
+
+const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
+  delhivery,
+  order,
+  userId,
+  lrn,
+  size = 'a4',
+}: {
+  delhivery: DelhiveryService
+  order: Partial<typeof b2b_orders.$inferSelect> & { id: string }
+  userId: string
+  lrn: string
+  size?: 'sm' | 'md' | 'a4' | 'std'
+}) => {
+  const normalizedLrn = String(lrn || '').trim()
+  if (!normalizedLrn) return null
+
+  const labelResult = await delhivery.getLtlShippingLabelUrls({ size, lrn: normalizedLrn })
+  const labelPayloads = Array.isArray(labelResult.labelUrls) ? labelResult.labelUrls : []
+  const orderFileName = sanitizeDocumentNameSegment(
+    order.order_number || order.awb_number || order.id || normalizedLrn,
+    normalizedLrn,
+  )
+
+  let labelKey: string | null = null
+  const uploadedLabelKeys: string[] = []
+  const labelBuffers: Buffer[] = []
+  for (let index = 0; index < labelPayloads.length; index += 1) {
+    const payload = String(labelPayloads[index] || '').trim()
+    if (!payload) continue
+
+    let documentBuffer: Buffer | null = null
+    let contentType = 'application/pdf'
+
+    if (/^https?:\/\//i.test(payload)) {
+      const response = await axios.get<ArrayBuffer>(payload, {
+        responseType: 'arraybuffer',
+        timeout: 120000,
+      })
+      documentBuffer = Buffer.from(response.data)
+      contentType = String(response.headers?.['content-type'] || 'application/pdf').split(';')[0] || 'application/pdf'
+    } else {
+      const decoded = decodeBase64DocumentPayloadOutsideTransaction(payload)
+      if (decoded?.buffer?.length) {
+        documentBuffer = decoded.buffer
+        contentType = decoded.contentType || 'application/pdf'
+      }
+    }
+
+    if (!documentBuffer?.length) continue
+
+    labelBuffers.push(documentBuffer)
+    const uploadedKey = await uploadBufferDocumentOutsideTransaction({
+      buffer: documentBuffer,
+      contentType,
+      fileName: `${orderFileName}-delhivery-b2b-label-${index + 1}.pdf`,
+      folderKey: 'labels',
+      userId,
+    })
+    uploadedLabelKeys.push(uploadedKey)
+  }
+
+  if (labelBuffers.length > 1) {
+    try {
+      const mergedPdf = await PDFDocument.create()
+      for (const buffer of labelBuffers) {
+        const sourcePdf = await PDFDocument.load(buffer)
+        const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices())
+        for (const page of copiedPages) {
+          mergedPdf.addPage(page)
+        }
+      }
+      const mergedBytes = await mergedPdf.save()
+      labelKey = await uploadBufferDocumentOutsideTransaction({
+        buffer: Buffer.from(mergedBytes),
+        contentType: 'application/pdf',
+        fileName: `${orderFileName}-delhivery-b2b-labels.pdf`,
+        folderKey: 'labels',
+        userId,
+      })
+    } catch {
+      labelKey = uploadedLabelKeys[0] || null
+    }
+  } else {
+    labelKey = uploadedLabelKeys[0] || null
+  }
+
+  const providerMeta =
+    order.provider_meta && typeof order.provider_meta === 'object' && !Array.isArray(order.provider_meta)
+      ? (order.provider_meta as Record<string, any>)
+      : {}
+  const nextProviderMeta = {
+    ...providerMeta,
+    delhivery_ltl_labels: {
+      status: labelKey ? 'stored' : 'unavailable',
+      lrn: normalizedLrn,
+      size,
+      label_key: labelKey,
+      label_count: labelPayloads.length,
+      stored_label_keys: uploadedLabelKeys,
+      merged: labelBuffers.length > 1 && labelKey !== uploadedLabelKeys[0],
+      provider_response: labelResult.provider_response,
+      fetched_at: new Date().toISOString(),
+    },
+  }
+
+  if (labelKey) {
+    await db
+      .update(b2b_orders)
+      .set({
+        label: labelKey,
+        provider_meta: nextProviderMeta as any,
+        updated_at: new Date(),
+      } as any)
+      .where(eq(b2b_orders.id, order.id))
+  }
+
+  return {
+    labelKey,
+    meta: nextProviderMeta.delhivery_ltl_labels,
+  }
+}
+
+export const backfillDelhiveryB2BLabelsService = async ({
+  orderNumber,
+  limit = 100,
+  onlyMissing = true,
+}: {
+  orderNumber?: string
+  limit?: number
+  onlyMissing?: boolean
+} = {}) => {
+  const normalizedOrderNumber = String(orderNumber || '').trim()
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 500))
+  const conditions: SQL[] = []
+
+  const providerCondition = or(
+    sql`lower(coalesce(${b2b_orders.integration_type}, '')) = 'delhivery'`,
+    sql`lower(coalesce(${b2b_orders.courier_partner}, '')) like '%delhivery%'`,
+    sql`lower(coalesce(${b2b_orders.provider_meta}::text, '')) like '%delhivery%'`,
+  )
+  if (providerCondition) conditions.push(providerCondition)
+
+  if (onlyMissing) {
+    const missingLabelCondition = or(
+      isNull(b2b_orders.label),
+      sql`trim(coalesce(${b2b_orders.label}, '')) = ''`,
+    )
+    if (missingLabelCondition) conditions.push(missingLabelCondition)
+  }
+
+  if (normalizedOrderNumber) {
+    const orderCondition = or(
+      eq(b2b_orders.order_number, normalizedOrderNumber),
+      eq(b2b_orders.awb_number, normalizedOrderNumber),
+      eq(b2b_orders.order_id, normalizedOrderNumber),
+      eq(b2b_orders.shipment_id, normalizedOrderNumber),
+      eq(b2b_orders.manifest, normalizedOrderNumber),
+      eq(b2b_orders.provider_reference, normalizedOrderNumber),
+      eq(b2b_orders.provider_request_id, normalizedOrderNumber),
+    )
+    if (orderCondition) conditions.push(orderCondition)
+  }
+
+  const rows = await db
+    .select()
+    .from(b2b_orders)
+    .where(and(...conditions))
+    .orderBy(desc(b2b_orders.created_at))
+    .limit(safeLimit)
+
+  const delhivery = new DelhiveryService()
+  const results: Array<{
+    id: string
+    order_number: string | null
+    lrn: string | null
+    status: 'stored' | 'unavailable' | 'skipped' | 'failed'
+    label_key?: string | null
+    error?: string
+  }> = []
+
+  for (const order of rows) {
+    const lrn = resolveDelhiveryB2BLrnFromOrder(order)
+    if (!lrn) {
+      results.push({
+        id: order.id,
+        order_number: order.order_number,
+        lrn: null,
+        status: 'skipped',
+        error: 'Delhivery LRN not found on order',
+      })
+      continue
+    }
+
+    try {
+      const result = await fetchAndStoreDelhiveryB2BLabelOutsideTransaction({
+        delhivery,
+        order,
+        userId: String(order.user_id || ''),
+        lrn,
+        size: 'a4',
+      })
+      results.push({
+        id: order.id,
+        order_number: order.order_number,
+        lrn,
+        status: result?.labelKey ? 'stored' : 'unavailable',
+        label_key: result?.labelKey ?? null,
+      })
+    } catch (error: any) {
+      results.push({
+        id: order.id,
+        order_number: order.order_number,
+        lrn,
+        status: 'failed',
+        error: error?.message || String(error),
+      })
+    }
+  }
+
+  return {
+    scanned: rows.length,
+    stored: results.filter((item) => item.status === 'stored').length,
+    unavailable: results.filter((item) => item.status === 'unavailable').length,
+    skipped: results.filter((item) => item.status === 'skipped').length,
+    failed: results.filter((item) => item.status === 'failed').length,
+    results,
+  }
 }
 
 const isSameTrackingHistoryEvent = (

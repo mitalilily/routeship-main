@@ -63,6 +63,7 @@
     "backfill:rto-charges": "ts-node src/scripts/backfillRtoCharges.ts",
     "backfill:order-statuses": "ts-node src/scripts/backfillOrderStatusesFromTracking.ts",
     "backfill:woocommerce-order-numbers": "ts-node src/scripts/backfillWooCommerceOrderNumbers.ts",
+    "backfill:delhivery-b2b-labels": "tsx src/scripts/backfillDelhiveryB2BLabels.ts",
     "backfill:woocommerce-payment-meta": "tsx src/scripts/backfillWooCommercePaymentMeta.ts"
   },
   "keywords": [],
