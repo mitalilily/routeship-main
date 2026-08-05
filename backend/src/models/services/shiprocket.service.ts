@@ -17147,6 +17147,121 @@ const decodeBase64DocumentPayloadOutsideTransaction = (value: unknown): {
   return null
 }
 
+type ProviderLabelDocument = {
+  buffer: Buffer
+  contentType: string
+}
+
+const extractProviderLabelDocumentOutsideTransaction = (value: unknown): ProviderLabelDocument | null => {
+  const seen = new WeakSet<object>()
+
+  const visit = (input: unknown): ProviderLabelDocument | null => {
+    if (input === null || input === undefined) return null
+
+    if (typeof input === 'string') {
+      return decodeBase64DocumentPayloadOutsideTransaction(input)
+    }
+
+    if (Array.isArray(input)) {
+      for (const entry of input) {
+        const found = visit(entry)
+        if (found) return found
+      }
+      return null
+    }
+
+    if (typeof input === 'object') {
+      const objectInput = input as object
+      if (seen.has(objectInput)) return null
+      seen.add(objectInput)
+
+      const record = input as Record<string, unknown>
+      for (const key of ['data', 'label', 'image', 'pdf', 'stream', 'base64', 'content']) {
+        const found = visit(record[key])
+        if (found) return found
+      }
+
+      for (const nested of Object.values(record)) {
+        const found = visit(nested)
+        if (found) return found
+      }
+    }
+
+    return null
+  }
+
+  return visit(value)
+}
+
+const resolveDownloadedProviderLabelOutsideTransaction = ({
+  buffer,
+  contentType,
+}: ProviderLabelDocument): ProviderLabelDocument | null => {
+  const normalizedContentType = String(contentType || 'application/pdf').split(';')[0].trim().toLowerCase()
+  const trimmedText = buffer.subarray(0, 64).toString('utf8').trim()
+
+  if (normalizedContentType.includes('json') || trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(buffer.toString('utf8'))
+      return extractProviderLabelDocumentOutsideTransaction(parsed)
+    } catch {
+      return null
+    }
+  }
+
+  return {
+    buffer,
+    contentType: normalizedContentType || 'application/pdf',
+  }
+}
+
+const buildMergedPdfFromProviderLabelsOutsideTransaction = async (documents: ProviderLabelDocument[]) => {
+  const mergedPdf = await PDFDocument.create()
+  let addedPages = 0
+
+  for (const document of documents) {
+    const contentType = String(document.contentType || '').toLowerCase()
+
+    try {
+      if (contentType.includes('pdf') || document.buffer.subarray(0, 4).toString('latin1') === '%PDF') {
+        const sourcePdf = await PDFDocument.load(document.buffer)
+        const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices())
+        for (const page of copiedPages) {
+          mergedPdf.addPage(page)
+          addedPages += 1
+        }
+        continue
+      }
+    } catch {
+      // Fall through and try image embedding.
+    }
+
+    const isPng = contentType.includes('png') || document.buffer.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
+    const isJpeg =
+      contentType.includes('jpeg') ||
+      contentType.includes('jpg') ||
+      document.buffer.subarray(0, 3).toString('hex') === 'ffd8ff'
+
+    if (isPng || isJpeg) {
+      const image = isPng ? await mergedPdf.embedPng(document.buffer) : await mergedPdf.embedJpg(document.buffer)
+      const page = mergedPdf.addPage([image.width, image.height])
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height,
+      })
+      addedPages += 1
+    }
+  }
+
+  if (!addedPages) {
+    throw new Error('Delhivery B2B label payloads could not be converted to PDF')
+  }
+
+  return Buffer.from(await mergedPdf.save())
+}
+
 const uploadBufferDocumentOutsideTransaction = async ({
   buffer,
   contentType,
@@ -17233,36 +17348,36 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
 
   let labelKey: string | null = null
   const uploadedLabelKeys: string[] = []
-  const labelBuffers: Buffer[] = []
+  const labelDocuments: ProviderLabelDocument[] = []
   let documentSource: 'shipping_label_urls' | 'lr_copy_fallback' = 'shipping_label_urls'
   for (let index = 0; index < labelPayloads.length; index += 1) {
     const payload = String(labelPayloads[index] || '').trim()
     if (!payload) continue
 
-    let documentBuffer: Buffer | null = null
-    let contentType = 'application/pdf'
+    let document: ProviderLabelDocument | null = null
 
     if (/^https?:\/\//i.test(payload)) {
       const response = await axios.get<ArrayBuffer>(payload, {
         responseType: 'arraybuffer',
         timeout: 120000,
       })
-      documentBuffer = Buffer.from(response.data)
-      contentType = String(response.headers?.['content-type'] || 'application/pdf').split(';')[0] || 'application/pdf'
+      document = resolveDownloadedProviderLabelOutsideTransaction({
+        buffer: Buffer.from(response.data),
+        contentType: String(response.headers?.['content-type'] || 'application/pdf'),
+      })
     } else {
       const decoded = decodeBase64DocumentPayloadOutsideTransaction(payload)
       if (decoded?.buffer?.length) {
-        documentBuffer = decoded.buffer
-        contentType = decoded.contentType || 'application/pdf'
+        document = decoded
       }
     }
 
-    if (!documentBuffer?.length) continue
+    if (!document?.buffer?.length) continue
 
-    labelBuffers.push(documentBuffer)
+    labelDocuments.push(document)
     const uploadedKey = await uploadBufferDocumentOutsideTransaction({
-      buffer: documentBuffer,
-      contentType,
+      buffer: document.buffer,
+      contentType: document.contentType,
       fileName: `${orderFileName}-delhivery-b2b-label-${index + 1}.pdf`,
       folderKey: 'labels',
       userId,
@@ -17275,7 +17390,7 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
     const decoded = decodeBase64DocumentPayloadOutsideTransaction(lrCopy.pdfBase64 || lrCopy.pdfDataUrl)
     if (decoded?.buffer?.length) {
       documentSource = 'lr_copy_fallback'
-      labelBuffers.push(decoded.buffer)
+      labelDocuments.push(decoded)
       const uploadedKey = await uploadBufferDocumentOutsideTransaction({
         buffer: decoded.buffer,
         contentType: decoded.contentType || lrCopy.contentType || 'application/pdf',
@@ -17287,19 +17402,11 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
     }
   }
 
-  if (labelBuffers.length > 1) {
+  if (labelDocuments.length) {
     try {
-      const mergedPdf = await PDFDocument.create()
-      for (const buffer of labelBuffers) {
-        const sourcePdf = await PDFDocument.load(buffer)
-        const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices())
-        for (const page of copiedPages) {
-          mergedPdf.addPage(page)
-        }
-      }
-      const mergedBytes = await mergedPdf.save()
+      const mergedBytes = await buildMergedPdfFromProviderLabelsOutsideTransaction(labelDocuments)
       labelKey = await uploadBufferDocumentOutsideTransaction({
-        buffer: Buffer.from(mergedBytes),
+        buffer: mergedBytes,
         contentType: 'application/pdf',
         fileName: `${orderFileName}-delhivery-b2b-labels.pdf`,
         folderKey: 'labels',
@@ -17308,8 +17415,6 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
     } catch {
       labelKey = uploadedLabelKeys[0] || null
     }
-  } else {
-    labelKey = uploadedLabelKeys[0] || null
   }
 
   const providerMeta =
@@ -17326,7 +17431,7 @@ const fetchAndStoreDelhiveryB2BLabelOutsideTransaction = async ({
       label_key: labelKey,
       label_count: labelPayloads.length,
       stored_label_keys: uploadedLabelKeys,
-      merged: labelBuffers.length > 1 && labelKey !== uploadedLabelKeys[0],
+      merged: labelDocuments.length > 1 && labelKey !== uploadedLabelKeys[0],
       provider_response: labelResult.provider_response,
       fetched_at: new Date().toISOString(),
     },
