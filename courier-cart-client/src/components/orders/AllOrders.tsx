@@ -993,6 +993,24 @@ const AllOrders = () => {
   }
 
   const handleSingleDocumentDownload = async (order: Order, type: DocumentType) => {
+    if (type === 'label' && getOrderTypeKey(order) === 'b2b' && getProviderKey(order) === 'delhivery') {
+      try {
+        const { blob, headers } = await downloadBulkOrderDocumentsZip([order.id], 'label')
+        const fileName = getArchiveFileNameFromHeaders(
+          headers,
+          getDownloadFileName(order, type, 'delhivery-b2b-labels.pdf'),
+        )
+        saveAs(blob, fileName)
+        return
+      } catch (error) {
+        toast.open({
+          message: getActionableErrorMessage(error, 'Unable to download Delhivery B2B labels.'),
+          severity: 'error',
+        })
+        return
+      }
+    }
+
     const reference = getDocumentReference(order, type)
     const keyValue = reference.key ? String(reference.key).trim() : ''
     const urlValue = reference.url ? String(reference.url).trim() : ''

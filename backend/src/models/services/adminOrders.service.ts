@@ -8,7 +8,11 @@ import { userProfiles } from '../schema/userProfile'
 import { users } from '../schema/users'
 import { sanitizeOrdersForCustomer } from '../../utils/orderSanitizer'
 import { getAmazonOrderLabelReference } from '../../utils/orderLabels'
-import { IOrderFilters, PaginationParams } from './shiprocket.service'
+import {
+  backfillDelhiveryB2BLabelsService,
+  IOrderFilters,
+  PaginationParams,
+} from './shiprocket.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import dayjs from 'dayjs'
 import { generateInvoicePDF, Product } from './invoice.service'
@@ -43,6 +47,22 @@ const ADMIN_UPDATABLE_ORDER_STATUSES = new Set([
 ])
 
 const ADMIN_NDR_STATUSES = new Set(['ndr', 'undelivered'])
+
+const isDelhiveryB2BOrder = (order: any, orderType: string) =>
+  orderType === 'b2b' &&
+  (String(order?.integration_type || '').trim().toLowerCase() === 'delhivery' ||
+    String(order?.courier_partner || '').trim().toLowerCase().includes('delhivery'))
+
+const resolveProviderDocumentLookup = (order: any) =>
+  String(
+    order?.awb_number ||
+      order?.provider_request_id ||
+      order?.provider_reference ||
+      order?.shipment_id ||
+      order?.order_id ||
+      order?.order_number ||
+      '',
+  ).trim()
 
 export const getAllOrdersServiceAdmin = async ({
   page = 1,
@@ -188,6 +208,22 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
         throw new Error('Amazon label regeneration failed because the provider label was not available')
       }
       newLabelKey = labelKey.trim()
+    } else if (isDelhiveryB2BOrder(order, orderType)) {
+      const lookup = resolveProviderDocumentLookup(order)
+      if (!lookup) {
+        throw new Error('Delhivery B2B label regeneration failed because AWB/LRN was not available')
+      }
+
+      const backfillResult = await backfillDelhiveryB2BLabelsService({
+        orderNumber: lookup,
+        limit: 1,
+        onlyMissing: false,
+      })
+      const storedLabelKey = backfillResult.results.find((result) => result.status === 'stored')?.label_key
+      if (!storedLabelKey || typeof storedLabelKey !== 'string') {
+        throw new Error('Delhivery B2B label regeneration failed because provider labels were not available')
+      }
+      newLabelKey = storedLabelKey.trim()
     } else {
       const labelKey = await generateLabelForOrder(order, userId, db)
       if (!labelKey || typeof labelKey !== 'string') {
