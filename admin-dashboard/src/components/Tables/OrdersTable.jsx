@@ -44,6 +44,7 @@ import {
 } from 'react-icons/fi'
 import { useHistory } from 'react-router-dom'
 import { fetchTracking } from 'services/order.service'
+import { getPresignedDownloadUrls } from 'services/upload.service'
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 import OrderDetailsModal from './OrderDetailsModal'
 
@@ -172,9 +173,67 @@ const OrdersTable = ({
     }
   }
 
-  const handleDownloadLabel = (order) => {
-    if (order.label) {
-      window.open(order.label, '_blank')
+  const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
+
+  const getProviderKey = (order) => {
+    const providerText = `${order?.integration_type || ''} ${order?.courier_partner || ''}`
+      .trim()
+      .toLowerCase()
+    if (providerText.includes('delhivery')) return 'delhivery'
+    if (providerText.includes('ekart')) return 'ekart'
+    if (providerText.includes('xpressbees') || providerText.includes('xpress bees')) return 'xpressbees'
+    if (providerText.includes('shadowfax')) return 'shadowfax'
+    if (providerText.includes('amazon')) return 'amazon'
+    return providerText
+  }
+
+  const resolvePresignedUrl = async (key) => {
+    const result = await getPresignedDownloadUrls([key])
+    if (Array.isArray(result)) {
+      const first = result[0]
+      if (typeof first === 'string') return first
+      return first?.url || first?.downloadUrl || first?.download_url || null
+    }
+    if (typeof result === 'string') return result
+    return result?.url || result?.downloadUrl || result?.download_url || null
+  }
+
+  const handleDownloadLabel = async (order) => {
+    if (!order?.id) return
+
+    const isDelhiveryB2B = String(order.type || '').toLowerCase() === 'b2b' && getProviderKey(order) === 'delhivery'
+
+    try {
+      if (isDelhiveryB2B) {
+        const response = await regenerateDocuments({
+          orderId: order.id,
+          regenerateLabel: true,
+          regenerateInvoice: false,
+        })
+        const freshLabelKey = response?.data?.label || response?.label
+        if (!freshLabelKey) throw new Error('Fresh Delhivery B2B label was not returned')
+        const freshUrl = isHttpUrl(freshLabelKey)
+          ? freshLabelKey
+          : await resolvePresignedUrl(freshLabelKey)
+        if (!freshUrl) throw new Error('Unable to prepare Delhivery B2B label download')
+        window.open(freshUrl, '_blank', 'noopener,noreferrer')
+        if (onRefresh) onRefresh()
+        return
+      }
+
+      if (order.label) {
+        const labelUrl = isHttpUrl(order.label) ? order.label : await resolvePresignedUrl(order.label)
+        if (!labelUrl) throw new Error('Unable to prepare label download')
+        window.open(labelUrl, '_blank', 'noopener,noreferrer')
+      }
+    } catch (error) {
+      toast({
+        title: 'Label download failed',
+        description: error?.response?.data?.message || error?.message || 'Unable to download label.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
     }
   }
 
