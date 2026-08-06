@@ -9,7 +9,7 @@ import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { b2bOrderListSelect, b2cOrderListSelect } from './orderListSelects'
 import { getOrderLabelReference } from '../../utils/orderLabels'
-import { downloadAndUploadToR2, presignDownload, presignUpload } from './upload.service'
+import { presignDownload, presignUpload } from './upload.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import { DelhiveryService } from './couriers/delhivery.service'
 
@@ -210,6 +210,115 @@ const bufferFromDelhiveryDocumentPayload = (value?: string | null) => {
   return null
 }
 
+type ProviderLabelDocument = {
+  buffer: Buffer
+  contentType: string
+}
+
+const extractProviderLabelDocument = (value: unknown): ProviderLabelDocument | null => {
+  const seen = new WeakSet<object>()
+
+  const visit = (input: unknown): ProviderLabelDocument | null => {
+    if (input === null || input === undefined) return null
+
+    if (typeof input === 'string') {
+      return bufferFromDelhiveryDocumentPayload(input)
+    }
+
+    if (Array.isArray(input)) {
+      for (const entry of input) {
+        const found = visit(entry)
+        if (found) return found
+      }
+      return null
+    }
+
+    if (typeof input === 'object') {
+      const objectInput = input as object
+      if (seen.has(objectInput)) return null
+      seen.add(objectInput)
+
+      const record = input as Record<string, unknown>
+      for (const key of ['data', 'label', 'image', 'pdf', 'stream', 'base64', 'content']) {
+        const found = visit(record[key])
+        if (found) return found
+      }
+
+      for (const nested of Object.values(record)) {
+        const found = visit(nested)
+        if (found) return found
+      }
+    }
+
+    return null
+  }
+
+  return visit(value)
+}
+
+const resolveDownloadedProviderLabel = ({
+  buffer,
+  contentType,
+}: ProviderLabelDocument): ProviderLabelDocument | null => {
+  const normalizedContentType = String(contentType || 'application/pdf').split(';')[0].trim().toLowerCase()
+  const trimmedText = buffer.subarray(0, 64).toString('utf8').trim()
+
+  if (normalizedContentType.includes('json') || trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
+    try {
+      return extractProviderLabelDocument(JSON.parse(buffer.toString('utf8')))
+    } catch {
+      return null
+    }
+  }
+
+  return {
+    buffer,
+    contentType: normalizedContentType || 'application/pdf',
+  }
+}
+
+const buildMergedPdfFromProviderLabels = async (documents: ProviderLabelDocument[]) => {
+  const mergedPdf = await PDFDocument.create()
+  let addedPages = 0
+
+  for (const document of documents) {
+    const contentType = String(document.contentType || '').toLowerCase()
+
+    try {
+      if (contentType.includes('pdf') || document.buffer.subarray(0, 4).toString('latin1') === '%PDF') {
+        const sourcePdf = await PDFDocument.load(document.buffer)
+        const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices())
+        for (const page of copiedPages) {
+          mergedPdf.addPage(page)
+          addedPages += 1
+        }
+        continue
+      }
+    } catch {
+      // Try image embedding below.
+    }
+
+    const isPng = contentType.includes('png') || document.buffer.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
+    const isJpeg =
+      contentType.includes('jpeg') ||
+      contentType.includes('jpg') ||
+      document.buffer.subarray(0, 3).toString('hex') === 'ffd8ff'
+
+    if (isPng || isJpeg) {
+      const image = isPng ? await mergedPdf.embedPng(document.buffer) : await mergedPdf.embedJpg(document.buffer)
+      const page = mergedPdf.addPage([image.width, image.height])
+      page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height })
+      addedPages += 1
+    }
+  }
+
+  if (!addedPages) {
+    throw new Error('Delhivery LTL label payloads could not be converted to PDF')
+  }
+
+  return Buffer.from(await mergedPdf.save())
+}
+
 const materializeDelhiveryB2BDocument = async (
   order: OrderRow,
   documentType: BulkDocumentType,
@@ -230,31 +339,41 @@ const materializeDelhiveryB2BDocument = async (
   let key: string | null = null
   if (documentType === 'label') {
     const labelResult = await delhivery.getLtlShippingLabelUrls({ size: 'a4', lrn })
-    const labelPayload = labelResult.labelUrls[0]
-    if (!labelPayload) {
+    if (!labelResult.labelUrls.length) {
       return null
     }
 
-    if (/^https?:\/\//i.test(labelPayload)) {
-      key = await downloadAndUploadToR2({
-        url: labelPayload,
-        userId,
-        filename: `${safeOrderName || lrn}-label.pdf`,
-        folderKey: 'labels',
-        contentType: 'application/pdf',
-      })
-    } else {
-      const decoded = bufferFromDelhiveryDocumentPayload(labelPayload)
-      if (decoded?.buffer?.length) {
-        key = await uploadBufferAsOrderDocument({
-          buffer: decoded.buffer,
-          contentType: decoded.contentType || 'application/pdf',
-          fileName: `${safeOrderName || lrn}-label.pdf`,
-          folderKey: 'labels',
-          userId,
+    const labelDocuments: ProviderLabelDocument[] = []
+    for (const labelPayload of labelResult.labelUrls) {
+      const payload = String(labelPayload || '').trim()
+      if (!payload) continue
+
+      if (/^https?:\/\//i.test(payload)) {
+        const response = await axios.get<ArrayBuffer>(payload, {
+          responseType: 'arraybuffer',
+          timeout: 120000,
         })
+        const document = resolveDownloadedProviderLabel({
+          buffer: Buffer.from(response.data),
+          contentType: String(response.headers?.['content-type'] || 'application/pdf'),
+        })
+        if (document?.buffer?.length) labelDocuments.push(document)
+      } else {
+        const decoded = bufferFromDelhiveryDocumentPayload(payload)
+        if (decoded?.buffer?.length) labelDocuments.push(decoded)
       }
     }
+
+    if (!labelDocuments.length) return null
+
+    const mergedLabelPdf = await buildMergedPdfFromProviderLabels(labelDocuments)
+    key = await uploadBufferAsOrderDocument({
+      buffer: mergedLabelPdf,
+      contentType: 'application/pdf',
+      fileName: `${safeOrderName || lrn}-labels.pdf`,
+      folderKey: 'labels',
+      userId,
+    })
   } else if (documentType === 'manifest') {
     const lrCopy = await delhivery.getLtlLrCopy({ lrn })
     const decoded = bufferFromDelhiveryDocumentPayload(lrCopy.pdfBase64 || lrCopy.pdfDataUrl)
