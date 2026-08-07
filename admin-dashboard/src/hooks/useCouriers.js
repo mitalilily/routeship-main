@@ -37,6 +37,7 @@ import {
   updateInnofulfillCredentials,
   updateMovinCredentials,
   updateApptmyzCredentials,
+  updateAmazonCredentials,
   updateXpressbeesAwbRange,
   updateXpressbeesCredentials,
   updateCourierStatus,
@@ -348,6 +349,17 @@ export const useUpdateApptmyzCredentials = () => {
 
   return useMutation({
     mutationFn: updateApptmyzCredentials,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courierCredentials'])
+    },
+  })
+}
+
+export const useUpdateAmazonCredentials = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateAmazonCredentials,
     onSuccess: () => {
       queryClient.invalidateQueries(['courierCredentials'])
     },

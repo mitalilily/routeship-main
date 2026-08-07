@@ -20,6 +20,17 @@ import {
   updateShopifySettingsController,
 } from '../controllers/shopify.controller'
 import { syncWooCommerceOrdersController } from '../controllers/woocommerce.controller'
+import {
+  cancelAmazonShipmentController,
+  getAmazonAccessPointsController,
+  getAmazonAdditionalInputsController,
+  getAmazonRatesController,
+  getAmazonShipmentDocumentsController,
+  oneClickAmazonShipmentController,
+  purchaseAmazonShipmentController,
+  submitAmazonNdrFeedbackController,
+  trackAmazonShipmentController,
+} from '../controllers/amazonShipping.controller'
 import { requireAuth } from '../middlewares/requireAuth'
 import { deleteStoreById } from "../models/services/PlatformIntegration.service";
 
@@ -47,5 +58,19 @@ router.post('/woocommerce/sync-orders', syncWooCommerceOrdersController)
 router.post("/magento-auth", integrateMagentoStore);
 router.post("/wix-auth", integrateWixStore);
 router.delete("/stores/:storeId", deleteStoreById);
+router.post('/amazon-shipping/rates', getAmazonRatesController)
+router.post('/amazon-shipping/shipments', purchaseAmazonShipmentController)
+router.post('/amazon-shipping/one-click-shipment', oneClickAmazonShipmentController)
+router.get('/amazon-shipping/tracking', trackAmazonShipmentController)
+router.post('/amazon-shipping/tracking', trackAmazonShipmentController)
+router.get('/amazon-shipping/shipments/:shipmentId/documents', getAmazonShipmentDocumentsController)
+router.post('/amazon-shipping/shipments/:shipmentId/documents', getAmazonShipmentDocumentsController)
+router.put('/amazon-shipping/shipments/:shipmentId/cancel', cancelAmazonShipmentController)
+router.post('/amazon-shipping/shipments/:shipmentId/cancel', cancelAmazonShipmentController)
+router.get('/amazon-shipping/access-points', getAmazonAccessPointsController)
+router.post('/amazon-shipping/access-points', getAmazonAccessPointsController)
+router.post('/amazon-shipping/ndr-feedback', submitAmazonNdrFeedbackController)
+router.get('/amazon-shipping/additional-inputs/schema', getAmazonAdditionalInputsController)
+router.post('/amazon-shipping/additional-inputs/schema', getAmazonAdditionalInputsController)
 
 export default router;

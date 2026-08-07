@@ -523,6 +523,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           'dtdc',
           'movin',
           'apptmyz',
+          'amazon',
         ]),
       )
 
@@ -626,6 +627,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         hasPublicKey: false,
         publicKeyMasked: '',
       },
+      amazon: buildAmazonCredentialResponse(null),
     }
 
     const data = rows.reduce<Record<string, any>>((acc, row) => {
@@ -805,6 +807,8 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasPublicKey: Boolean(publicKey),
           publicKeyMasked: publicKey ? `${publicKey.slice(0, 10)}...${publicKey.slice(-10)}` : '',
         }
+      } else if (provider === 'amazon') {
+        acc.amazon = buildAmazonCredentialResponse(row)
       }
       return acc
     }, { ...defaults })

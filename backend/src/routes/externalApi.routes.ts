@@ -48,6 +48,17 @@ import {
 } from '../controllers/externalApi/webhook.controller'
 import { requireApiKey } from '../middlewares/requireApiKey'
 import { requireAuth } from '../middlewares/requireAuth'
+import {
+  cancelAmazonShipmentController,
+  getAmazonAccessPointsController,
+  getAmazonAdditionalInputsController,
+  getAmazonRatesController,
+  getAmazonShipmentDocumentsController,
+  oneClickAmazonShipmentController,
+  purchaseAmazonShipmentController,
+  submitAmazonNdrFeedbackController,
+  trackAmazonShipmentController,
+} from '../controllers/amazonShipping.controller'
 
 const router = Router()
 
@@ -134,6 +145,48 @@ router.get('/ndr/timeline', requireApiKey, getNdrTimelineController)
 // RTO MANAGEMENT (Requires API Key)
 // ============================================================================
 router.get('/rto', requireApiKey, getRtoEventsController)
+
+// ============================================================================
+// AMAZON SHIPPING RAW WRAPPERS (Requires API Key)
+// ============================================================================
+router.post('/amazon-shipping/rates', requireApiKey, getAmazonRatesController)
+router.post('/amazon-shipping/shipments', requireApiKey, purchaseAmazonShipmentController)
+router.post('/amazon-shipping/one-click-shipment', requireApiKey, oneClickAmazonShipmentController)
+router.get('/amazon-shipping/tracking', requireApiKey, trackAmazonShipmentController)
+router.post('/amazon-shipping/tracking', requireApiKey, trackAmazonShipmentController)
+router.get(
+  '/amazon-shipping/shipments/:shipmentId/documents',
+  requireApiKey,
+  getAmazonShipmentDocumentsController,
+)
+router.post(
+  '/amazon-shipping/shipments/:shipmentId/documents',
+  requireApiKey,
+  getAmazonShipmentDocumentsController,
+)
+router.put(
+  '/amazon-shipping/shipments/:shipmentId/cancel',
+  requireApiKey,
+  cancelAmazonShipmentController,
+)
+router.post(
+  '/amazon-shipping/shipments/:shipmentId/cancel',
+  requireApiKey,
+  cancelAmazonShipmentController,
+)
+router.get('/amazon-shipping/access-points', requireApiKey, getAmazonAccessPointsController)
+router.post('/amazon-shipping/access-points', requireApiKey, getAmazonAccessPointsController)
+router.post('/amazon-shipping/ndr-feedback', requireApiKey, submitAmazonNdrFeedbackController)
+router.get(
+  '/amazon-shipping/additional-inputs/schema',
+  requireApiKey,
+  getAmazonAdditionalInputsController,
+)
+router.post(
+  '/amazon-shipping/additional-inputs/schema',
+  requireApiKey,
+  getAmazonAdditionalInputsController,
+)
 
 // ============================================================================
 // RETURN ORDERS (Requires API Key)

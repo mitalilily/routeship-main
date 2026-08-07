@@ -2,6 +2,7 @@ import {
   Badge,
   Box,
   Button,
+  Checkbox,
   Flex,
   FormControl,
   FormLabel,
@@ -41,6 +42,7 @@ import {
   useUpdateInnofulfillCredentials,
   useUpdateMovinCredentials,
   useUpdateApptmyzCredentials,
+  useUpdateAmazonCredentials,
   useUpdateXpressbeesAwbRange,
   useUpdateXpressbeesCredentials,
 } from 'hooks/useCouriers'
@@ -75,6 +77,7 @@ const CourierCredentials = () => {
   const updateInnofulfill = useUpdateInnofulfillCredentials()
   const updateMovin = useUpdateMovinCredentials()
   const updateApptmyz = useUpdateApptmyzCredentials()
+  const updateAmazon = useUpdateAmazonCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
   const updateXpressbeesAwbRange = useUpdateXpressbeesAwbRange()
 
@@ -230,6 +233,17 @@ const CourierCredentials = () => {
     publicKey: '',
     customerCode: '',
   })
+  const [amazonForm, setAmazonForm] = useState({
+    apiBase: 'https://sellingpartnerapi-eu.amazon.com',
+    lwaClientId: '',
+    lwaClientSecret: '',
+    refreshToken: '',
+    accessToken: '',
+    shippingBusinessId: 'AmazonShipping_IN',
+    region: 'eu',
+    sandbox: false,
+    lwaTokenUrl: 'https://api.amazon.com/auth/o2/token',
+  })
   const [xpressbeesForm, setXpressbeesForm] = useState({
     apiBase: '',
     username: '',
@@ -327,6 +341,19 @@ const CourierCredentials = () => {
         password: '',
         publicKey: '',
         customerCode: data.apptmyz.customerCode || '',
+      })
+    }
+    if (data?.amazon) {
+      setAmazonForm({
+        apiBase: data.amazon.apiBase || 'https://sellingpartnerapi-eu.amazon.com',
+        lwaClientId: data.amazon.lwaClientId || '',
+        lwaClientSecret: '',
+        refreshToken: '',
+        accessToken: '',
+        shippingBusinessId: data.amazon.shippingBusinessId || 'AmazonShipping_IN',
+        region: data.amazon.region || 'eu',
+        sandbox: Boolean(data.amazon.sandbox),
+        lwaTokenUrl: data.amazon.lwaTokenUrl || 'https://api.amazon.com/auth/o2/token',
       })
     }
     if (data?.xpressbees) {
@@ -1199,6 +1226,42 @@ const CourierCredentials = () => {
     )
   }
 
+  const handleSaveAmazon = () => {
+    updateAmazon.mutate(
+      {
+        apiBase: amazonForm.apiBase,
+        lwaClientId: amazonForm.lwaClientId,
+        shippingBusinessId: amazonForm.shippingBusinessId,
+        region: amazonForm.region,
+        sandbox: amazonForm.sandbox,
+        lwaTokenUrl: amazonForm.lwaTokenUrl,
+        ...(amazonForm.lwaClientSecret
+          ? { lwaClientSecret: amazonForm.lwaClientSecret }
+          : {}),
+        ...(amazonForm.refreshToken ? { refreshToken: amazonForm.refreshToken } : {}),
+        ...(amazonForm.accessToken ? { accessToken: amazonForm.accessToken } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Amazon Shipping credentials updated', status: 'success' })
+          setAmazonForm((prev) => ({
+            ...prev,
+            lwaClientSecret: '',
+            refreshToken: '',
+            accessToken: '',
+          }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update Amazon Shipping credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSaveXpressbees = () => {
     updateXpressbees.mutate(
       {
@@ -1537,6 +1600,161 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Send LTL Password Reset
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">Amazon Shipping B2C</Text>
+              <Badge colorScheme={data?.amazon?.configured ? 'green' : 'orange'}>
+                {data?.amazon?.configured ? 'Configured' : 'Missing credentials'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={amazonForm.apiBase}
+                onChange={(e) => setAmazonForm((prev) => ({ ...prev, apiBase: e.target.value }))}
+                placeholder="https://sellingpartnerapi-eu.amazon.com"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Amazon Selling Partner API host for the account region. India uses the EU endpoint.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>LWA Client ID</FormLabel>
+              <Input
+                value={amazonForm.lwaClientId}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, lwaClientId: e.target.value }))
+                }
+                placeholder="amzn1.application-oa2-client..."
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Login With Amazon client ID from the approved Amazon Shipping developer app.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>LWA Client Secret</FormLabel>
+              <Input
+                type="password"
+                value={amazonForm.lwaClientSecret}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, lwaClientSecret: e.target.value }))
+                }
+                placeholder={
+                  data?.amazon?.hasLwaClientSecret
+                    ? 'Leave blank to keep existing client secret'
+                    : 'LWA client secret'
+                }
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Secret for the Amazon developer app. It is used with the refresh token to generate
+                live access tokens.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Refresh Token</FormLabel>
+              <Input
+                type="password"
+                value={amazonForm.refreshToken}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, refreshToken: e.target.value }))
+                }
+                placeholder={data?.amazon?.refreshTokenMasked || 'Atzr| refresh token'}
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Long-lived LWA refresh token generated after the seller authorizes the Amazon
+                Shipping app.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Direct Access Token</FormLabel>
+              <Input
+                type="password"
+                value={amazonForm.accessToken}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, accessToken: e.target.value }))
+                }
+                placeholder={data?.amazon?.accessTokenMasked || 'Optional Atza| access token'}
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Optional short-lived fallback token. Prefer refresh token plus client ID and secret.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Shipping Business ID</FormLabel>
+              <Input
+                value={amazonForm.shippingBusinessId}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, shippingBusinessId: e.target.value }))
+                }
+                placeholder="AmazonShipping_IN"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Business ID sent as x-amzn-shipping-business-id. India defaults to
+                AmazonShipping_IN.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Region</FormLabel>
+              <Input
+                value={amazonForm.region}
+                onChange={(e) => setAmazonForm((prev) => ({ ...prev, region: e.target.value }))}
+                placeholder="eu"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Region selector for base URL resolution: eu, na, or fe.
+              </Text>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>LWA Token URL</FormLabel>
+              <Input
+                value={amazonForm.lwaTokenUrl}
+                onChange={(e) =>
+                  setAmazonForm((prev) => ({ ...prev, lwaTokenUrl: e.target.value }))
+                }
+                placeholder="https://api.amazon.com/auth/o2/token"
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                OAuth token endpoint. Keep the default unless Amazon gives a region-specific LWA
+                URL.
+              </Text>
+            </FormControl>
+
+            <Checkbox
+              isChecked={amazonForm.sandbox}
+              onChange={(e) => setAmazonForm((prev) => ({ ...prev, sandbox: e.target.checked }))}
+            >
+              Use Amazon sandbox
+            </Checkbox>
+            <Text fontSize="xs" color="gray.500">
+              Turn this on only for sandbox credentials. Live B2C booking should use production.
+            </Text>
+
+            <Text fontSize="xs" color="gray.500">
+              The backend exposes rates, shipment purchase, one-click shipment, tracking,
+              documents, cancellation, access points, NDR feedback, and additional-input schema
+              endpoints.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveAmazon}
+              isLoading={updateAmazon.isPending}
+              alignSelf="flex-start"
+            >
+              Save Amazon Shipping Credentials
             </Button>
           </VStack>
         </Box>

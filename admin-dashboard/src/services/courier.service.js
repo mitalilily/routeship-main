@@ -423,6 +423,12 @@ export const updateApptmyzCredentials = async (payload) => {
   return data.data
 }
 
+export const updateAmazonCredentials = async (payload) => {
+  const { data } = await api.put('/admin/couriers/credentials/amazon', payload)
+  if (!data?.success) throw new Error(data?.message || 'Failed to update Amazon credentials')
+  return data.data
+}
+
 export const updateXpressbeesAwbRange = async (payload) => {
   const { data } = await api.put('/admin/couriers/credentials/xpressbees/awb-range', payload)
   if (!data?.success) throw new Error(data?.message || 'Failed to update Xpressbees AWB range')

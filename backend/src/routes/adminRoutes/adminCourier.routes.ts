@@ -35,6 +35,7 @@ import {
   updateInnofulfillCredentialsController,
   updateMovinCredentialsController,
   updateApptmyzCredentialsController,
+  updateAmazonCredentialsController,
   updateXpressbeesAwbRangeController,
   updateXpressbeesCredentialsController,
   updateShippingRateController,
@@ -249,6 +250,12 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateApptmyzCredentialsController,
+)
+router.put(
+  '/credentials/amazon',
+  requireAuth,
+  isAdminMiddleware,
+  updateAmazonCredentialsController,
 )
 router.post('/credentials/apptmyz/login', requireAuth, isAdminMiddleware, apptmyzGenerateTokenController)
 router.post('/credentials/apptmyz/orders', requireAuth, isAdminMiddleware, apptmyzCreateOrderController)
