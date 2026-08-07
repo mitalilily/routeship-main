@@ -2912,6 +2912,13 @@ export const importShippingRatesController = async (req: any, res: Response) => 
     if (normalizedBusinessType !== 'b2b' && normalizedBusinessType !== 'b2c') {
       return res.status(400).json({ success: false, message: 'Invalid business_type' })
     }
+    if (normalizedBusinessType === 'b2b') {
+      return res.status(400).json({
+        success: false,
+        message:
+          'B2B rate cards must be imported from B2B Pricing Configuration > Rate Matrix. The old generic importer does not update the B2B booking rate table.',
+      })
+    }
 
     const { data, errors } = await parseRateCardFile(req.file)
 

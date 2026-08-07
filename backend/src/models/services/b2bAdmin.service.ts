@@ -17,6 +17,7 @@ import Papa from 'papaparse'
 
 import { db } from '../client'
 import { locations } from '../schema/locations'
+import { plans } from '../schema/plans'
 // Try importing the entire module first to debug
 import { checkHolidayCharge } from '../../utils/holidayChecker'
 import { tracking_events } from '../schema/trackingEvents'
@@ -83,6 +84,17 @@ const normalizeCourierScope = (scope?: CourierScope) => {
   const courierId = scope.courierId != null ? Number(scope.courierId) : null
   const serviceProvider = scope.serviceProvider ?? null
   return { courierId, serviceProvider }
+}
+
+const getDefaultB2BPlanId = async () => {
+  const [basicPlan] = await db
+    .select({ id: plans.id })
+    .from(plans)
+    .where(and(eq(plans.business_type, 'b2b'), eq(plans.is_active, true)))
+    .orderBy(sql`case when lower(${plans.name}) = 'basic' then 0 else 1 end`, desc(plans.created_at))
+    .limit(1)
+
+  return basicPlan?.id || null
 }
 
 const isGreenTaxRule = (rule: {
@@ -634,8 +646,10 @@ export const listZoneToZoneRates = async (params: {
       )
     }
 
+    const effectivePlanId = params.planId || (await getDefaultB2BPlanId())
+
     await ensureDelhiveryB2BBasicPricing({
-      planId: params.planId,
+      planId: effectivePlanId || undefined,
       courierScope: params.courierScope,
     })
 
@@ -662,9 +676,14 @@ export const listZoneToZoneRates = async (params: {
     // We'll check this by trying to use it, and if it fails, we'll retry without it
     let shouldFilterByPlan = false
     if (b2bZoneToZoneRates.plan_id) {
-      if (params.planId) {
+      if (effectivePlanId) {
         shouldFilterByPlan = true
-        filters.push(eq(b2bZoneToZoneRates.plan_id, params.planId))
+        filters.push(
+          or(
+            eq(b2bZoneToZoneRates.plan_id, effectivePlanId),
+            isNull(b2bZoneToZoneRates.plan_id),
+          ) as SQLWrapper,
+        )
       } else {
         // If no plan_id provided, only show rates without plan_id (generic rates)
         shouldFilterByPlan = true
@@ -862,6 +881,7 @@ export const upsertZoneToZoneRate = async (payload: {
   }
 
   const { courierId, serviceProvider } = normalizeCourierScope(payload.courierScope)
+  const effectivePlanId = payload.planId ?? (await getDefaultB2BPlanId())
 
   try {
     // If an explicit ID is provided, prefer a direct update on that record.
@@ -937,8 +957,8 @@ export const upsertZoneToZoneRate = async (payload: {
     }
 
     // Plan-scoped rates: if planId provided, match on that; otherwise scope to NULL plan_id
-    if (payload.planId) {
-      whereConditions.push(eq(b2bZoneToZoneRates.plan_id, payload.planId))
+    if (effectivePlanId) {
+      whereConditions.push(eq(b2bZoneToZoneRates.plan_id, effectivePlanId))
     } else {
       whereConditions.push(isNull(b2bZoneToZoneRates.plan_id))
     }
@@ -951,7 +971,7 @@ export const upsertZoneToZoneRate = async (payload: {
 
     const updateData = {
       rate_per_kg: payload.ratePerKg.toString(),
-      plan_id: payload.planId ?? null,
+      plan_id: effectivePlanId ?? null,
       updated_at: new Date(),
     }
 
@@ -974,7 +994,7 @@ export const upsertZoneToZoneRate = async (payload: {
           rate_per_kg: payload.ratePerKg.toString(),
           courier_id: courierId,
           service_provider: serviceProvider,
-          plan_id: payload.planId ?? null,
+          plan_id: effectivePlanId ?? null,
         })
         .returning()
       record = inserted
@@ -996,7 +1016,7 @@ export const upsertZoneToZoneRate = async (payload: {
         ratePerKg: payload.ratePerKg,
         courierId,
         serviceProvider,
-        planId: payload.planId ?? null,
+        planId: effectivePlanId ?? null,
       },
     })
 
@@ -1068,6 +1088,7 @@ export const importZoneRatesFromCsv = async (
   },
 ) => {
   const csv = fileBuffer.toString('utf8')
+  const effectivePlanId = options.planId || (await getDefaultB2BPlanId()) || undefined
   const parsed = Papa.parse<ZoneRateCsvRecord>(csv, {
     header: true,
     skipEmptyLines: true,
@@ -1157,7 +1178,7 @@ export const importZoneRatesFromCsv = async (
         destinationZoneId,
         ratePerKg,
         courierScope: options.courierScope,
-        planId: options.planId,
+        planId: effectivePlanId,
       })
 
       inserted += 1

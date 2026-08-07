@@ -4,6 +4,7 @@ import type { ShippingRateFilters } from '../../controllers/admin/courier.contro
 import { db } from '../client'
 import { couriers } from '../schema/couriers'
 import { courierSummary } from '../schema/courierSummary'
+import { plans } from '../schema/plans'
 import { b2cCourierRateConfigs, shippingRates } from '../schema/shippingRates'
 import { b2bZoneToZoneRates, zones } from '../schema/zones'
 import { getUserPlanId } from './plan.service'
@@ -140,6 +141,12 @@ export const getCourierSummary = async () => {
 }
 
 export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
+  if (filters.business_type === 'b2b') {
+    const planId = filters.plan_id || (await getDefaultB2BPlanId())
+    if (!planId) return []
+    return getB2BShippingRatesForPlan(planId, filters)
+  }
+
   const conditions: any[] = []
   const configuredProviders = [...(await getConfiguredCourierProviderSet())]
   if (!configuredProviders.length) return []
@@ -280,16 +287,21 @@ export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
   return result
 }
 
-const getUserB2BShippingRates = async (
-  userId: string,
+const getDefaultB2BPlanId = async () => {
+  const [basicPlan] = await db
+    .select({ id: plans.id })
+    .from(plans)
+    .where(and(eq(plans.business_type, 'b2b'), eq(plans.is_active, true)))
+    .orderBy(sql`case when lower(${plans.name}) = 'basic' then 0 else 1 end`, desc(plans.created_at))
+    .limit(1)
+
+  return basicPlan?.id || null
+}
+
+const getB2BShippingRatesForPlan = async (
+  planId: string,
   filters: Omit<ShippingRateFilters, 'plan_id'> = {},
 ) => {
-  const planId = await getUserPlanId(userId, 'b2b')
-
-  if (!planId) {
-    throw new Error('No active B2B plan found for this user')
-  }
-
   const configuredProviders = [...(await getConfiguredCourierProviderSet())]
     .map((provider) => provider.toLowerCase())
   if (!configuredProviders.length) return []
@@ -400,6 +412,19 @@ const getUserB2BShippingRates = async (
   }
 
   return Array.from(grouped.values())
+}
+
+const getUserB2BShippingRates = async (
+  userId: string,
+  filters: Omit<ShippingRateFilters, 'plan_id'> = {},
+) => {
+  const planId = await getUserPlanId(userId, 'b2b')
+
+  if (!planId) {
+    throw new Error('No active B2B plan found for this user')
+  }
+
+  return getB2BShippingRatesForPlan(planId, filters)
 }
 
 export const getUserShippingRates = async (

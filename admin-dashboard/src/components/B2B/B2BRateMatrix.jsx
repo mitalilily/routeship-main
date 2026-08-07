@@ -223,7 +223,7 @@ const B2BRateMatrix = ({
 
     const formData = new FormData()
     formData.append('file', importFile)
-    if (planId) formData.append('plan_id', planId)
+    if (effectivePlanId) formData.append('plan_id', effectivePlanId)
     if (courierId) formData.append('courier_id', courierId)
     if (serviceProvider) formData.append('service_provider', serviceProvider)
 
