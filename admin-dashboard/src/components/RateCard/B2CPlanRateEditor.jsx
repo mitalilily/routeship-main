@@ -30,6 +30,7 @@ import {
 import Papa from "papaparse";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUpdateShippingRate } from "hooks/useCouriers";
+import DownloadSampleCSVButton from "components/CSV/DownloadSampleCSVButton";
 
 const ZONE_HELP = {
   A: "Within city and local shipments.",
@@ -153,6 +154,7 @@ const buildInitialState = (zones, existing) => {
 const CourierRateForm = ({ courier, existing, zones, planId }) => {
   const [state, setState] = useState(() => buildInitialState(zones, existing));
   const fileRef = useRef();
+  const rtoFileRef = useRef();
   const toast = useToast();
   const updateRate = useUpdateShippingRate();
 
@@ -301,6 +303,103 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
     });
   };
 
+  const buildRtoCsvRows = (sourceSlabs = state.rtoSlabs) =>
+    sourceSlabs.map((slab) => ({
+      min_weight: slab.minWeight,
+      max_weight: slab.maxWeight,
+      ...Object.fromEntries(
+        zones.map((zone) => [
+          `zone_${zone.code.toLowerCase()}`,
+          slab.rates?.[zone.code] || "",
+        ])
+      ),
+    }));
+
+  const rtoFormatRows = [
+    {
+      min_weight: "0",
+      max_weight: "0.5",
+      ...Object.fromEntries(
+        zones.map((zone, index) => [
+          `zone_${zone.code.toLowerCase()}`,
+          index === 0 ? "35" : String(40 + index * 5),
+        ])
+      ),
+    },
+    {
+      min_weight: "0.5",
+      max_weight: "1",
+      ...Object.fromEntries(
+        zones.map((zone, index) => [
+          `zone_${zone.code.toLowerCase()}`,
+          index === 0 ? "45" : String(50 + index * 5),
+        ])
+      ),
+    },
+  ];
+
+  const exportRtoCsv = () => {
+    const rows = buildRtoCsvRows();
+    const blob = new Blob([Papa.unparse(rows)], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${courier.name
+      .replace(/\s+/g, "-")
+      .toLowerCase()}-rto-rates.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const importRtoCsv = (file) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: ({ data }) => {
+        const nextRtoSlabs = data
+          .map((row) => ({
+            minWeight: row.min_weight || row["Min Weight"] || "",
+            maxWeight: row.max_weight || row["Max Weight"] || "",
+            rates: Object.fromEntries(
+              zones.map((zone) => [
+                zone.code,
+                row[`zone_${zone.code.toLowerCase()}`] ||
+                  row[`Zone ${zone.code}`] ||
+                  row[zone.name] ||
+                  "",
+              ])
+            ),
+          }))
+          .filter(
+            (slab) =>
+              slab.minWeight !== "" ||
+              slab.maxWeight !== "" ||
+              Object.values(slab.rates).some((value) => value !== "")
+          );
+
+        if (!nextRtoSlabs.length) {
+          toast({
+            title: "No RTO rows found",
+            description:
+              "Use min_weight, max_weight, and zone_a/zone_b columns from the sample CSV.",
+            status: "warning",
+          });
+          return;
+        }
+
+        setState((current) => ({
+          ...current,
+          rtoSlabs: nextRtoSlabs,
+        }));
+        toast({ title: "RTO rates imported", status: "success" });
+      },
+      error: () =>
+        toast({
+          title: "Could not import RTO CSV",
+          status: "error",
+        }),
+    });
+  };
+
   return (
     <Box py={3}>
       <Flex justify="space-between" align="center" mb={4} gap={3} wrap="wrap">
@@ -439,20 +538,58 @@ const CourierRateForm = ({ courier, existing, zones, planId }) => {
             Add return-to-origin charges in the same slab format as forward rates.
           </Text>
         </Box>
-        <Button
-          size="xs"
-          variant="outline"
-          colorScheme="purple"
-          leftIcon={<AddIcon />}
-          onClick={() =>
-            setState((current) => ({
-              ...current,
-              rtoSlabs: [...current.rtoSlabs, blankSlab(zones)],
-            }))
-          }
-        >
-          Add RTO Row
-        </Button>
+        <HStack spacing={2} wrap="wrap" justify="flex-end">
+          <Button
+            size="xs"
+            variant="outline"
+            colorScheme="purple"
+            leftIcon={<AddIcon />}
+            onClick={() =>
+              setState((current) => ({
+                ...current,
+                rtoSlabs: [...current.rtoSlabs, blankSlab(zones)],
+              }))
+            }
+          >
+            Add RTO Row
+          </Button>
+          <DownloadSampleCSVButton
+            headers={rtoFormatRows}
+            filename="b2c-rto-slab-format.csv"
+            buttonText="RTO CSV Format"
+            size="xs"
+            colorScheme="purple"
+            tooltip="Download the CSV format for importing RTO slab rates."
+            buttonProps={{ variant: "outline" }}
+          />
+          <Button
+            size="xs"
+            variant="outline"
+            colorScheme="purple"
+            onClick={exportRtoCsv}
+          >
+            Export RTO
+          </Button>
+          <Button
+            size="xs"
+            variant="outline"
+            colorScheme="purple"
+            onClick={() => rtoFileRef.current?.click()}
+          >
+            Import RTO
+          </Button>
+          <Input
+            ref={rtoFileRef}
+            type="file"
+            accept=".csv"
+            display="none"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) importRtoCsv(file);
+              event.target.value = "";
+            }}
+          />
+        </HStack>
       </Flex>
       <TableContainer border="1px solid" borderColor="gray.100">
         <Table size="sm">
