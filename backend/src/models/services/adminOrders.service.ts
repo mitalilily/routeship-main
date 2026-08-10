@@ -61,8 +61,15 @@ const resolveProviderDocumentLookup = (order: any) =>
       order?.shipment_id ||
       order?.order_id ||
       order?.order_number ||
-      '',
+    '',
   ).trim()
+
+const preferenceText = (value: unknown) => String(value ?? '').trim()
+
+const getInvoiceLogoKey = (prefs: any, fallbackLogoKey?: unknown) => {
+  if (prefs?.includeLogo === false) return undefined
+  return preferenceText(prefs?.logoFile) || preferenceText(fallbackLogoKey) || undefined
+}
 
 export const getAllOrdersServiceAdmin = async ({
   page = 1,
@@ -262,30 +269,42 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
     const serviceType = (order as any).service_type || order.integration_type || order.courier_partner || ''
     const pickupAddress = formatPickupAddress(pickupDetails)
     const sellerAddress =
-      pickupAddress || companyInfo.companyAddress || companyInfo.address || ''
-    const sellerStateCode = pickupDetails?.state || companyInfo.state || ''
+      preferenceText(prefs?.sellerAddress) ||
+      pickupAddress ||
+      companyInfo.companyAddress ||
+      companyInfo.address ||
+      ''
+    const sellerStateCode =
+      preferenceText(prefs?.stateCode) || pickupDetails?.state || companyInfo.state || ''
     const sellerName =
+      preferenceText(prefs?.sellerName) ||
       pickupDetails?.warehouse_name ||
       companyInfo.brandName ||
       companyInfo.companyName ||
       companyInfo.businessName ||
       'Seller'
-    const brandName = companyInfo.brandName || companyInfo.companyName || pickupDetails?.warehouse_name || ''
-    const gstNumber = companyGST || companyInfo.gstNumber || companyInfo.gst || ''
-    const panNumber = companyInfo.panNumber || companyInfo.pan || ''
+    const brandName =
+      preferenceText(prefs?.brandName) ||
+      companyInfo.brandName ||
+      companyInfo.companyName ||
+      pickupDetails?.warehouse_name ||
+      ''
+    const gstNumber =
+      preferenceText(prefs?.gstNumber) || companyGST || companyInfo.gstNumber || companyInfo.gst || ''
+    const panNumber = preferenceText(prefs?.panNumber) || companyInfo.panNumber || companyInfo.pan || ''
     const supportPhone =
+      preferenceText(prefs?.supportPhone) ||
       pickupDetails?.phone ||
       companyInfo.companyContactNumber ||
       companyInfo.contactNumber ||
-      prefs?.supportPhone ||
       ''
     const supportEmail =
-      companyInfo.contactEmail || companyInfo.companyEmail || prefs?.supportEmail || ''
+      preferenceText(prefs?.supportEmail) || companyInfo.contactEmail || companyInfo.companyEmail || ''
 
     const products = normalizeProducts(order.products, toNumber(order.order_amount))
     const { logoBuffer, signatureBuffer } = await loadInvoiceAssets(
       {
-        companyLogoKey: companyInfo.companyLogoUrl ?? undefined,
+        companyLogoKey: getInvoiceLogoKey(prefs, companyInfo.companyLogoUrl),
         includeSignature: prefs?.includeSignature,
         signatureFile: prefs?.signatureFile ?? undefined,
       },

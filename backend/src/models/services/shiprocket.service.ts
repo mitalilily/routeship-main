@@ -1529,6 +1529,13 @@ async function fetchPickupWarehouseRecord(
 
 const trimText = (value: unknown) => String(value ?? '').trim()
 
+const preferenceText = (value: unknown) => trimText(value)
+
+const getInvoiceLogoKey = (prefs: any, fallbackLogoKey?: unknown) => {
+  if (prefs?.includeLogo === false) return undefined
+  return preferenceText(prefs?.logoFile) || preferenceText(fallbackLogoKey) || undefined
+}
+
 const normalizeAmazonGstNumber = (value: unknown) => {
   const normalized = trimText(value).toUpperCase().replace(/\s+/g, '')
   return /^[0-9A-Z]{15}$/.test(normalized) ? normalized : ''
@@ -12398,7 +12405,7 @@ async function generateInvoiceForManifestOrderOutsideTransaction(order: any): Pr
 
     const { logoBuffer, signatureBuffer } = await loadInvoiceAssets(
       {
-        companyLogoKey: user?.companyLogo ?? undefined,
+        companyLogoKey: getInvoiceLogoKey(prefs, user?.companyLogo),
         includeSignature: prefs?.includeSignature,
         signatureFile: prefs?.signatureFile ?? undefined,
       },
@@ -12422,15 +12429,23 @@ async function generateInvoiceForManifestOrderOutsideTransaction(order: any): Pr
     const invoiceDateStored = dayjs().format('YYYY-MM-DD')
 
     const pickupAddress = formatPickupAddress(pickupDetails)
-    const sellerAddress = pickupAddress || user?.companyAddress || ''
-    const sellerStateCode = pickupDetails?.state || user?.companyState || ''
+    const sellerAddress =
+      preferenceText(prefs?.sellerAddress) || pickupAddress || user?.companyAddress || ''
+    const sellerStateCode =
+      preferenceText(prefs?.stateCode) || pickupDetails?.state || user?.companyState || ''
     const sellerName =
+      preferenceText(prefs?.sellerName) ||
       pickupDetails?.warehouse_name || user?.companyName || user?.brandName || 'Seller'
-    const brandName = user?.brandName || user?.companyName || pickupDetails?.warehouse_name || ''
-    const gstNumber = user?.companyGST || ''
-    const panNumber = user?.panNumber || ''
-    const supportPhone = pickupDetails?.phone || user?.supportPhone || ''
-    const supportEmail = user?.supportEmail || prefs?.supportEmail || ''
+    const brandName =
+      preferenceText(prefs?.brandName) ||
+      user?.brandName ||
+      user?.companyName ||
+      pickupDetails?.warehouse_name ||
+      ''
+    const gstNumber = preferenceText(prefs?.gstNumber) || user?.companyGST || ''
+    const panNumber = preferenceText(prefs?.panNumber) || user?.panNumber || ''
+    const supportPhone = preferenceText(prefs?.supportPhone) || pickupDetails?.phone || user?.supportPhone || ''
+    const supportEmail = preferenceText(prefs?.supportEmail) || user?.supportEmail || ''
 
     const invoiceAmount =
       Number(order.order_amount ?? 0) +
@@ -14703,7 +14718,7 @@ export const generateManifestService = async (params: {
 
             const { logoBuffer, signatureBuffer } = await loadInvoiceAssets(
               {
-                companyLogoKey: user?.companyLogo ?? undefined,
+                companyLogoKey: getInvoiceLogoKey(prefs, user?.companyLogo),
                 includeSignature: prefs?.includeSignature,
                 signatureFile: prefs?.signatureFile ?? undefined,
               },
@@ -14728,16 +14743,21 @@ export const generateManifestService = async (params: {
             const invoiceDateStored = dayjs().format('YYYY-MM-DD')
 
             const pickupAddress = formatPickupAddress(pickupDetails)
-            const sellerAddress = pickupAddress || user?.companyAddress || ''
-            const sellerStateCode = pickupDetails?.state || user?.companyState || ''
+            const sellerAddress =
+              preferenceText(prefs?.sellerAddress) || pickupAddress || user?.companyAddress || ''
+            const sellerStateCode =
+              preferenceText(prefs?.stateCode) || pickupDetails?.state || user?.companyState || ''
             const sellerName =
+              preferenceText(prefs?.sellerName) ||
               pickupDetails?.warehouse_name || user?.companyName || user?.brandName || 'Seller'
             const brandName =
+              preferenceText(prefs?.brandName) ||
               user?.brandName || user?.companyName || pickupDetails?.warehouse_name || ''
-            const gstNumber = user?.companyGST || ''
-            const panNumber = user?.panNumber || ''
-            const supportPhone = pickupDetails?.phone || user?.supportPhone || ''
-            const supportEmail = user?.supportEmail || prefs?.supportEmail || ''
+            const gstNumber = preferenceText(prefs?.gstNumber) || user?.companyGST || ''
+            const panNumber = preferenceText(prefs?.panNumber) || user?.panNumber || ''
+            const supportPhone =
+              preferenceText(prefs?.supportPhone) || pickupDetails?.phone || user?.supportPhone || ''
+            const supportEmail = preferenceText(prefs?.supportEmail) || user?.supportEmail || ''
 
             // ✅ COD-safe invoice amount
             const invoiceAmount =
@@ -15769,7 +15789,7 @@ export const generateManifestService = async (params: {
           const pickupPincode = pickupDetails?.pincode
           const { logoBuffer, signatureBuffer } = await loadInvoiceAssets(
             {
-              companyLogoKey: user?.companyLogo ?? undefined,
+              companyLogoKey: getInvoiceLogoKey(prefs, user?.companyLogo),
               includeSignature: prefs?.includeSignature,
               signatureFile: prefs?.signatureFile ?? undefined,
             },
@@ -15789,16 +15809,21 @@ export const generateManifestService = async (params: {
           const invoiceDateStored = dayjs().format('YYYY-MM-DD')
 
           const pickupAddress = formatPickupAddress(pickupDetails)
-          const sellerAddress = pickupAddress || user?.companyAddress || ''
-          const sellerStateCode = pickupDetails?.state || user?.companyState || ''
+          const sellerAddress =
+            preferenceText(prefs?.sellerAddress) || pickupAddress || user?.companyAddress || ''
+          const sellerStateCode =
+            preferenceText(prefs?.stateCode) || pickupDetails?.state || user?.companyState || ''
           const sellerName =
+            preferenceText(prefs?.sellerName) ||
             pickupDetails?.warehouse_name || user?.companyName || user?.brandName || 'Seller'
           const brandName =
+            preferenceText(prefs?.brandName) ||
             user?.brandName || user?.companyName || pickupDetails?.warehouse_name || ''
-          const gstNumber = user?.companyGST || ''
-          const panNumber = user?.panNumber || ''
-          const supportPhone = pickupDetails?.phone || user?.supportPhone || ''
-          const supportEmail = user?.supportEmail || prefs?.supportEmail || ''
+          const gstNumber = preferenceText(prefs?.gstNumber) || user?.companyGST || ''
+          const panNumber = preferenceText(prefs?.panNumber) || user?.panNumber || ''
+          const supportPhone =
+            preferenceText(prefs?.supportPhone) || pickupDetails?.phone || user?.supportPhone || ''
+          const supportEmail = preferenceText(prefs?.supportEmail) || user?.supportEmail || ''
 
           // ✅ COD-safe invoice amount
           const invoiceAmount =
