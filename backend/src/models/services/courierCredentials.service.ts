@@ -232,7 +232,7 @@ export const isCourierCredentialRowConfigured = (
   if (normalizedProvider === 'movin') {
     const tenantId = metadataValue(row, 'tenantId', 'tenant_id')
     const serverId = metadataValue(row, 'serverId', 'server_id')
-    const subscriptionKey = metadataValue(row, 'subscriptionKey', 'subscription_key')
+    const subscriptionKey = apiKey || metadataValue(row, 'subscriptionKey', 'subscription_key')
     const accountNumber = metadataValue(row, 'accountNumber', 'account_number')
     return Boolean(row.apiBase && tenantId && serverId && clientId && password && subscriptionKey && accountNumber)
   }
