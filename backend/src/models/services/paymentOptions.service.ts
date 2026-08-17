@@ -10,18 +10,23 @@ const ensurePaymentOptionsSchema = () => {
     paymentOptionsSchemaReady = db
       .execute(sql`
         ALTER TABLE payment_options
+          ADD COLUMN IF NOT EXISTS min_account_wallet_balance INTEGER DEFAULT 0,
           ADD COLUMN IF NOT EXISTS gst_percent NUMERIC(6, 2) DEFAULT '0'
       `)
       .then(() =>
         db.execute(sql`
           UPDATE payment_options
-          SET gst_percent = '0'
-          WHERE gst_percent IS NULL
+          SET
+            min_account_wallet_balance = COALESCE(min_account_wallet_balance, 0),
+            gst_percent = COALESCE(gst_percent, '0')
+          WHERE min_account_wallet_balance IS NULL OR gst_percent IS NULL
         `),
       )
       .then(() =>
         db.execute(sql`
           ALTER TABLE payment_options
+            ALTER COLUMN min_account_wallet_balance SET DEFAULT 0,
+            ALTER COLUMN min_account_wallet_balance SET NOT NULL,
             ALTER COLUMN gst_percent SET DEFAULT '0',
             ALTER COLUMN gst_percent SET NOT NULL
         `),
@@ -56,6 +61,7 @@ export async function getPaymentOptions() {
       codEnabled: true,
       prepaidEnabled: true,
       minWalletRecharge: 0,
+      minAccountWalletBalance: 0,
       gstPercent: 0,
     })
     .returning()
@@ -70,6 +76,7 @@ export async function updatePaymentOptions(updates: {
   codEnabled?: boolean
   prepaidEnabled?: boolean
   minWalletRecharge?: number
+  minAccountWalletBalance?: number
   gstPercent?: number
 }) {
   // Ensure settings exist
@@ -86,6 +93,10 @@ export async function updatePaymentOptions(updates: {
   if (updates.minWalletRecharge !== undefined) {
     const value = Number(updates.minWalletRecharge)
     updateData.minWalletRecharge = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0
+  }
+  if (updates.minAccountWalletBalance !== undefined) {
+    const value = Number(updates.minAccountWalletBalance)
+    updateData.minAccountWalletBalance = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0
   }
   if (updates.gstPercent !== undefined) {
     updateData.gstPercent = normalizeGstPercent(updates.gstPercent)
@@ -104,6 +115,10 @@ export async function updatePaymentOptions(updates: {
         minWalletRecharge:
           updates.minWalletRecharge !== undefined && !isNaN(Number(updates.minWalletRecharge))
             ? Math.max(0, Math.floor(Number(updates.minWalletRecharge)))
+            : 0,
+        minAccountWalletBalance:
+          updates.minAccountWalletBalance !== undefined && !isNaN(Number(updates.minAccountWalletBalance))
+            ? Math.max(0, Math.floor(Number(updates.minAccountWalletBalance)))
             : 0,
         gstPercent:
           updates.gstPercent !== undefined && !isNaN(Number(updates.gstPercent))

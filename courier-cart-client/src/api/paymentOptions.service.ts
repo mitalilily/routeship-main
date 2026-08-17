@@ -4,6 +4,7 @@ export interface PaymentOptions {
   codEnabled: boolean
   prepaidEnabled: boolean
   minWalletRecharge: number
+  minAccountWalletBalance: number
   gstPercent: number
 }
 

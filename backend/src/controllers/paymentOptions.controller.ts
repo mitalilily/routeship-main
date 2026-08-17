@@ -13,6 +13,7 @@ export async function getPaymentOptionsController(req: Request, res: Response) {
       codEnabled: settings.codEnabled,
       prepaidEnabled: settings.prepaidEnabled,
       minWalletRecharge: settings.minWalletRecharge ?? 0,
+      minAccountWalletBalance: settings.minAccountWalletBalance ?? 0,
       gstPercent: Number(settings.gstPercent ?? 0),
     })
   } catch (error: any) {
@@ -27,23 +28,33 @@ export async function getPaymentOptionsController(req: Request, res: Response) {
  */
 export async function updatePaymentOptionsController(req: Request, res: Response) {
   try {
-    const { codEnabled, prepaidEnabled, minWalletRecharge, gstPercent } = req.body
+    const { codEnabled, prepaidEnabled, minWalletRecharge, minAccountWalletBalance, gstPercent } = req.body
 
     if (
       codEnabled === undefined &&
       prepaidEnabled === undefined &&
       (minWalletRecharge === undefined || minWalletRecharge === null) &&
+      (minAccountWalletBalance === undefined || minAccountWalletBalance === null) &&
       (gstPercent === undefined || gstPercent === null)
     ) {
       return res
         .status(400)
-        .json({ error: 'At least one field (codEnabled, prepaidEnabled, minWalletRecharge, gstPercent) must be provided' })
+        .json({
+          error:
+            'At least one field (codEnabled, prepaidEnabled, minWalletRecharge, minAccountWalletBalance, gstPercent) must be provided',
+        })
     }
 
     if (minWalletRecharge !== undefined && minWalletRecharge !== null) {
       const value = Number(minWalletRecharge)
       if (!Number.isFinite(value) || value < 0) {
         return res.status(400).json({ error: 'minWalletRecharge must be a non-negative number' })
+      }
+    }
+    if (minAccountWalletBalance !== undefined && minAccountWalletBalance !== null) {
+      const value = Number(minAccountWalletBalance)
+      if (!Number.isFinite(value) || value < 0) {
+        return res.status(400).json({ error: 'minAccountWalletBalance must be a non-negative number' })
       }
     }
     if (gstPercent !== undefined && gstPercent !== null) {
@@ -57,6 +68,7 @@ export async function updatePaymentOptionsController(req: Request, res: Response
       codEnabled?: boolean
       prepaidEnabled?: boolean
       minWalletRecharge?: number
+      minAccountWalletBalance?: number
       gstPercent?: number
     } = {}
     if (codEnabled !== undefined) {
@@ -67,6 +79,9 @@ export async function updatePaymentOptionsController(req: Request, res: Response
     }
     if (minWalletRecharge !== undefined && minWalletRecharge !== null) {
       updates.minWalletRecharge = Number(minWalletRecharge)
+    }
+    if (minAccountWalletBalance !== undefined && minAccountWalletBalance !== null) {
+      updates.minAccountWalletBalance = Number(minAccountWalletBalance)
     }
     if (gstPercent !== undefined && gstPercent !== null) {
       updates.gstPercent = Number(gstPercent)
@@ -80,6 +95,7 @@ export async function updatePaymentOptionsController(req: Request, res: Response
         codEnabled: settings.codEnabled,
         prepaidEnabled: settings.prepaidEnabled,
         minWalletRecharge: settings.minWalletRecharge ?? 0,
+        minAccountWalletBalance: settings.minAccountWalletBalance ?? 0,
         gstPercent: Number(settings.gstPercent ?? 0),
       },
     })

@@ -59,7 +59,7 @@ export async function getMerchantOrderReadiness(userId: string) {
   const kycRow = kycRecord[0]
   const walletBalance = Number(wallet[0]?.balance ?? 0)
   const pickupCount = Number(pickupCountResult[0]?.count ?? 0)
-  const requiredWalletBalance = Math.max(Number(paymentSettings?.minWalletRecharge ?? 0), 1)
+  const requiredWalletBalance = Math.max(Number(paymentSettings?.minAccountWalletBalance ?? 0), 0)
 
   return {
     onboardingComplete: Boolean(profileRow?.onboardingComplete),
@@ -67,7 +67,7 @@ export async function getMerchantOrderReadiness(userId: string) {
     hasCompanyInfo: hasRequiredCompanyInfo(profileRow?.companyInfo as CompanyInfo | null | undefined),
     kycVerified: kycRow?.status === 'verified',
     hasPickupAddress: pickupCount > 0,
-    walletReady: walletBalance >= requiredWalletBalance,
+    walletReady: requiredWalletBalance <= 0 || walletBalance >= requiredWalletBalance,
     walletBalance,
     requiredWalletBalance,
   }

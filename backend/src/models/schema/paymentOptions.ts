@@ -15,6 +15,10 @@ export const paymentOptions = pgTable('payment_options', {
   // 0 = no minimum enforced
   minWalletRecharge: integer('min_wallet_recharge').default(0).notNull(),
 
+  // Minimum wallet balance merchants must keep to continue placing orders
+  // 0 = no readiness minimum enforced beyond per-order wallet debit checks
+  minAccountWalletBalance: integer('min_account_wallet_balance').default(0).notNull(),
+
   // GST percentage applied to seller courier wallet debit
   gstPercent: numeric('gst_percent').$type<number>().default(0).notNull(),
 

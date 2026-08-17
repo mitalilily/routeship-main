@@ -26,6 +26,7 @@ export default function PaymentOptionsSettings() {
     codEnabled: true,
     prepaidEnabled: true,
     minWalletRecharge: 0,
+    minAccountWalletBalance: 0,
     gstPercent: 0,
   })
 
@@ -35,6 +36,7 @@ export default function PaymentOptionsSettings() {
         codEnabled: paymentOptions.settings.codEnabled ?? true,
         prepaidEnabled: paymentOptions.settings.prepaidEnabled ?? true,
         minWalletRecharge: paymentOptions.settings.minWalletRecharge ?? 0,
+        minAccountWalletBalance: paymentOptions.settings.minAccountWalletBalance ?? 0,
         gstPercent: paymentOptions.settings.gstPercent ?? 0,
       })
     } else if (paymentOptions) {
@@ -43,6 +45,7 @@ export default function PaymentOptionsSettings() {
         codEnabled: paymentOptions.codEnabled ?? true,
         prepaidEnabled: paymentOptions.prepaidEnabled ?? true,
         minWalletRecharge: paymentOptions.minWalletRecharge ?? 0,
+        minAccountWalletBalance: paymentOptions.minAccountWalletBalance ?? 0,
         gstPercent: paymentOptions.gstPercent ?? 0,
       })
     }
@@ -62,6 +65,10 @@ export default function PaymentOptionsSettings() {
       minWalletRecharge:
         formData.minWalletRecharge && Number(formData.minWalletRecharge) >= 0
           ? Number(formData.minWalletRecharge)
+          : 0,
+      minAccountWalletBalance:
+        formData.minAccountWalletBalance && Number(formData.minAccountWalletBalance) >= 0
+          ? Number(formData.minAccountWalletBalance)
           : 0,
       gstPercent:
         formData.gstPercent !== '' && Number(formData.gstPercent) >= 0
@@ -173,6 +180,41 @@ export default function PaymentOptionsSettings() {
               colorScheme="blue"
               size="lg"
             />
+          </Flex>
+
+          <Flex
+            justify="space-between"
+            align="center"
+            mt={4}
+            p={4}
+            bg={grayBg}
+            borderRadius="md"
+            gap={4}
+          >
+            <Box flex="1">
+              <Text fontWeight="semibold" mb={1}>
+                Minimum Account Wallet Balance (INR)
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Set the wallet balance merchants must keep to continue placing orders. Set to 0 to
+                only rely on each order&apos;s actual wallet debit check.
+              </Text>
+            </Box>
+            <Box width="150px">
+              <Input
+                type="number"
+                min={0}
+                step={100}
+                value={formData.minAccountWalletBalance}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    minAccountWalletBalance: e.target.value === '' ? '' : Number(e.target.value),
+                  }))
+                }
+                placeholder="0"
+              />
+            </Box>
           </Flex>
 
           <Flex

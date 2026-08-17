@@ -44,7 +44,7 @@ export const useMerchantReadiness = () => {
   const { data: paymentOptions, isLoading: paymentOptionsLoading } = usePaymentOptions()
 
   const walletBalance = Number(walletData?.data?.balance || 0)
-  const requiredWalletBalance = Math.max(Number(paymentOptions?.minWalletRecharge || 0), 1)
+  const requiredWalletBalance = Math.max(Number(paymentOptions?.minAccountWalletBalance || 0), 0)
   const hasPickupAddress =
     Number(pickupData?.totalCount || 0) > 0 || (pickupData?.pickupAddresses?.length || 0) > 0
   const hasCompanyInfo = hasRequiredCompanyInfo(user?.companyInfo)
@@ -96,8 +96,11 @@ export const useMerchantReadiness = () => {
       {
         key: 'wallet',
         title: 'Wallet Ready',
-        description: `Keep at least Rs ${requiredWalletBalance.toLocaleString('en-IN')} available for first-order charges.`,
-        done: walletBalance >= requiredWalletBalance,
+        description:
+          requiredWalletBalance > 0
+            ? `Keep at least Rs ${requiredWalletBalance.toLocaleString('en-IN')} available to continue placing orders.`
+            : 'Wallet readiness is controlled by each order charge at booking time.',
+        done: requiredWalletBalance <= 0 || walletBalance >= requiredWalletBalance,
         path: '/billing/wallet_transactions',
         actionLabel: 'Add Wallet Balance',
       },
