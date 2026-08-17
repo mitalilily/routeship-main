@@ -1548,6 +1548,17 @@ const normalizeAmazonInvoiceDate = (value: unknown) => {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
+const normalizeAmazonShipDate = (value: unknown) => {
+  const normalized = trimText(value)
+  const parsed = normalized ? new Date(normalized) : null
+  const minimumShipDate = new Date(Date.now() + 60 * 60 * 1000)
+  const date =
+    parsed && !Number.isNaN(parsed.getTime()) && parsed.getTime() > minimumShipDate.getTime()
+      ? parsed
+      : minimumShipDate
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
 const getAmazonProviderInternalInputError = (error: any) =>
   error?.details?.providerInternalInputError === true ||
   (Array.isArray(error?.details?.errors) &&
@@ -2464,6 +2475,18 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
   const weightGrams = Math.max(1, normalizeServiceabilityWeightToGrams(params.package_weight ?? params.weight ?? 0))
   const orderAmount = Math.max(1, toPositiveNumber(params.order_amount ?? params.orderAmount, 1))
   const firstItem = Array.isArray(params.order_items) ? params.order_items[0] : null
+  const taxAmount = Math.max(
+    0,
+    toPositiveNumber(
+      params.tax_amount ??
+        params.taxAmount ??
+        params.product_tax ??
+        params.productTax ??
+        firstItem?.tax_amount ??
+        firstItem?.taxAmount,
+      0,
+    ),
+  )
   const orderReference = trimText(params.order_number || params.orderNo || params.order_id)
   const invoiceNumber = trimText(
     params.invoice_number ||
@@ -2476,6 +2499,23 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
       params.productType ||
       firstItem?.product_type ||
       firstItem?.productType,
+  )
+  const itemIdentifier = trimText(
+    firstItem?.sku ||
+      firstItem?.itemIdentifier ||
+      firstItem?.item_identifier ||
+      params.sku ||
+      orderReference ||
+      invoiceNumber,
+  )
+  const sellerDisplayName = trimText(
+    params.seller_display_name ||
+      params.sellerDisplayName ||
+      params.company?.name ||
+      pickupWarehouse?.addressNickname ||
+      pickupWarehouse?.contactName ||
+      shipFrom?.companyName ||
+      shipFrom?.name,
   )
   const gstNumber = normalizeAmazonGstNumber(
     params.company?.gst ||
@@ -2494,6 +2534,10 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
     },
     shipFrom,
     shipTo,
+    returnTo: isReverseShipment ? shipTo : shipFrom,
+    shipDate: normalizeAmazonShipDate(
+      params.ship_date || params.shipDate || params.pickup_date || params.pickupDate,
+    ),
     packages: [
       {
         packageClientReferenceId: orderReference
@@ -2514,10 +2558,21 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
           unit: currency,
         },
         isHazmat: false,
+        ...(sellerDisplayName ? { sellerDisplayName: sellerDisplayName.slice(0, 50) } : {}),
+        charges: [
+          {
+            amount: {
+              value: taxAmount,
+              unit: currency,
+            },
+            chargeType: 'TAX',
+          },
+        ],
         items: [
           {
             quantity: Math.max(1, Number(firstItem?.qty ?? firstItem?.quantity ?? 1)),
             description: trimText(firstItem?.name) || 'Merchandise',
+            itemIdentifier: (itemIdentifier || 'SKU1').slice(0, 50),
             itemValue: {
               value: Math.max(1, toPositiveNumber(firstItem?.price, orderAmount)),
               unit: currency,
