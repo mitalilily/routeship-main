@@ -1541,6 +1541,14 @@ const normalizeAmazonGstNumber = (value: unknown) => {
   return /^[0-9A-Z]{15}$/.test(normalized) ? normalized : ''
 }
 
+const normalizeAmazonTaxRegistrationNumber = (...values: unknown[]) => {
+  for (const value of values) {
+    const normalized = trimText(value).toUpperCase().replace(/\s+/g, '')
+    if (normalized) return normalized.slice(0, 30)
+  }
+  return 'GSTID#'
+}
+
 const normalizeAmazonInvoiceDate = (value: unknown) => {
   const normalized = trimText(value)
   const parsed = normalized ? new Date(normalized) : new Date()
@@ -2517,6 +2525,16 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
       shipFrom?.companyName ||
       shipFrom?.name,
   )
+  const taxRegistrationNumber = normalizeAmazonTaxRegistrationNumber(
+    params.company?.gst ||
+      params.company?.gstin ||
+      params.company_gst ||
+      params.gstin ||
+      params.pickup?.gst_number ||
+      params.pickup?.gstNumber ||
+      pickupWarehouse?.gstNumber ||
+      process.env.AMAZON_SHIPPING_GSTIN,
+  )
   const gstNumber = normalizeAmazonGstNumber(
     params.company?.gst ||
       params.company?.gstin ||
@@ -2603,14 +2621,12 @@ const buildAmazonShippingRatesRequest = async (params: any, userId?: string | nu
     shipmentType: isReverseShipment ? 'RETURNS' : 'FORWARD',
   }
 
-  if (gstNumber) {
-    requestBody.taxDetails = [
-      {
-        taxType: 'GST',
-        taxRegistrationNumber: gstNumber,
-      },
-    ]
-  }
+  requestBody.taxDetails = [
+    {
+      taxType: 'GST',
+      taxRegistrationNumber: gstNumber || taxRegistrationNumber,
+    },
+  ]
 
   if (isAmazonCodOrder(params)) {
     requestBody.valueAddedServices = {
