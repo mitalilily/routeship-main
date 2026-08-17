@@ -699,7 +699,7 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                       background: '#f9f9f9',
                     }}
                   >
-                    <OrderDetailsForm hideOrderType />
+                    <OrderDetailsForm hideOrderType={isReverseOrder} paymentOrderTypesOnly />
                   </Box>
                 </Box>
 

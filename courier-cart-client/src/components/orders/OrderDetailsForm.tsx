@@ -31,9 +31,11 @@ const b2bRovTypes = [
 const OrderDetailsForm = ({
   shipmentType = 'b2c',
   hideOrderType = false,
+  paymentOrderTypesOnly = false,
 }: {
   shipmentType?: 'b2b' | 'b2c'
   hideOrderType?: boolean
+  paymentOrderTypesOnly?: boolean
 }) => {
   const {
     control,
@@ -53,7 +55,7 @@ const OrderDetailsForm = ({
   // Filter order types based on payment options settings
   const orderTypes = useMemo(() => {
     const baseTypes =
-      shipmentType === 'b2c'
+      shipmentType === 'b2c' && !paymentOrderTypesOnly
         ? allOrderTypes
         : allOrderTypes.filter((type) => type.key !== 'reverse')
 
@@ -65,7 +67,7 @@ const OrderDetailsForm = ({
       if (type.key === 'prepaid') return paymentOptions.prepaidEnabled
       return true
     })
-  }, [paymentOptions, shipmentType])
+  }, [paymentOptions, paymentOrderTypesOnly, shipmentType])
 
   const currentOrderType = watch('orderType')
   const currentOrderId = String(watch('orderId') || '').trim()
