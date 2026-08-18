@@ -89,8 +89,17 @@ export const trackAmazonShipmentController = async (req: Request, res: Response)
     const input = { ...bodyObject(req), ...req.query }
     const result = await getAmazonShippingTracking(
       {
-        trackingId: input.trackingId || input.tracking_id,
-        carrierId: input.carrierId || input.carrier_id,
+        trackingId:
+          input.trackingId ||
+          input.tracking_id ||
+          input.amazonTrackingId ||
+          input.amazon_tracking_id,
+        carrierId:
+          input.carrierId ||
+          input.carrier_id ||
+          input.amazonCarrierId ||
+          input.amazon_carrier_id ||
+          input.carrier,
       },
       credentials,
     )
