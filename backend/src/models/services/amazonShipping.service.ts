@@ -853,14 +853,36 @@ export const getAmazonShippingRates = async (
 
 export const purchaseAmazonShipment = async (body: any, credentials: AmazonShippingCredentials) => {
   validatePurchaseBody(body)
-  return requestAmazonShipping(credentials, {
-    method: 'POST',
-    url: '/shipping/v2/shipments',
-    data: body,
-    headers: {
-      'x-amzn-IdempotencyKey': normalize(credentials.idempotencyKey) || randomUUID(),
-    },
-  })
+  const { idempotencyKey, idempotency_key, ...purchaseBody } = body
+  try {
+    return await requestAmazonShipping(credentials, {
+      method: 'POST',
+      url: '/shipping/v2/shipments',
+      data: purchaseBody,
+      headers: {
+        'x-amzn-IdempotencyKey':
+          normalize(idempotencyKey || idempotency_key) ||
+          normalize(credentials.idempotencyKey) ||
+          randomUUID(),
+      },
+    })
+  } catch (error: any) {
+    const errors = Array.isArray(error?.details?.errors) ? error.details.errors : []
+    const tokenExpired = errors.some((entry: any) =>
+      [entry?.code, entry?.message, entry?.details]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes('token_expired'),
+    )
+
+    if (tokenExpired) {
+      error.message =
+        'Amazon Shipping purchaseShipment failed: TOKEN_EXPIRED. Fetch fresh rates and purchase within 10 minutes.'
+    }
+
+    throw error
+  }
 }
 
 export const oneClickAmazonShipment = async (body: any, credentials: AmazonShippingCredentials) => {
