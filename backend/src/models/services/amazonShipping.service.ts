@@ -962,7 +962,6 @@ export const getAmazonAccessPoints = async (
   params: AmazonShippingAccessPointsParams,
   credentials: AmazonShippingCredentials,
 ) => {
-  assertBusinessId(credentials, ['AmazonShipping_UK'], 'getAccessPoints')
   const accessPointTypes = validateAccessPointsParams(params)
   return requestAmazonShipping(credentials, {
     method: 'GET',

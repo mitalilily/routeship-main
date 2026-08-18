@@ -69,6 +69,8 @@ router.put('/amazon-shipping/shipments/:shipmentId/cancel', cancelAmazonShipment
 router.post('/amazon-shipping/shipments/:shipmentId/cancel', cancelAmazonShipmentController)
 router.get('/amazon-shipping/access-points', getAmazonAccessPointsController)
 router.post('/amazon-shipping/access-points', getAmazonAccessPointsController)
+router.get('/amazon-shipping/accessPoints', getAmazonAccessPointsController)
+router.post('/amazon-shipping/accessPoints', getAmazonAccessPointsController)
 router.post('/amazon-shipping/ndr-feedback', submitAmazonNdrFeedbackController)
 router.post('/amazon-shipping/ndrFeedback', submitAmazonNdrFeedbackController)
 router.get('/amazon-shipping/additional-inputs/schema', getAmazonAdditionalInputsController)

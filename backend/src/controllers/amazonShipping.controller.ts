@@ -164,7 +164,11 @@ export const getAmazonAccessPointsController = async (req: Request, res: Respons
     const input = { ...bodyObject(req), ...req.query }
     const result = await getAmazonAccessPoints(
       {
-        accessPointTypes: input.accessPointTypes || input.access_point_types,
+        accessPointTypes:
+          input.accessPointTypes ||
+          input.access_point_types ||
+          input.accessPoints ||
+          input.access_points,
         countryCode: input.countryCode || input.country_code,
         postalCode: input.postalCode || input.postal_code,
       },

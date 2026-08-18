@@ -176,6 +176,8 @@ router.post(
 )
 router.get('/amazon-shipping/access-points', requireApiKey, getAmazonAccessPointsController)
 router.post('/amazon-shipping/access-points', requireApiKey, getAmazonAccessPointsController)
+router.get('/amazon-shipping/accessPoints', requireApiKey, getAmazonAccessPointsController)
+router.post('/amazon-shipping/accessPoints', requireApiKey, getAmazonAccessPointsController)
 router.post('/amazon-shipping/ndr-feedback', requireApiKey, submitAmazonNdrFeedbackController)
 router.post('/amazon-shipping/ndrFeedback', requireApiKey, submitAmazonNdrFeedbackController)
 router.get(
