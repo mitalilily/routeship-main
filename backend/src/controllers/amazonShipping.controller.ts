@@ -115,9 +115,18 @@ export const getAmazonShipmentDocumentsController = async (req: Request, res: Re
     const input = { ...bodyObject(req), ...req.query, ...req.params }
     const result = await getAmazonShipmentDocuments(
       {
-        shipmentId: input.shipmentId || input.shipment_id,
+        shipmentId:
+          input.shipmentId ||
+          input.shipment_id ||
+          input.amazonShipmentId ||
+          input.amazon_shipment_id,
         packageClientReferenceId:
-          input.packageClientReferenceId || input.package_client_reference_id,
+          input.packageClientReferenceId ||
+          input.package_client_reference_id ||
+          input.packageReferenceId ||
+          input.package_reference_id ||
+          input.amazonPackageClientReferenceId ||
+          input.amazon_package_client_reference_id,
         format: input.format,
         dpi: input.dpi,
       },
