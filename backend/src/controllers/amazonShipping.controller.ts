@@ -143,7 +143,13 @@ export const cancelAmazonShipmentController = async (req: Request, res: Response
     const credentials = await loadCredentials(req)
     const input = { ...bodyObject(req), ...req.params }
     const result = await cancelAmazonShipment(
-      { shipmentId: input.shipmentId || input.shipment_id },
+      {
+        shipmentId:
+          input.shipmentId ||
+          input.shipment_id ||
+          input.amazonShipmentId ||
+          input.amazon_shipment_id,
+      },
       credentials,
     )
     sendResult(res, result)
