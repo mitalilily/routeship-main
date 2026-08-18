@@ -949,12 +949,42 @@ export const getAmazonAdditionalInputs = async (
   credentials: AmazonShippingCredentials,
 ) => {
   validateAdditionalInputsParams(params)
-  return requestAmazonShipping(credentials, {
-    method: 'GET',
-    url: '/shipping/v2/shipments/additionalInputs/schema',
-    params: {
-      requestToken: normalize(params.requestToken),
-      rateId: normalize(params.rateId),
-    },
-  })
+  try {
+    return await requestAmazonShipping(credentials, {
+      method: 'GET',
+      url: '/shipping/v2/shipments/additionalInputs/schema',
+      params: {
+        requestToken: normalize(params.requestToken),
+        rateId: normalize(params.rateId),
+      },
+    })
+  } catch (error: any) {
+    const errors = Array.isArray(error?.details?.errors) ? error.details.errors : []
+    const unsupported = errors.some((entry: any) =>
+      [entry?.code, entry?.message, entry?.details]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes("doesn't support getadditionalinputs api"),
+    )
+
+    if (!unsupported) throw error
+
+    return {
+      status: 200,
+      data: {
+        payload: {
+          additionalInputsRequired: false,
+          supported: false,
+          schema: null,
+          message:
+            "Amazon Shipping doesn't support GetAdditionalInputs API for this account/rate. Purchase can continue when the selected rate has requiresAdditionalInputs=false.",
+        },
+      },
+      amazon: {
+        requestId: error?.details?.requestId || null,
+        rateLimit: error?.details?.rateLimit || null,
+      },
+    }
+  }
 }
