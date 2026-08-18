@@ -18,10 +18,6 @@ const assignedRateCardCourierName = (rate: any) => {
   if (provider === 'amazon') return modeLabel ? `Amazon Shipping ${modeLabel}` : 'Amazon Shipping'
   if (provider === 'xpressbees') return modeLabel ? `Xpressbees ${modeLabel}` : 'Xpressbees'
 
-  if (mode && courierName && !courierName.toLowerCase().includes(mode)) {
-    return `${courierName} ${modeLabel}`
-  }
-
   return courierName
 }
 
