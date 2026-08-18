@@ -2,6 +2,43 @@ import { Response } from 'express'
 import { getUserShippingRates } from '../models/services/courierIntegration.service'
 import { ShippingRateFilters } from './admin/courier.controller'
 
+const titleCase = (value: string) =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+
+const assignedRateCardCourierName = (rate: any) => {
+  const provider = String(rate?.service_provider || '').trim().toLowerCase()
+  const mode = String(rate?.mode || '').trim().toLowerCase()
+  const modeLabel = titleCase(mode)
+  const courierName = String(rate?.courier_name || '').trim()
+
+  if (provider === 'amazon') return modeLabel ? `Amazon Shipping ${modeLabel}` : 'Amazon Shipping'
+  if (provider === 'xpressbees') return modeLabel ? `Xpressbees ${modeLabel}` : 'Xpressbees'
+
+  if (mode && courierName && !courierName.toLowerCase().includes(mode)) {
+    return `${courierName} ${modeLabel}`
+  }
+
+  return courierName
+}
+
+const sortAssignedRateCardRows = (rates: any[]) => {
+  const priority = (rate: any) => {
+    const provider = String(rate?.service_provider || '').trim().toLowerCase()
+    if (provider === 'amazon') return 0
+    return 1
+  }
+
+  return [...rates].sort((a, b) => {
+    const priorityDelta = priority(a) - priority(b)
+    if (priorityDelta !== 0) return priorityDelta
+    return assignedRateCardCourierName(a).localeCompare(assignedRateCardCourierName(b))
+  })
+}
+
 export const getShippingRatesForUserController = async (req: any, res: Response) => {
   try {
     const userId = req.user.sub
@@ -23,7 +60,15 @@ export const getShippingRatesForUserController = async (req: any, res: Response)
     }
 
     const rates = await getUserShippingRates(userId, filters)
-    res.json({ success: true, data: rates })
+    const data =
+      filters.business_type === 'b2b'
+        ? rates
+        : sortAssignedRateCardRows(rates).map((rate) => ({
+            ...rate,
+            courier_name: assignedRateCardCourierName(rate),
+          }))
+
+    res.json({ success: true, data })
   } catch (err) {
     console.error('Error fetching shipping rates:', err)
     res.status(500).json({ success: false, message: 'Internal Server Error' })
