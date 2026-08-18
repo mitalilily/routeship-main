@@ -97,6 +97,20 @@ const getZoneRates = (
   return candidates.map((key) => rates?.[key]).find(Boolean) || {}
 }
 
+const titleCase = (value: string) =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+
+const getCourierDisplayName = (row: ShippingRate) => {
+  const courierName = String(row.courier_name || '').trim()
+  const mode = String(row.mode || '').trim()
+  if (!mode || courierName.toLowerCase().includes(mode.toLowerCase())) return courierName
+  return `${courierName} ${titleCase(mode)}`
+}
+
 // --- B2C Table ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] }) => {
@@ -106,6 +120,7 @@ const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] })
       id: 'courier_name',
       label: 'Courier',
       render: (_, row) => {
+        const displayName = getCourierDisplayName(row)
         const logoSrc =
           Object.entries(courierLogos)?.find(([key]) =>
             row?.courier_name?.toLowerCase().includes(key.toLowerCase()),
@@ -114,10 +129,10 @@ const B2CClientTable = ({ data, zones }: { data: ShippingRate[]; zones: any[] })
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
               src={logoSrc || defaultLogo}
-              alt={row.courier_name}
+              alt={displayName}
               sx={{ width: 24, height: 24 }}
             />
-            <Typography fontWeight={500}>{row.courier_name}</Typography>
+            <Typography fontWeight={500}>{displayName}</Typography>
           </Stack>
         )
       },
@@ -241,7 +256,9 @@ const RateCard = () => {
   const { data: couriers } = useAllCouriers()
   const { data, isLoading, isError } = useShippingRates({ ...filters, businessType: businessType })
 
-  const rates: ShippingRate[] = data || []
+  const rates: ShippingRate[] = [...((data || []) as ShippingRate[])].sort((a, b) =>
+    getCourierDisplayName(a).localeCompare(getCourierDisplayName(b)),
+  )
   const b2cDisplayZones = getB2CDisplayZones(zones)
   const courierOptions = Array.from(
     new Set([
