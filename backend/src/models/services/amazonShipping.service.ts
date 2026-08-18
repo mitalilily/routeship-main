@@ -692,24 +692,43 @@ const validateNdrFeedbackBody = (body: any) => {
     throw new HttpError(400, 'SubmitNdrFeedbackRequest body must be a JSON object')
   }
 
-  if (!normalize(body.trackingId)) throw new HttpError(400, 'trackingId is required')
+  const ndrRequestData =
+    body.ndrRequestData && typeof body.ndrRequestData === 'object'
+      ? body.ndrRequestData
+      : body.ndr_request_data && typeof body.ndr_request_data === 'object'
+      ? body.ndr_request_data
+      : undefined
+  const amazonBody = { ...body }
+  delete amazonBody.tracking_id
+  delete amazonBody.amazonTrackingId
+  delete amazonBody.amazon_tracking_id
+  delete amazonBody.ndr_action
+  delete amazonBody.ndr_request_data
+  const normalizedBody = {
+    ...amazonBody,
+    trackingId: body.trackingId || body.tracking_id || body.amazonTrackingId || body.amazon_tracking_id,
+    ndrAction: body.ndrAction || body.ndr_action,
+    ...(ndrRequestData ? { ndrRequestData } : {}),
+  }
 
-  const ndrAction = normalize(body.ndrAction).toUpperCase()
+  if (!normalize(normalizedBody.trackingId)) throw new HttpError(400, 'trackingId is required')
+
+  const ndrAction = normalize(normalizedBody.ndrAction).toUpperCase()
   if (!ndrAction) throw new HttpError(400, 'ndrAction is required')
   if (!VALID_NDR_ACTIONS.has(ndrAction)) {
     throw new HttpError(400, 'ndrAction must be one of RESCHEDULE, REATTEMPT, or RTO')
   }
 
-  if (ndrAction === 'RESCHEDULE' && !normalize(body.ndrRequestData?.rescheduleDate)) {
+  if (ndrAction === 'RESCHEDULE' && !normalize(normalizedBody.ndrRequestData?.rescheduleDate)) {
     throw new HttpError(400, 'ndrRequestData.rescheduleDate is required when ndrAction is RESCHEDULE')
   }
 
-  if (ndrAction === 'REATTEMPT' && !normalize(body.ndrRequestData?.additionalAddressNotes)) {
+  if (ndrAction === 'REATTEMPT' && !normalize(normalizedBody.ndrRequestData?.additionalAddressNotes)) {
     throw new HttpError(400, 'ndrRequestData.additionalAddressNotes is required when ndrAction is REATTEMPT')
   }
 
   return {
-    ...body,
+    ...normalizedBody,
     ndrAction,
   }
 }
@@ -759,7 +778,7 @@ const requestAmazonShipping = async <T>(
 
     return {
       status: response.status,
-      data: response.data,
+      data: (response.status === 204 ? {} : response.data) as T,
       amazon: {
         requestId: normalize(response.headers?.['x-amzn-requestid']) || null,
         rateLimit: normalize(response.headers?.['x-amzn-ratelimit-limit']) || null,
