@@ -61,6 +61,7 @@ router.delete("/stores/:storeId", deleteStoreById);
 router.post('/amazon-shipping/rates', getAmazonRatesController)
 router.post('/amazon-shipping/shipments', purchaseAmazonShipmentController)
 router.post('/amazon-shipping/one-click-shipment', oneClickAmazonShipmentController)
+router.post('/amazon-shipping/oneClickShipment', oneClickAmazonShipmentController)
 router.get('/amazon-shipping/tracking', trackAmazonShipmentController)
 router.post('/amazon-shipping/tracking', trackAmazonShipmentController)
 router.get('/amazon-shipping/shipments/:shipmentId/documents', getAmazonShipmentDocumentsController)

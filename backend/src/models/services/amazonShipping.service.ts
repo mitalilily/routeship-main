@@ -905,11 +905,12 @@ export const purchaseAmazonShipment = async (body: any, credentials: AmazonShipp
 }
 
 export const oneClickAmazonShipment = async (body: any, credentials: AmazonShippingCredentials) => {
-  validateOneClickBody(body)
+  const requestBody = addDefaultAmazonTaxDetails(body)
+  validateOneClickBody(requestBody)
   return requestAmazonShipping(credentials, {
     method: 'POST',
     url: '/shipping/v2/oneClickShipment',
-    data: body,
+    data: requestBody,
   })
 }
 

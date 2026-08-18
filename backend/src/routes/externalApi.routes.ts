@@ -152,6 +152,7 @@ router.get('/rto', requireApiKey, getRtoEventsController)
 router.post('/amazon-shipping/rates', requireApiKey, getAmazonRatesController)
 router.post('/amazon-shipping/shipments', requireApiKey, purchaseAmazonShipmentController)
 router.post('/amazon-shipping/one-click-shipment', requireApiKey, oneClickAmazonShipmentController)
+router.post('/amazon-shipping/oneClickShipment', requireApiKey, oneClickAmazonShipmentController)
 router.get('/amazon-shipping/tracking', requireApiKey, trackAmazonShipmentController)
 router.post('/amazon-shipping/tracking', requireApiKey, trackAmazonShipmentController)
 router.get(
