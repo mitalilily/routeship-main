@@ -182,7 +182,7 @@ export const fetchB2BRateQuotes = async (params: any): Promise<any[]> => {
 }
 
 interface ShippingRatesFilters {
-  courier?: string
+  courier?: string | string[]
   mode?: string
   min_weight?: number
   businessType?: 'b2b' | 'b2c'
@@ -190,9 +190,14 @@ interface ShippingRatesFilters {
 }
 
 export const fetchShippingRates = async (filters: ShippingRatesFilters = {}) => {
-  const params: Record<string, string | number> = {}
+  const params: Record<string, string | number | string[]> = {}
 
-  if (filters.courier) params.courier_name = filters.courier
+  const courierFilter = Array.isArray(filters.courier)
+    ? filters.courier.filter(Boolean)
+    : filters.courier
+      ? [filters.courier]
+      : []
+  if (courierFilter.length) params.courier_name = courierFilter
   if (filters.mode) params.mode = filters.mode
   if (filters.min_weight !== undefined) params.min_weight = filters.min_weight
   if (filters.businessType) params.businessType = filters.businessType

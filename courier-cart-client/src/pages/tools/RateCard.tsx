@@ -243,6 +243,15 @@ const RateCard = () => {
 
   const rates: ShippingRate[] = data || []
   const b2cDisplayZones = getB2CDisplayZones(zones)
+  const courierOptions = Array.from(
+    new Set([
+      ...((couriers || []) as string[]),
+      ...rates.map((rate) => rate.courier_name).filter(Boolean),
+    ]),
+  ).sort((a, b) => a.localeCompare(b))
+  const activeFilterCount = Object.values(filters).filter((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value),
+  ).length
 
   console.log('rates', rates)
 
@@ -296,7 +305,7 @@ const RateCard = () => {
       name: 'courier',
       label: 'Courier',
       type: 'multiselect',
-      options: couriers?.map((c: string) => ({ label: c, value: c })) || [],
+      options: courierOptions.map((c: string) => ({ label: c, value: c })),
     },
     { name: 'min_weight', label: 'Min Weight (kg)', type: 'text', placeholder: 'Enter min weight' },
   ]
@@ -331,7 +340,7 @@ const RateCard = () => {
           }}
           mode="button"
           buttonLabel="Filters"
-          appliedCount={Object.values(filters).filter(Boolean).length}
+          appliedCount={activeFilterCount}
         />
       </Stack>
     </Box>
