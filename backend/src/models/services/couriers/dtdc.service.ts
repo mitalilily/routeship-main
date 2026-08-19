@@ -11,6 +11,10 @@ const DTDC_CANCEL_ENDPOINT = '/api/customer/integration/consignment/cancel'
 const DTDC_SHIPSY_TRACK_ENDPOINT = '/api/customer/integration/consignment/track'
 const DTDC_SHIPSY_LABEL_STREAM_ENDPOINT = '/api/customer/integration/consignment/shippinglabel/stream'
 const DTDC_SOFTDATA_ENDPOINT = '/api/customer/integration/consignment/softdata'
+const DTDC_SURFACE_SERVICE_TYPE_ID = 'B2C SMART EXPRESS'
+const DTDC_AIR_SERVICE_TYPE_ID = 'B2C PRIORITY'
+const DTDC_SURFACE_COURIER_ID = 4001
+const DTDC_AIR_COURIER_ID = 4002
 
 export class DtdcService {
   private apiBase = process.env.DTDC_API_BASE || DTDC_TRACKING_BASE_URL
@@ -142,6 +146,37 @@ export class DtdcService {
     return text || fallback
   }
 
+  private normalizeMode(value: unknown) {
+    const text = this.trim(value).toLowerCase()
+    if (!text) return ''
+    if (['air', 'a', 'priority', 'express'].includes(text) || text.includes('priority')) return 'air'
+    if (['surface', 's', 'ground'].includes(text) || text.includes('surface') || text.includes('smart')) {
+      return 'surface'
+    }
+    return text
+  }
+
+  private resolveServiceTypeId(params: ShipmentParams) {
+    const explicit = this.trim((params as any).dtdc_service_type_id || (params as any).service_type_id)
+    if (explicit) return explicit
+
+    const courierId = Number((params as any).courier_id || 0)
+    if (courierId === DTDC_SURFACE_COURIER_ID) return DTDC_SURFACE_SERVICE_TYPE_ID
+    if (courierId === DTDC_AIR_COURIER_ID) return DTDC_AIR_SERVICE_TYPE_ID
+
+    const courierName = this.trim((params as any).courier_partner || (params as any).courier_name).toLowerCase()
+    if (courierName.includes('dtdc')) {
+      if (courierName.includes('surface') || courierName.includes('smart')) return DTDC_SURFACE_SERVICE_TYPE_ID
+      if (courierName.includes('air') || courierName.includes('priority')) return DTDC_AIR_SERVICE_TYPE_ID
+    }
+
+    const mode = this.normalizeMode((params as any).shipping_mode || (params as any).mode)
+    if (mode === 'surface') return DTDC_SURFACE_SERVICE_TYPE_ID
+    if (mode === 'air') return DTDC_AIR_SERVICE_TYPE_ID
+
+    return this.trim(this.serviceTypeId, DTDC_SURFACE_SERVICE_TYPE_ID)
+  }
+
   private numberString(value: unknown, fallback: number) {
     const parsed = Number(value)
     const safe = Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -215,10 +250,11 @@ export class DtdcService {
     const description =
       items.map((item: any) => this.trim(item?.name)).filter(Boolean).join(', ').slice(0, 250) ||
       this.trim((params as any).description, 'Shipment')
+    const serviceTypeId = this.resolveServiceTypeId(params)
 
     const consignment: Record<string, any> = {
       customer_code: customerCode,
-      service_type_id: this.trim((params as any).dtdc_service_type_id || this.serviceTypeId, 'B2C PRIORITY'),
+      service_type_id: serviceTypeId,
       consignment_type: this.trim((params as any).consignment_type, 'Forward'),
       load_type: this.trim((params as any).load_type, 'NON-DOCUMENT'),
       description,
@@ -315,6 +351,7 @@ export class DtdcService {
     if (!apiKey) throw new HttpError(400, 'DTDC API key is not configured')
 
     const payload = this.buildSoftdataPayload(params)
+    const serviceTypeId = this.trim(payload?.consignments?.[0]?.service_type_id)
 
     try {
       const response = await axios.post(`${this.bookingApiBase}${DTDC_SOFTDATA_ENDPOINT}`, payload, {
@@ -350,6 +387,8 @@ export class DtdcService {
         shipment_id: awb,
         provider_reference: first?.reference_number || awb,
         provider_request_id: first?.reference_number || awb,
+        provider_service: serviceTypeId,
+        dtdc_service_type_id: serviceTypeId,
         courier_name: 'DTDC',
         chargeable_weight: first?.chargeable_weight,
         dtdc: {

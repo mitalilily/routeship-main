@@ -8848,7 +8848,11 @@ export const createB2CShipmentService = async (
         sort_code: null,
         provider_reference: shipmentData?.provider_reference || dtdcAwb,
         provider_request_id: shipmentData?.provider_request_id || dtdcAwb,
-        provider_service: (params as any).dtdc_service_type_id || 'B2C PRIORITY',
+        provider_service:
+          shipmentData?.dtdc_service_type_id ||
+          shipmentData?.provider_service ||
+          (params as any).dtdc_service_type_id ||
+          null,
         provider_mode: normalizeB2CShippingMode(params.shipping_mode) || 'surface',
         dtdc: {
           reference_number: dtdcAwb,
