@@ -368,7 +368,7 @@ export class MovinService {
             shipment_unique_id: shipmentUniqueId,
             shipment_type: 'forward',
             ship_from_account: config.accountNumber,
-            flag: 'NONE',
+            __flag: 'NONE',
             ship_from_company: trimText(pickup.warehouse_name || params.company?.name, 'RouteShip').slice(0, 80),
             ship_from_first_name: pickupName.first,
             ship_from_last_name: pickupName.last,
