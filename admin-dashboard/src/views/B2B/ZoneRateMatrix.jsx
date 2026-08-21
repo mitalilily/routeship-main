@@ -61,6 +61,24 @@ const buildCourierScope = (courierId, couriers = []) => {
   }
 }
 
+const csvEscape = (value) => {
+  const text = String(value ?? '')
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+const downloadCsv = (filename, rows) => {
+  const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -71,6 +89,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const [commission, setCommission] = useState('10.00')
   const [staticCharges, setStaticCharges] = useState({ 'Volumetric Dividend': '4500' })
   const [dynamicRules, setDynamicRules] = useState([])
+  const [showZoneRates, setShowZoneRates] = useState(true)
   const [filters, setFilters] = useState({
     courierId: '',
     originZoneId: '',
@@ -178,6 +197,24 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const sortedZones = b2bZones.slice().sort((a, b) => a.code.localeCompare(b.code))
   const rateMap = new Map(rates.map((r) => [`${r.origin_zone_id}|${r.destination_zone_id}`, r]))
 
+  const handleDownloadSampleCsv = () => {
+    const sampleZones = sortedZones.length >= 2 ? sortedZones : [
+      { code: 'W1', name: 'West One' },
+      { code: 'S1', name: 'South One' },
+      { code: 'N1', name: 'North One' },
+    ]
+    const first = sampleZones[0]
+    const second = sampleZones[1] || sampleZones[0]
+    const third = sampleZones[2] || second
+
+    downloadCsv('b2b-zone-rate-matrix-sample.csv', [
+      ['origin_zone_code', 'destination_zone_code', 'rate_per_kg'],
+      [first.code || first.name, first.code || first.name, '14.50'],
+      [first.code || first.name, second.code || second.name, '18.00'],
+      [second.code || second.name, third.code || third.name, '22.75'],
+    ])
+  }
+
   return (
     <Stack spacing={embedded ? 4 : 6} pt={embedded ? 0 : { base: '120px', md: '75px' }}>
       <Flex justify="space-between" align="center">
@@ -190,6 +227,9 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
           </Button>
           <Button variant="outline" onClick={onImportOpen}>
             Import CSV
+          </Button>
+          <Button variant="outline" onClick={handleDownloadSampleCsv}>
+            Download Sample CSV
           </Button>
         </HStack>
       </Flex>
@@ -301,8 +341,22 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
         </Box>
       )}
 
-      <GenericTable
-        title="Zone Rates"
+      <Box borderWidth="1px" borderRadius="6px" overflow="hidden">
+        <Flex px={5} py={4} justify="space-between" align="center" bg="white">
+          <Box>
+            <Text fontWeight="700" fontSize="lg">Zone Rates</Text>
+            <Text fontSize="sm" color="gray.500">
+              Open this section when you need to review or edit individual zone rows.
+            </Text>
+          </Box>
+          <Button variant="outline" onClick={() => setShowZoneRates((value) => !value)}>
+            {showZoneRates ? 'Hide Zone Rates' : 'Show Zone Rates'}
+          </Button>
+        </Flex>
+        {showZoneRates && (
+          <Box px={4} pb={4}>
+            <GenericTable
+        title=""
         data={rates.map((rate, idx) => ({
           sno: idx + 1,
           origin: rate.origin_zone_id,
@@ -357,7 +411,10 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
             </Button>
           </HStack>
         )}
-      />
+            />
+          </Box>
+        )}
+      </Box>
 
       <Box borderWidth="1px" borderRadius="6px" overflow="hidden">
         <Flex bg="brand.500" color="white" px={5} py={4} justify="space-between" align="center">
@@ -501,8 +558,11 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       >
         <Text fontSize="sm" mb={3}>
           Upload a CSV file with columns:{' '}
-          <b>origin_zone_code, destination_zone_code, rate_per_kg, min_charge, max_weight_limit</b>.
+          <b>origin_zone_code, destination_zone_code, rate_per_kg</b>.
         </Text>
+        <Button size="sm" variant="outline" mb={4} onClick={handleDownloadSampleCsv}>
+          Download Sample CSV
+        </Button>
         <FileUploader
           maxSizeMb={5}
           uploadLoading={uploading}
