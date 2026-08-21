@@ -17120,6 +17120,121 @@ const mapEkartTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrac
   }
 }
 
+const parseProviderJsonPayload = (raw: any) => {
+  if (typeof raw !== 'string') return raw
+  const trimmed = raw.trim()
+  if (!trimmed) return {}
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return raw
+  }
+}
+
+const mapMovinTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const parsed = parseProviderJsonPayload(raw)
+  const payload = parsed?.data || parsed?.payload || parsed || {}
+  const awb = sanitizeString(order.awb_number)
+  const shipment =
+    (awb && payload?.data?.[awb]) ||
+    (awb && payload?.[awb]) ||
+    payload?.tracking ||
+    payload?.shipment ||
+    payload
+  const history: TrackingHistoryItem[] = []
+  const normalizeRows = (value: unknown): any[] => {
+    if (Array.isArray(value)) return value
+    if (value && typeof value === 'object') return [value]
+    return []
+  }
+
+  const rawEvents =
+    shipment?.tracking_history ||
+    shipment?.trackingHistory ||
+    shipment?.tracking_events ||
+    shipment?.events ||
+    shipment?.history ||
+    shipment?.scans ||
+    shipment?.[`${awb}_M3`] ||
+    []
+
+  normalizeRows(rawEvents).forEach((entry: any) => {
+    pushHistoryEvent(history, {
+      statusCode:
+        entry?.status_code ||
+        entry?.statusCode ||
+        entry?.event_code ||
+        entry?.eventCode ||
+        entry?.status ||
+        entry?.event,
+      message:
+        entry?.status ||
+        entry?.current_status ||
+        entry?.description ||
+        entry?.message ||
+        entry?.remarks ||
+        entry?.event,
+      location:
+        entry?.location ||
+        entry?.current_location ||
+        entry?.branch ||
+        entry?.branch_name ||
+        entry?.hub ||
+        entry?.city,
+      time:
+        entry?.event_time ||
+        entry?.eventTime ||
+        entry?.timestamp ||
+        entry?.created_at ||
+        entry?.updated_at ||
+        entry?.date,
+    })
+  })
+
+  const currentStatus = sanitizeString(
+    shipment?.current_status ||
+      shipment?.status ||
+      shipment?.shipment_status ||
+      payload?.current_status ||
+      payload?.status ||
+      history[0]?.message ||
+      order.order_status,
+    order.order_status || 'Shipment Created',
+  )
+  const currentBranch = sanitizeString(
+    shipment?.current_branch ||
+      shipment?.currentBranch ||
+      shipment?.branch ||
+      shipment?.location ||
+      '',
+  )
+  const trackingUrl = sanitizeString(shipment?.tracking_url || payload?.tracking_url || '')
+
+  if (!history.length) {
+    pushHistoryEvent(history, {
+      statusCode: currentStatus,
+      message: currentStatus,
+      location: currentBranch,
+      time: order.updated_at || order.created_at || new Date(),
+    })
+  }
+
+  return {
+    history,
+    status: currentStatus,
+    courier_name: 'Movin',
+    edd:
+      sanitizeString(
+        shipment?.edd ||
+          shipment?.estimated_delivery_date ||
+          shipment?.expected_delivery_date ||
+          payload?.edd ||
+          '',
+      ) || undefined,
+    shipment_info: trackingUrl || currentBranch || undefined,
+  }
+}
+
 const normalizeLiveTrackingStatusText = (value: unknown) =>
   sanitizeString(value)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -18832,6 +18947,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const ekartService = new EkartService()
       const raw = await ekartService.track(awb)
       providerData = mapEkartTracking(raw, order)
+    } else if (providerKey === 'movin') {
+      const movinService = new MovinService()
+      const raw = await movinService.trackShipments([awb])
+      providerData = mapMovinTracking(raw, order)
     }
   } catch (err: any) {
     if (err instanceof HttpError) throw err
