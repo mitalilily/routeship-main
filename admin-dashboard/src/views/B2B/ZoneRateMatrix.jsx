@@ -203,15 +203,17 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       { code: 'S1', name: 'South One' },
       { code: 'N1', name: 'North One' },
     ]
-    const first = sampleZones[0]
-    const second = sampleZones[1] || sampleZones[0]
-    const third = sampleZones[2] || second
+    const rows = sampleZones.flatMap((originZone, originIndex) =>
+      sampleZones.map((destinationZone, destinationIndex) => [
+        originZone.code || originZone.name,
+        destinationZone.code || destinationZone.name,
+        (14.5 + originIndex * 2.25 + destinationIndex * 1.75).toFixed(2),
+      ]),
+    )
 
     downloadCsv('b2b-zone-rate-matrix-sample.csv', [
       ['origin_zone_code', 'destination_zone_code', 'rate_per_kg'],
-      [first.code || first.name, first.code || first.name, '14.50'],
-      [first.code || first.name, second.code || second.name, '18.00'],
-      [second.code || second.name, third.code || third.name, '22.75'],
+      ...rows,
     ])
   }
 

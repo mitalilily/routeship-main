@@ -315,41 +315,22 @@ const B2BRateMatrix = ({
     { code: 'N2', name: 'North Two' },
     { code: 'S1', name: 'South One' },
   ]
-  const sampleZones = zones.length >= 2 ? zones.slice(0, 3) : fallbackSampleZones
-  const emptyTemplateRows = [
-    {
-      origin_zone_code: sampleZones[0]?.code || 'N1',
-      destination_zone_code: sampleZones[1]?.code || 'N2',
-      rate_per_kg: '',
-    },
-    {
-      origin_zone_code: sampleZones[1]?.code || 'N2',
-      destination_zone_code: sampleZones[2]?.code || 'S1',
-      rate_per_kg: '',
-    },
-    {
-      origin_zone_code: sampleZones[2]?.code || 'S1',
-      destination_zone_code: sampleZones[0]?.code || 'N1',
-      rate_per_kg: '',
-    },
-  ]
-  const filledSampleRows = [
-    {
-      origin_zone_code: sampleZones[0]?.code || 'N1',
-      destination_zone_code: sampleZones[1]?.code || 'N2',
-      rate_per_kg: '18.50',
-    },
-    {
-      origin_zone_code: sampleZones[1]?.code || 'N2',
-      destination_zone_code: sampleZones[2]?.code || 'S1',
-      rate_per_kg: '24.75',
-    },
-    {
-      origin_zone_code: sampleZones[2]?.code || 'S1',
-      destination_zone_code: sampleZones[0]?.code || 'N1',
-      rate_per_kg: '21.00',
-    },
-  ]
+  const sampleZones = (zones.length ? zones : fallbackSampleZones)
+    .slice()
+    .sort((a, b) => String(a.code || a.name || '').localeCompare(String(b.code || b.name || '')))
+  const buildMatrixSampleRows = (rateResolver) =>
+    sampleZones.flatMap((originZone, originIndex) =>
+      sampleZones.map((destinationZone, destinationIndex) => ({
+        origin_zone_code: originZone.code || originZone.name,
+        destination_zone_code: destinationZone.code || destinationZone.name,
+        rate_per_kg: rateResolver(originZone, destinationZone, originIndex, destinationIndex),
+      })),
+    )
+  const emptyTemplateRows = buildMatrixSampleRows(() => '')
+  const filledSampleRows = buildMatrixSampleRows(
+    (_originZone, _destinationZone, originIndex, destinationIndex) =>
+      (14.5 + originIndex * 2.25 + destinationIndex * 1.75).toFixed(2),
+  )
 
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   const matrixHeaderBg = useColorModeValue('gray.100', 'gray.700')
