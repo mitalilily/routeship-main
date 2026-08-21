@@ -2073,6 +2073,7 @@ export const calculateB2BRate = async (params: {
     'greenTaxMinimum',
     'specialDeliveryPerKg',
     'specialDeliveryMinimum',
+    'rovOwnerPercentage',
   ])
 
   // Apply admin-controlled overhead charges (always from database)
@@ -2412,7 +2413,10 @@ export const calculateB2BRate = async (params: {
         params.rovType === 'courier' || params.rovType === 'carrier' ? 'courier' : 'owner'
       const rovFixedAmount =
         rovType === 'courier' ? customNumber('rovCourierMinimum', 150) : customNumber('rovOwnerMinimum', 50)
-      const rovPercentage = rovType === 'courier' ? customNumber('rovCourierPercentage', 0.25) : 0
+      const rovPercentage =
+        rovType === 'courier'
+          ? customNumber('rovCourierPercentage', 0.25)
+          : customNumber('rovOwnerPercentage', 0)
       const rovMethod = 'whichever_is_higher' as 'whichever_is_higher' | 'whichever_is_lower'
 
       const rovByFixed = rovFixedAmount
@@ -2655,6 +2659,7 @@ export const calculateB2BRate = async (params: {
     // Apply custom fields (admin-defined charges)
     if (additionalCharges.custom_fields && typeof additionalCharges.custom_fields === 'object') {
       for (const [fieldKey, fieldValue] of Object.entries(additionalCharges.custom_fields)) {
+        if (fieldKey.startsWith('__routeship_')) continue
         if (vasConfigFieldKeys.has(fieldKey)) continue
 
         const fieldDefRaw = additionalCharges.field_definitions?.[fieldKey]

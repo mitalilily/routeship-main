@@ -27,9 +27,11 @@ import CustomModal from 'components/Modal/CustomModal'
 import FileUploader from 'components/upload/FileUploader'
 import { useCouriers } from 'hooks/useCouriers'
 import { useZones } from 'hooks/useZones'
-import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 import { useB2BZoneRates } from '../../hooks/useB2BZoneRates'
+import { b2bAdminService } from '../../services/b2bAdmin.service'
 import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 
 const STATIC_CHARGE_FIELDS = [
@@ -49,6 +51,35 @@ const STATIC_CHARGE_FIELDS = [
   'Minimum Handling Charge More Than 500 Kg', 'Handling Charge Per Kg More Than 500 Kg',
   'Minimum Green Charge', 'Green Charge Per Kg', 'Additional RTO Charge', 'Volumetric Dividend',
 ]
+
+const ROUTESHIP_META_PREFIX = '__routeship_'
+const SHIPPING_API_FIELD = `${ROUTESHIP_META_PREFIX}use_shipping_charge_api`
+const STATIC_META_PREFIX = `${ROUTESHIP_META_PREFIX}zone_matrix_static_`
+const DYNAMIC_FIELD_PREFIX = 'zoneMatrixDynamicCharge_'
+const COMMISSION_FIELD = 'zoneMatrixCommissionPercentage'
+
+const STATIC_CHARGE_CONFIG = {
+  'Docket Charge': { payloadKey: 'awbCharges', dbKey: 'awb_charges' },
+  'Minimum ODA1 Charge': { payloadKey: 'odaCharges', dbKey: 'oda_charges' },
+  'ODA1 Charge Per Kg': { payloadKey: 'odaPerKgCharge', dbKey: 'oda_per_kg_charge' },
+  'FSC Percentage': { payloadKey: 'fuelSurchargePercentage', dbKey: 'fuel_surcharge_percentage' },
+  'ROV Owner Risk Charge': { customKey: 'rovOwnerMinimum' },
+  'ROV Owner Percentage': { customKey: 'rovOwnerPercentage' },
+  'ROV Carrier Charge': { customKey: 'rovCourierMinimum' },
+  'ROV Carrier Percentage': { customKey: 'rovCourierPercentage' },
+  'Appointment Delivery Charge': { customKey: 'specialDeliveryMinimum' },
+  'Appointment Charge Per Kg': { customKey: 'specialDeliveryPerKg' },
+  'Minimum COD Charge': { payloadKey: 'codFixedAmount', dbKey: 'cod_fixed_amount' },
+  'COD Charge Percentage': { payloadKey: 'codPercentage', dbKey: 'cod_percentage' },
+  'To Pay Charge': { customKey: 'fodCharge' },
+  'Minimum Handling Charge Upto 50 Kg': { payloadKey: 'handlingSinglePiece', dbKey: 'handling_single_piece' },
+  'Minimum Handling Charge 50 To 100 Kg': { payloadKey: 'handlingBelow100Kg', dbKey: 'handling_below_100_kg' },
+  'Minimum Handling Charge 100 To 250 Kg': { payloadKey: 'handling100To200Kg', dbKey: 'handling_100_to_200_kg' },
+  'Minimum Handling Charge More Than 500 Kg': { payloadKey: 'handlingAbove200Kg', dbKey: 'handling_above_200_kg' },
+  'Minimum Green Charge': { customKey: 'greenTaxMinimum' },
+  'Green Charge Per Kg': { customKey: 'greenTaxPerKg' },
+  'Volumetric Dividend': { payloadKey: 'cftFactor', dbKey: 'cft_factor' },
+}
 
 const buildCourierScope = (courierId, couriers = []) => {
   if (!courierId) return {}
@@ -79,14 +110,54 @@ const downloadCsv = (filename, rows) => {
   URL.revokeObjectURL(url)
 }
 
+const slugify = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+
+const formatValue = (value) => {
+  if (value === null || value === undefined || value === '') return ''
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? String(numeric) : ''
+}
+
+const toNumberOrZero = (value) => {
+  if (value === null || value === undefined || value === '') return 0
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+const staticMetaKey = (label) => `${STATIC_META_PREFIX}${slugify(label)}`
+
+const dynamicChargeKey = (name, index) =>
+  `${DYNAMIC_FIELD_PREFIX}${index + 1}_${slugify(name) || 'charge'}`
+
+const createMetadataDefinition = (label, order) => ({
+  label,
+  visible: true,
+  group: 'Zone Matrix Settings',
+  order,
+  condition: '__metadata',
+})
+
+const createStaticDefinition = (label, unit = 'INR') => ({
+  label,
+  visible: true,
+  group: 'Zone Matrix Static Charges',
+  unit,
+})
+
 export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const toast = useToast()
+  const queryClient = useQueryClient()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
   const [selectedRate, setSelectedRate] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [useShippingApi, setUseShippingApi] = useState(false)
-  const [commission, setCommission] = useState('10.00')
+  const [commission, setCommission] = useState('')
   const [staticCharges, setStaticCharges] = useState({ 'Volumetric Dividend': '4500' })
   const [dynamicRules, setDynamicRules] = useState([])
   const [showZoneRates, setShowZoneRates] = useState(true)
@@ -101,12 +172,90 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
   const { zones: b2bZones = [] } = useZones('B2B', { include_global: true })
 
   const courierScope = buildCourierScope(filters.courierId, couriers)
+  const additionalChargesQueryKey = [
+    'b2b-additional-charges',
+    'zone-rate-matrix',
+    courierScope.courierId || 'global',
+    courierScope.serviceProvider || 'global',
+  ]
 
   const { rates, isLoading, upsertRate, deleteRate, importRates } = useB2BZoneRates({
     courier_id: courierScope.courierId,
     service_provider: courierScope.serviceProvider,
     origin_zone_id: filters.originZoneId || undefined,
     destination_zone_id: filters.destinationZoneId || undefined,
+  })
+
+  const { data: additionalCharges, isFetching: isChargesLoading } = useQuery({
+    queryKey: additionalChargesQueryKey,
+    queryFn: () =>
+      b2bAdminService.getAdditionalCharges({
+        courier_id: courierScope.courierId || undefined,
+        service_provider: courierScope.serviceProvider || undefined,
+      }),
+  })
+
+  useEffect(() => {
+    if (!additionalCharges) return
+
+    const customFields = additionalCharges.custom_fields || {}
+    const fieldDefinitions = additionalCharges.field_definitions || {}
+    const nextStaticCharges = {}
+
+    STATIC_CHARGE_FIELDS.forEach((label) => {
+      const config = STATIC_CHARGE_CONFIG[label]
+      if (config?.dbKey) {
+        nextStaticCharges[label] = formatValue(additionalCharges[config.dbKey])
+      } else if (config?.customKey) {
+        nextStaticCharges[label] = formatValue(customFields[config.customKey])
+      } else {
+        nextStaticCharges[label] = formatValue(customFields[staticMetaKey(label)])
+      }
+    })
+
+    if (!nextStaticCharges['Volumetric Dividend']) {
+      nextStaticCharges['Volumetric Dividend'] = '4500'
+    }
+
+    const nextDynamicRules = Object.entries(customFields)
+      .filter(([key]) => key.startsWith(DYNAMIC_FIELD_PREFIX))
+      .sort(([leftKey], [rightKey]) => {
+        const leftOrder = fieldDefinitions[leftKey]?.order ?? Number.MAX_SAFE_INTEGER
+        const rightOrder = fieldDefinitions[rightKey]?.order ?? Number.MAX_SAFE_INTEGER
+        return leftOrder - rightOrder
+      })
+      .map(([key, value]) => ({
+        name: fieldDefinitions[key]?.label || key.replace(DYNAMIC_FIELD_PREFIX, ''),
+        value: formatValue(value),
+      }))
+
+    setUseShippingApi(Boolean(customFields[SHIPPING_API_FIELD]))
+    setCommission(formatValue(customFields[COMMISSION_FIELD]))
+    setStaticCharges(nextStaticCharges)
+    setDynamicRules(nextDynamicRules)
+  }, [additionalCharges])
+
+  const saveChargesMutation = useMutation({
+    mutationFn: (payload) => b2bAdminService.upsertAdditionalCharges(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['b2b-additional-charges'] })
+      toast({
+        title: 'B2B charge settings saved',
+        description: 'Static charges, dynamic charges and the shipping API toggle are now persisted.',
+        status: 'success',
+        duration: 3500,
+        isClosable: true,
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to save B2B charge settings',
+        description: error?.response?.data?.error || error?.message || 'Unknown error',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    },
   })
 
   const [rateForm, setRateForm] = useState({
@@ -215,6 +364,96 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       ['origin_zone_code', 'destination_zone_code', 'rate_per_kg'],
       ...rows,
     ])
+  }
+
+  const handleSaveChargeSettings = () => {
+    const existingCustomFields = additionalCharges?.custom_fields || {}
+    const existingFieldDefinitions = additionalCharges?.field_definitions || {}
+    const customFields = { ...existingCustomFields }
+    const fieldDefinitions = { ...existingFieldDefinitions }
+    const payload = {
+      courier_id: courierScope.courierId || undefined,
+      service_provider: courierScope.serviceProvider || undefined,
+      customFields,
+      fieldDefinitions,
+    }
+
+    Object.keys(customFields).forEach((key) => {
+      if (key.startsWith(DYNAMIC_FIELD_PREFIX)) {
+        delete customFields[key]
+        delete fieldDefinitions[key]
+      }
+    })
+
+    customFields[SHIPPING_API_FIELD] = Boolean(useShippingApi)
+    fieldDefinitions[SHIPPING_API_FIELD] = createMetadataDefinition(
+      'Use Shipping Charge API',
+      1,
+    )
+
+    if (commission !== '') {
+      customFields[COMMISSION_FIELD] = toNumberOrZero(commission)
+      fieldDefinitions[COMMISSION_FIELD] = {
+        label: 'Commission',
+        visible: true,
+        group: 'Zone Matrix Dynamic Charges',
+        order: 2,
+        unit: '%',
+        chargeType: 'percent',
+        appliesTo: 'total',
+      }
+    } else {
+      delete customFields[COMMISSION_FIELD]
+      delete fieldDefinitions[COMMISSION_FIELD]
+    }
+
+    STATIC_CHARGE_FIELDS.forEach((label, index) => {
+      const value = staticCharges[label]
+      const numericValue = toNumberOrZero(value)
+      const config = STATIC_CHARGE_CONFIG[label]
+
+      if (config?.payloadKey) {
+        payload[config.payloadKey] = numericValue
+        return
+      }
+
+      if (config?.customKey) {
+        customFields[config.customKey] = numericValue
+        fieldDefinitions[config.customKey] = createStaticDefinition(
+          label,
+          label.toLowerCase().includes('percentage') ? '%' : 'INR',
+        )
+        return
+      }
+
+      const key = staticMetaKey(label)
+      if (value === '') {
+        delete customFields[key]
+        delete fieldDefinitions[key]
+        return
+      }
+      customFields[key] = numericValue
+      fieldDefinitions[key] = createMetadataDefinition(label, 100 + index)
+    })
+
+    dynamicRules.forEach((rule, index) => {
+      const name = String(rule.name || '').trim()
+      const value = toNumberOrZero(rule.value)
+      if (!name || value <= 0) return
+      const key = dynamicChargeKey(name, index)
+      customFields[key] = value
+      fieldDefinitions[key] = {
+        label: name,
+        visible: true,
+        group: 'Zone Matrix Dynamic Charges',
+        order: 1000 + index,
+        unit: 'INR',
+        chargeType: 'flat',
+        appliesTo: 'total',
+      }
+    })
+
+    saveChargesMutation.mutate(payload)
   }
 
   return (
@@ -421,7 +660,14 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       <Box borderWidth="1px" borderRadius="6px" overflow="hidden">
         <Flex bg="brand.500" color="white" px={5} py={4} justify="space-between" align="center">
           <Text fontWeight="700">Static Charges</Text>
-          <Button size="sm" colorScheme="whiteAlpha" onClick={() => toast({ title: 'Static charges saved', status: 'success' })}>Submit</Button>
+          <Button
+            size="sm"
+            colorScheme="whiteAlpha"
+            isLoading={saveChargesMutation.isPending || isChargesLoading}
+            onClick={handleSaveChargeSettings}
+          >
+            Submit
+          </Button>
         </Flex>
         <Box p={5}>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5} mb={5}>
