@@ -15,7 +15,7 @@ import StatusChip from '../../UI/chip/StatusChip'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
 import { OrderExpandedRow } from '../OrderExpandedRow'
-import { getArchiveFileNameFromHeaders } from '../bulkActionUtils'
+import { getArchiveFileNameFromHeaders, getDocumentReference } from '../bulkActionUtils'
 
 export const statusColorMap: Record<string, 'success' | 'pending' | 'error' | 'info'> = {
   delivered: 'success',
@@ -148,7 +148,10 @@ const B2BOrdersList = ({
           )
         }
 
-        if (row.manifest) {
+        const manifestReference = getDocumentReference(row as any, 'manifest')
+        const hasManifestDocument = Boolean(manifestReference.key || manifestReference.url)
+
+        if (hasManifestDocument) {
           const isDownloading = downloadingManifestOrderId === String(row.id)
           actions.push(
             <Button

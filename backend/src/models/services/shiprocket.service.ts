@@ -11515,7 +11515,7 @@ export const createB2BShipmentService = async (
           courier_partner: params.courier_partner || 'Movin',
           courier_id: courierId ?? null,
           label: labelUrl ? labelUrl.slice(0, 500) : null,
-          manifest: pickupRequestNumber || primaryAwb,
+          manifest: null,
           courier_cost: params?.courier_cost ?? chargesBreakdown?.total ?? null,
           weight: package_weight,
           length: package_length || null,

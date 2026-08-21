@@ -29,7 +29,7 @@ const ensureDownloadUrl = async (value?: string | null) => {
   }
 
   try {
-    const url = await presignDownload(value)
+    const url = await presignDownload(value, { checkExists: true })
     const finalUrl = Array.isArray(url) ? url[0] ?? null : url
 
     if (!finalUrl) {
@@ -46,6 +46,23 @@ const ensureDownloadUrl = async (value?: string | null) => {
     })
     return null
   }
+}
+
+const isHttpUrl = (value?: string | null) => typeof value === 'string' && /^https?:\/\//i.test(value)
+
+const isLikelyStoredDocumentReference = (value?: string | null) => {
+  const reference = String(value || '').trim()
+  if (!reference) return false
+  if (isHttpUrl(reference)) return true
+
+  const normalizedReference = reference.toLowerCase()
+  return (
+    normalizedReference.includes('/') ||
+    normalizedReference.includes('label') ||
+    normalizedReference.includes('manifest') ||
+    normalizedReference.includes('invoice') ||
+    normalizedReference.endsWith('.pdf')
+  )
 }
 
 /**
@@ -91,13 +108,24 @@ export const sanitizeOrderForCustomer = async (order: any): Promise<any> => {
 
   // Always expose stored document keys so clients can reliably use the same regenerated keys
   if (labelReference) sanitized.label_key = labelReference
-  if (order.manifest) sanitized.manifest_key = order.manifest
+  const manifestReference = String(order.manifest || '').trim()
+  const isMovinOrder =
+    provider === 'movin' ||
+    String(order?.courier_partner || '').trim().toLowerCase().includes('movin')
+  const manifestLooksLikeDocument = isLikelyStoredDocumentReference(manifestReference)
+
+  if (manifestReference && manifestLooksLikeDocument) {
+    sanitized.manifest_key = manifestReference
+  } else if (manifestReference && isMovinOrder) {
+    sanitized.manifest_provider_reference = manifestReference
+    sanitized.manifest = null
+  }
   if (order.invoice_link) sanitized.invoice_key = order.invoice_link
 
   try {
     const [labelUrl, manifestUrl, invoiceUrl] = await Promise.all([
       ensureDownloadUrl(labelReference),
-      ensureDownloadUrl(order.manifest),
+      ensureDownloadUrl(manifestLooksLikeDocument ? manifestReference : null),
       ensureDownloadUrl(order.invoice_link),
     ])
 
