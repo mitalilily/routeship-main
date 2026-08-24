@@ -9,6 +9,7 @@ import { b2bOrderListSelect, b2cOrderListSelect } from './orderListSelects'
 export interface CombinedOrderFilters {
   userId?: string
   status?: string | string[]
+  statusGroup?: string
   fromDate?: string
   toDate?: string
   search?: string
@@ -28,6 +29,39 @@ type CombinedOrderPageRow = {
 }
 
 const DEFAULT_PAGE_LIMIT = 10
+
+const STATUS_GROUPS: Record<string, string[]> = {
+  pending: ['pending', 'booked'],
+  shipped: [
+    'shipment_created',
+    'pickup_initiated',
+    'pickup_requested',
+    'manifested',
+    'manifest_pending',
+    'in_transit',
+    'out_for_delivery',
+  ],
+  ndr: [
+    'ndr',
+    'undelivered',
+    'lost',
+    'address_issue',
+    'nsl',
+    'delivery_attempt_failed',
+    'door_closed',
+    'attempt_undelivered',
+    'customer_not_available',
+    'customer_unavailable',
+    'consignee_not_available',
+    'consignee_unavailable',
+  ],
+  delivered: ['delivered'],
+  rto: ['rto', 'rto_in_transit', 'rto_delivered'],
+  failed: ['failed', 'manifest_failed'],
+  cancelled: ['cancelled', 'cancellation_requested'],
+}
+
+const SUMMARY_KEYS = ['pending', 'shipped', 'ndr', 'delivered', 'rto', 'failed', 'cancelled'] as const
 
 const toSqlDateStart = (value: string) => {
   const date = new Date(value)
@@ -54,6 +88,11 @@ const buildStatusCondition = (qualifiedColumn: string, status?: string | string[
   }
 
   return sql`${sql.raw(qualifiedColumn)} = ${String(status).trim()}`
+}
+
+const buildStatusGroupCondition = (qualifiedColumn: string, statusGroup?: string) => {
+  const statuses = STATUS_GROUPS[String(statusGroup || '').trim()]
+  return statuses ? buildStatusCondition(qualifiedColumn, statuses) : null
 }
 
 const buildSearchCondition = (alias: 'b2c' | 'b2b', search?: string) => {
@@ -142,6 +181,11 @@ const buildOrderConditions = (alias: 'b2c' | 'b2b', filters: CombinedOrderFilter
     conditions.push(statusCondition)
   }
 
+  const statusGroupCondition = filters.status ? null : buildStatusGroupCondition(`${alias}.order_status`, filters.statusGroup)
+  if (statusGroupCondition) {
+    conditions.push(statusGroupCondition)
+  }
+
   if (filters.fromDate) {
     conditions.push(sql`${sql.raw(`${alias}.created_at`)} >= ${toSqlDateStart(filters.fromDate)}`)
   }
@@ -161,6 +205,69 @@ const buildOrderConditions = (alias: 'b2c' | 'b2b', filters: CombinedOrderFilter
   }
 
   return conditions
+}
+
+const buildStatusSummary = (rows: Array<{ status: string | null; count: number }>, totalCount: number) => {
+  const byStatus: Record<string, number> = {}
+  const summary: Record<(typeof SUMMARY_KEYS)[number], number> = {
+    pending: 0,
+    shipped: 0,
+    ndr: 0,
+    delivered: 0,
+    rto: 0,
+    failed: 0,
+    cancelled: 0,
+  }
+
+  for (const row of rows) {
+    const status = String(row.status || 'pending').trim().toLowerCase()
+    const countValue = Number(row.count || 0)
+    byStatus[status] = (byStatus[status] || 0) + countValue
+
+    for (const key of SUMMARY_KEYS) {
+      if (STATUS_GROUPS[key].includes(status)) {
+        summary[key] += countValue
+        break
+      }
+    }
+  }
+
+  const groupedTotal = SUMMARY_KEYS.reduce((sum, key) => sum + summary[key], 0)
+
+  return {
+    total: totalCount,
+    ...summary,
+    other: Math.max(totalCount - groupedTotal, 0),
+    byStatus,
+  }
+}
+
+export const fetchCombinedOrderStatusSummary = async (filters: CombinedOrderFilters = {}) => {
+  const summaryFilters = {
+    ...filters,
+    status: undefined,
+    statusGroup: undefined,
+  }
+  const b2cConditions = buildOrderConditions('b2c', summaryFilters)
+  const b2bConditions = buildOrderConditions('b2b', summaryFilters)
+
+  const summaryResult = (await db.execute(sql`
+    SELECT lower(coalesce(order_status, 'pending')) AS status, COUNT(*)::int AS count
+    FROM (
+      SELECT b2c.order_status
+      FROM b2c_orders AS b2c
+      WHERE ${sql.join(b2cConditions, sql` AND `)}
+      UNION ALL
+      SELECT b2b.order_status
+      FROM b2b_orders AS b2b
+      WHERE ${sql.join(b2bConditions, sql` AND `)}
+    ) AS combined_orders
+    GROUP BY lower(coalesce(order_status, 'pending'))
+  `)) as any
+
+  const rows = (summaryResult.rows || []) as Array<{ status: string | null; count: number }>
+  const totalCount = rows.reduce((sum, row) => sum + Number(row.count || 0), 0)
+  return buildStatusSummary(rows, totalCount)
 }
 
 const fetchCombinedOrderPageRows = async ({

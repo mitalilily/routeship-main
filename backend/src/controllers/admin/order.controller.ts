@@ -28,18 +28,19 @@ export const getAllOrdersControllerAdmin = async (req: any, res: Response) => {
       toDate: req.query.toDate as string | undefined,
       search: req.query.search as string | undefined,
       userId: req.query.userId as string | undefined,
+      statusGroup: req.query.statusGroup as string | undefined,
       pickupAlert: req.query.pickupAlert as string | undefined,
       sortBy: (req.query.sortBy as 'created_at' | 'updated_at' | undefined) || 'created_at',
       sortOrder: (req.query.sortOrder as 'asc' | 'desc' | undefined) || 'desc',
     }
 
-    const { orders, totalCount, totalPages } = await getAllOrdersServiceAdmin({
+    const { orders, totalCount, totalPages, statusSummary } = await getAllOrdersServiceAdmin({
       page,
       limit,
       filters,
     })
 
-    res.status(200).json({ success: true, orders, totalCount, totalPages })
+    res.status(200).json({ success: true, orders, totalCount, totalPages, statusSummary })
   } catch (error: any) {
     console.error('Error fetching all orders:', error.message)
     res.status(500).json({ success: false, message: error.message })
@@ -55,6 +56,7 @@ export const exportOrdersControllerAdmin = async (req: any, res: Response) => {
       toDate: req.query.toDate as string | undefined,
       search: req.query.search as string | undefined,
       userId: req.query.userId as string | undefined,
+      statusGroup: req.query.statusGroup as string | undefined,
       pickupAlert: req.query.pickupAlert as string | undefined,
       sortBy: (req.query.sortBy as 'created_at' | 'updated_at' | undefined) || 'created_at',
       sortOrder: (req.query.sortOrder as 'asc' | 'desc' | undefined) || 'desc',

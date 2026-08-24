@@ -23,7 +23,11 @@ import {
 } from './invoiceHelpers'
 import { presignDownload, presignUpload } from './upload.service'
 import { resolveInvoiceNumber } from './invoiceNumber.service'
-import { fetchCombinedOrdersPage, fetchOrderUserMetadata } from './orderListing.service'
+import {
+  fetchCombinedOrderStatusSummary,
+  fetchCombinedOrdersPage,
+  fetchOrderUserMetadata,
+} from './orderListing.service'
 import { recordNdrEvent } from './ndr.service'
 import { logTrackingEvent } from './trackingEvents.service'
 import { createNotificationService } from './notifications.service'
@@ -77,26 +81,34 @@ export const getAllOrdersServiceAdmin = async ({
   filters = {} as IOrderFilters,
   sanitizeDocuments = true,
 }: PaginationParams & { filters?: IOrderFilters; sanitizeDocuments?: boolean }) => {
-  const { orders: combinedOrdersRaw, totalCount, totalPages } = await fetchCombinedOrdersPage({
-    page,
-    limit,
-    filters: {
-      userId: filters.userId,
-      status: filters.status,
-      fromDate: filters.fromDate,
-      toDate: filters.toDate,
-      search: filters.search,
-      pickupAlert: (filters as any).pickupAlert,
-      sortBy: (filters as any).sortBy,
-      sortOrder: filters.sortOrder,
-    },
-  })
+  const combinedFilters = {
+    userId: filters.userId,
+    status: filters.status,
+    statusGroup: (filters as any).statusGroup,
+    fromDate: filters.fromDate,
+    toDate: filters.toDate,
+    search: filters.search,
+    pickupAlert: (filters as any).pickupAlert,
+    sortBy: (filters as any).sortBy,
+    sortOrder: filters.sortOrder,
+  }
+
+  const [{ orders: combinedOrdersRaw, totalCount, totalPages }, statusSummary] =
+    await Promise.all([
+      fetchCombinedOrdersPage({
+        page,
+        limit,
+        filters: combinedFilters,
+      }),
+      fetchCombinedOrderStatusSummary(combinedFilters),
+    ])
 
   if (totalCount === 0) {
     return {
       orders: [],
       totalCount: 0,
       totalPages: 0,
+      statusSummary,
     }
   }
 
@@ -128,6 +140,7 @@ export const getAllOrdersServiceAdmin = async ({
     orders: sanitizeDocuments ? await sanitizeOrdersForCustomer(combinedOrders) : combinedOrders,
     totalCount,
     totalPages,
+    statusSummary,
   }
 }
 

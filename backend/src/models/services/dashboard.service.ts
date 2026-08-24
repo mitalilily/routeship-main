@@ -42,6 +42,21 @@ const ACTIVE_NDR_STATUSES = new Set([
   'consignee_unavailable',
 ])
 
+const ACTIVE_PENDING_STATUSES = new Set([
+  'pending',
+  'booked',
+  'pickup_requested',
+  'pickup_initiated',
+  'manifest_pending',
+  'manifested',
+])
+
+const ACTIVE_SHIPMENT_STATUSES = new Set([
+  'shipment_created',
+  'in_transit',
+  'out_for_delivery',
+])
+
 const NON_REVENUE_STATUSES = new Set([
   'failed',
   'manifest_failed',
@@ -436,12 +451,10 @@ export const getMerchantDashboardStats = async (userId: string, selectedDate?: D
 
   const todayOrders = eligibleOrders.filter((order) => isSameLocalDay(getOrderTimestamp(order), today))
   const pendingOrders = todayOrders.filter((order) =>
-    ['pending', 'booked', 'pickup_initiated'].includes(String(order.order_status || '').toLowerCase()),
+    ACTIVE_PENDING_STATUSES.has(String(order.order_status || '').toLowerCase()),
   )
   const inTransitOrders = todayOrders.filter((order) =>
-    ['shipment_created', 'in_transit', 'out_for_delivery'].includes(
-      String(order.order_status || '').toLowerCase(),
-    ),
+    ACTIVE_SHIPMENT_STATUSES.has(String(order.order_status || '').toLowerCase()),
   )
   const deliveredToday = todayOrders.filter(
     (order) => String(order.order_status || '').toLowerCase() === 'delivered',

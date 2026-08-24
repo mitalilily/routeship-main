@@ -33,11 +33,72 @@ const getRouteFiltersFromSearch = (search) => {
   const params = new URLSearchParams(search)
   return {
     status: params.get('status') || '',
+    statusGroup: params.get('statusGroup') || '',
     pickupAlert: params.get('pickupAlert') || '',
     search: params.get('search') || '',
     fromDate: params.get('fromDate') || '',
     toDate: params.get('toDate') || '',
   }
+}
+
+const STATUS_GROUPS = {
+  pending: ['pending', 'booked'],
+  shipped: [
+    'shipment_created',
+    'pickup_initiated',
+    'pickup_requested',
+    'manifested',
+    'manifest_pending',
+    'in_transit',
+    'out_for_delivery',
+  ],
+  ndr: [
+    'ndr',
+    'undelivered',
+    'lost',
+    'address_issue',
+    'nsl',
+    'delivery_attempt_failed',
+    'door_closed',
+    'attempt_undelivered',
+    'customer_not_available',
+    'customer_unavailable',
+    'consignee_not_available',
+    'consignee_unavailable',
+  ],
+  delivered: ['delivered'],
+  rto: ['rto', 'rto_in_transit', 'rto_delivered'],
+  failed: ['failed', 'manifest_failed'],
+  cancelled: ['cancelled', 'cancellation_requested'],
+}
+
+const buildFallbackStatusSummary = (orders = [], totalCount = 0) => {
+  const summary = {
+    total: totalCount || orders.length,
+    pending: 0,
+    shipped: 0,
+    ndr: 0,
+    delivered: 0,
+    rto: 0,
+    failed: 0,
+    cancelled: 0,
+    other: 0,
+    byStatus: {},
+  }
+
+  orders.forEach((order) => {
+    const status = String(order?.order_status || 'pending').trim().toLowerCase()
+    summary.byStatus[status] = (summary.byStatus[status] || 0) + 1
+
+    const groupKey = Object.keys(STATUS_GROUPS).find((key) => STATUS_GROUPS[key].includes(status))
+    if (groupKey) {
+      summary[groupKey] += 1
+    } else {
+      summary.other += 1
+    }
+  })
+
+  return summary
 }
 
 const Orders = () => {
@@ -47,6 +108,7 @@ const Orders = () => {
   const [limit, setLimit] = useState(10)
   const [filters, setFilters] = useState({
     status: '',
+    statusGroup: '',
     pickupAlert: '',
     sortBy: 'created_at',
     sortOrder: 'desc',
@@ -74,29 +136,29 @@ const Orders = () => {
   // Calculate statistics
   const stats = useMemo(() => {
     const orders = ordersData?.orders || []
-    return {
-      total: ordersData?.totalCount || 0,
-      pending: orders.filter((o) => o.order_status === 'pending').length,
-      shipped: orders.filter(
-        (o) => o.order_status === 'shipment_created' || o.order_status === 'in_transit',
-      ).length,
-      ndr: orders.filter((o) => ['ndr', 'undelivered'].includes(o.order_status)).length,
-      delivered: orders.filter((o) => o.order_status === 'delivered').length,
-      cancelled: orders.filter((o) => o.order_status === 'cancelled').length,
-      cancellationRequested: orders.filter((o) => o.order_status === 'cancellation_requested')
-        .length,
-    }
+    return ordersData?.statusSummary || buildFallbackStatusSummary(orders, ordersData?.totalCount || 0)
   }, [ordersData])
 
   const handleStatusFilter = (statusValue = '') => {
     setFilters((prev) => ({
       ...prev,
       status: statusValue,
+      statusGroup: '',
+    }))
+    setPage(1)
+  }
+
+  const handleStatusGroupFilter = (statusGroup = '') => {
+    setFilters((prev) => ({
+      ...prev,
+      status: '',
+      statusGroup,
     }))
     setPage(1)
   }
 
   const isStatusActive = (statusValue = '') => filters.status === statusValue
+  const isStatusGroupActive = (statusGroup = '') => filters.statusGroup === statusGroup
 
   const handleExport = async () => {
     try {
@@ -136,9 +198,14 @@ const Orders = () => {
       placeholder: 'All Statuses',
       options: [
         { value: 'pending', label: 'Pending' },
+        { value: 'booked', label: 'Booked' },
+        { value: 'pickup_requested', label: 'Pickup Requested' },
         { value: 'pickup_initiated', label: 'Pickup Initiated' },
         { value: 'shipment_created', label: 'Shipment Created' },
+        { value: 'manifested', label: 'Manifested' },
+        { value: 'manifest_pending', label: 'Manifest Pending' },
         { value: 'manifest_failed', label: 'Manifest Failed' },
+        { value: 'failed', label: 'Failed' },
         { value: 'in_transit', label: 'In Transit' },
         { value: 'out_for_delivery', label: 'Out for Delivery' },
         { value: 'ndr', label: 'NDR' },
@@ -221,7 +288,7 @@ const Orders = () => {
         templateColumns={{
           base: '1fr',
           md: 'repeat(2, 1fr)',
-          xl: 'repeat(6, 1fr)',
+          xl: 'repeat(4, 1fr)',
         }}
         gap={4}
         mb={5}
@@ -237,20 +304,20 @@ const Orders = () => {
         <MetricTile
           label="Pending"
           value={stats.pending}
-          muted="Awaiting dispatch action"
+          muted="Pending or booked"
           icon={<Icon as={FiRefreshCw} w={5} h={5} />}
           accent="orange.500"
-          onClick={() => handleStatusFilter('pending')}
-          active={isStatusActive('pending')}
+          onClick={() => handleStatusGroupFilter('pending')}
+          active={isStatusGroupActive('pending')}
         />
         <MetricTile
           label="Shipped"
           value={stats.shipped}
-          muted="Created or in transit"
+          muted="Pickup, manifested, or in transit"
           icon={<Icon as={FiTruck} w={5} h={5} />}
           accent="brand.500"
-          onClick={() => handleStatusFilter('in_transit')}
-          active={filters.status === 'shipment_created' || filters.status === 'in_transit'}
+          onClick={() => handleStatusGroupFilter('shipped')}
+          active={isStatusGroupActive('shipped')}
         />
         <MetricTile
           label="NDR"
@@ -258,8 +325,8 @@ const Orders = () => {
           muted="Need intervention"
           icon={<Icon as={FiAlertTriangle} w={5} h={5} />}
           accent="secondary.500"
-          onClick={() => handleStatusFilter('ndr')}
-          active={filters.status === 'ndr' || filters.status === 'undelivered'}
+          onClick={() => handleStatusGroupFilter('ndr')}
+          active={isStatusGroupActive('ndr')}
         />
         <MetricTile
           label="Delivered"
@@ -267,17 +334,35 @@ const Orders = () => {
           muted="Closed successfully"
           icon={<Icon as={FiCheckCircle} w={5} h={5} />}
           accent="green.500"
-          onClick={() => handleStatusFilter('delivered')}
-          active={isStatusActive('delivered')}
+          onClick={() => handleStatusGroupFilter('delivered')}
+          active={isStatusGroupActive('delivered')}
+        />
+        <MetricTile
+          label="RTO"
+          value={stats.rto}
+          muted="Return flow orders"
+          icon={<Icon as={FiRefreshCw} w={5} h={5} />}
+          accent="purple.500"
+          onClick={() => handleStatusGroupFilter('rto')}
+          active={isStatusGroupActive('rto')}
+        />
+        <MetricTile
+          label="Failed"
+          value={stats.failed + (stats.other || 0)}
+          muted={stats.other ? `${stats.other} uncategorised statuses` : 'Failed or manifest failed'}
+          icon={<Icon as={FiAlertTriangle} w={5} h={5} />}
+          accent="red.500"
+          onClick={() => handleStatusGroupFilter('failed')}
+          active={isStatusGroupActive('failed')}
         />
         <MetricTile
           label="Cancelled"
           value={stats.cancelled}
-          muted={`${stats.cancellationRequested} cancellation requests open`}
+          muted="Cancelled or requested"
           icon={<Icon as={FiXCircle} w={5} h={5} />}
           accent="red.500"
-          onClick={() => handleStatusFilter('cancelled')}
-          active={isStatusActive('cancelled')}
+          onClick={() => handleStatusGroupFilter('cancelled')}
+          active={isStatusGroupActive('cancelled')}
         />
       </Grid>
 
@@ -317,6 +402,7 @@ const Orders = () => {
             onApply={(appliedFilters) => {
               setFilters((prev) => ({
                 ...appliedFilters,
+                statusGroup: '',
                 sortBy: prev.sortBy || 'created_at',
                 sortOrder: prev.sortOrder || 'desc',
               }))

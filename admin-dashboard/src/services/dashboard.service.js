@@ -1,5 +1,16 @@
 import api from './axios'
 
+const ACTIVE_PENDING_STATUSES = [
+  'pending',
+  'booked',
+  'pickup_requested',
+  'pickup_initiated',
+  'manifest_pending',
+  'manifested',
+]
+
+const ACTIVE_SHIPMENT_STATUSES = ['shipment_created', 'in_transit', 'out_for_delivery']
+
 // Get comprehensive admin dashboard statistics
 export const getAdminDashboardStats = async () => {
   try {
@@ -277,11 +288,11 @@ export const getAdminDashboardStats = async () => {
     })
     const pendingOrders = orders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
-      return ['pending', 'booked'].includes(status)
+      return ACTIVE_PENDING_STATUSES.includes(status)
     })
     const inTransitOrders = orders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
-      return ['shipment_created', 'in_transit', 'out_for_delivery'].includes(status)
+      return ACTIVE_SHIPMENT_STATUSES.includes(status)
     })
     const deliveredToday = orders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
@@ -313,11 +324,11 @@ export const getAdminDashboardStats = async () => {
     })
     const todayPendingOrders = todayOrders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
-      return ['pending', 'booked'].includes(status)
+      return ACTIVE_PENDING_STATUSES.includes(status)
     })
     const todayInTransitOrders = todayOrders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
-      return ['shipment_created', 'in_transit', 'out_for_delivery'].includes(status)
+      return ACTIVE_SHIPMENT_STATUSES.includes(status)
     })
     const todayNdrOrders = todayOrders.filter((o) => {
       const status = (o.order_status || o.orderStatus || '').toLowerCase()
