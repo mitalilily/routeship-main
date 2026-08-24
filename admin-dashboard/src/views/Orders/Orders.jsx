@@ -288,14 +288,19 @@ const Orders = () => {
       </Box>
 
       <Grid
-        templateColumns={{
-          base: '1fr',
-          sm: 'repeat(2, minmax(0, 1fr))',
-          lg: 'repeat(3, minmax(0, 1fr))',
-          '2xl': 'repeat(9, minmax(0, 1fr))',
+        templateColumns="repeat(9, minmax(118px, 1fr))"
+        gap={2.5}
+        mb={4}
+        overflowX="auto"
+        pb={1}
+        sx={{
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { height: '6px' },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(148, 163, 184, 0.35)',
+            borderRadius: '999px',
+          },
         }}
-        gap={3}
-        mb={5}
       >
         <MetricTile
           label="Total"

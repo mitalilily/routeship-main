@@ -40,9 +40,10 @@ export default function MetricTile({
     <Flex
       direction="column"
       justify="space-between"
-      minH={compact ? '92px' : '136px'}
-      p={compact ? 3 : 4.5}
-      borderRadius={compact ? '16px' : '22px'}
+      minH={compact ? '78px' : '136px'}
+      minW={compact ? '118px' : undefined}
+      p={compact ? 2.5 : 4.5}
+      borderRadius={compact ? '14px' : '22px'}
       borderWidth="1px"
       borderColor={borderColor}
       bg={bg}
@@ -60,7 +61,7 @@ export default function MetricTile({
       }
       onClick={onClick}
     >
-      <Flex align="center" justify="space-between" mb={compact ? 2 : 5} gap={2}>
+      <Flex align="center" justify="space-between" mb={compact ? 1.5 : 5} gap={2}>
         <Text
           fontSize={compact ? '10px' : 'xs'}
           fontWeight="700"
@@ -75,9 +76,9 @@ export default function MetricTile({
           align="center"
           justify="center"
           flexShrink={0}
-          w={compact ? '30px' : '42px'}
-          h={compact ? '30px' : '42px'}
-          borderRadius={compact ? '12px' : '16px'}
+          w={compact ? '26px' : '42px'}
+          h={compact ? '26px' : '42px'}
+          borderRadius={compact ? '10px' : '16px'}
           bg={iconBg}
           color={accent}
         >
@@ -86,7 +87,7 @@ export default function MetricTile({
       </Flex>
       <Box>
         <Text
-          fontSize={compact ? { base: 'xl', md: '2xl' } : { base: '2xl', md: '3xl' }}
+          fontSize={compact ? { base: 'lg', md: 'xl' } : { base: '2xl', md: '3xl' }}
           fontWeight="800"
           letterSpacing="0"
           lineHeight="1"
@@ -95,7 +96,7 @@ export default function MetricTile({
           {value}
         </Text>
         {muted ? (
-          <Text mt={compact ? 1 : 1.5} fontSize={compact ? 'xs' : 'sm'} color={titleColor} noOfLines={1}>
+          <Text mt={compact ? 0.5 : 1.5} fontSize={compact ? '11px' : 'sm'} color={titleColor} noOfLines={1}>
             {muted}
           </Text>
         ) : null}
