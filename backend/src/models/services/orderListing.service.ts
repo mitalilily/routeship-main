@@ -32,12 +32,14 @@ const DEFAULT_PAGE_LIMIT = 10
 
 const STATUS_GROUPS: Record<string, string[]> = {
   pending: ['pending', 'booked'],
-  shipped: [
-    'shipment_created',
+  pickup: [
     'pickup_initiated',
     'pickup_requested',
     'manifested',
     'manifest_pending',
+  ],
+  shipped: [
+    'shipment_created',
     'in_transit',
     'out_for_delivery',
   ],
@@ -61,7 +63,7 @@ const STATUS_GROUPS: Record<string, string[]> = {
   cancelled: ['cancelled', 'cancellation_requested'],
 }
 
-const SUMMARY_KEYS = ['pending', 'shipped', 'ndr', 'delivered', 'rto', 'failed', 'cancelled'] as const
+const SUMMARY_KEYS = ['pending', 'pickup', 'shipped', 'ndr', 'delivered', 'rto', 'failed', 'cancelled'] as const
 
 const toSqlDateStart = (value: string) => {
   const date = new Date(value)
@@ -211,6 +213,7 @@ const buildStatusSummary = (rows: Array<{ status: string | null; count: number }
   const byStatus: Record<string, number> = {}
   const summary: Record<(typeof SUMMARY_KEYS)[number], number> = {
     pending: 0,
+    pickup: 0,
     shipped: 0,
     ndr: 0,
     delivered: 0,

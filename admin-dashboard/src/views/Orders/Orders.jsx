@@ -43,12 +43,14 @@ const getRouteFiltersFromSearch = (search) => {
 
 const STATUS_GROUPS = {
   pending: ['pending', 'booked'],
-  shipped: [
-    'shipment_created',
+  pickup: [
     'pickup_initiated',
     'pickup_requested',
     'manifested',
     'manifest_pending',
+  ],
+  shipped: [
+    'shipment_created',
     'in_transit',
     'out_for_delivery',
   ],
@@ -76,6 +78,7 @@ const buildFallbackStatusSummary = (orders = [], totalCount = 0) => {
   const summary = {
     total: totalCount || orders.length,
     pending: 0,
+    pickup: 0,
     shipped: 0,
     ndr: 0,
     delivered: 0,
@@ -311,11 +314,20 @@ const Orders = () => {
           active={isStatusGroupActive('pending')}
         />
         <MetricTile
-          label="Shipped"
-          value={stats.shipped}
-          muted="Pickup, manifested, or in transit"
+          label="Pickup"
+          value={stats.pickup}
+          muted="Pickup or manifest flow"
           icon={<Icon as={FiTruck} w={5} h={5} />}
           accent="brand.500"
+          onClick={() => handleStatusGroupFilter('pickup')}
+          active={isStatusGroupActive('pickup')}
+        />
+        <MetricTile
+          label="Shipped"
+          value={stats.shipped}
+          muted="Created, in transit, or OFD"
+          icon={<Icon as={FiTruck} w={5} h={5} />}
+          accent="teal.500"
           onClick={() => handleStatusGroupFilter('shipped')}
           active={isStatusGroupActive('shipped')}
         />
