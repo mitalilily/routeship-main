@@ -374,7 +374,7 @@ const B2BRateMatrix = ({
           const courier = couriers.find((c) => c.id?.toString() === courierId?.toString())
           return `${courier?.name || 'Unknown'}${serviceProvider ? ` (${serviceProvider})` : ''}`
         })()
-      : 'Global (All Couriers)'
+      : 'Select courier'
 
   if (isLoadingZones || isLoadingRates) {
     return (
@@ -392,7 +392,7 @@ const B2BRateMatrix = ({
             <FormControl width="300px">
               <FormLabel fontSize="sm">Courier - Service Provider</FormLabel>
               <Select
-                placeholder="All Couriers (Global)"
+                placeholder="Select courier"
                 value={getCombinedCourierValue()}
                 onChange={(e) => handleCourierServiceChange(e.target.value)}
               >

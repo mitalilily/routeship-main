@@ -437,7 +437,6 @@ const HolidayCalendar = () => {
                       onChange={(e) => setFilters({ ...filters, courierId: e.target.value })}
                       size="sm"
                     >
-                      <option value="">All Couriers</option>
                       {couriers.map((courier) => (
                         <option key={courier.id} value={courier.id}>
                           {courier.name}
@@ -671,7 +670,6 @@ const HolidayCalendar = () => {
                       value={formData.courierId}
                       onChange={(e) => setFormData({ ...formData, courierId: e.target.value })}
                     >
-                      <option value="">All Couriers</option>
                       {couriers.map((courier) => (
                         <option key={courier.id} value={courier.id}>
                           {courier.name}

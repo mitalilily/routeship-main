@@ -237,10 +237,9 @@ const B2BSurchargeManagement = ({
                 <Select
                   value={getCombinedCourierValue()}
                   onChange={(e) => handleCourierServiceChange(e.target.value)}
-                  placeholder="All Couriers"
+                  placeholder="Select courier"
                   size="md"
                 >
-                  <option value="">All Couriers</option>
                   {couriers.map((courier) => (
                     <option
                       key={courier.id}
@@ -1098,9 +1097,8 @@ const SurchargeModal = ({ isOpen, onClose, rule, courierId, serviceProvider, pla
                         setFormData({ ...formData, conditionCourierId: e.target.value })
                       }
                       size="md"
-                      placeholder="All Couriers"
+                      placeholder="Select courier"
                     >
-                      <option value="">All Couriers</option>
                       {couriers.map((courier) => (
                         <option key={courier.id} value={courier.id}>
                           {courier.name} - {courier.serviceProvider || 'N/A'}

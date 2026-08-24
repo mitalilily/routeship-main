@@ -5838,6 +5838,9 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       String(value || '')
         .trim()
         .toLowerCase()
+    const hiddenB2BCourierNames = new Set(['global rates', 'global rate', 'movin express ez'])
+    const isHiddenB2BCourierOption = (courier: { name?: unknown } | null | undefined) =>
+      hiddenB2BCourierNames.has(String(courier?.name || '').trim().toLowerCase())
     const makeCourierIdentityKey = (courier: {
       id: number | string
       integration_type?: string | null
@@ -5996,6 +5999,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           inArray(sql`lower(${couriers.serviceProvider})`, [...configuredProviders]),
         ),
       )
+      .then((rows) => rows.filter((row) => !isHiddenB2BCourierOption(row)))
 
     const shadowfaxRows = systemCourierRows.filter(
       (row) => normalizeProviderKey(row.serviceProvider) === 'shadowfax',

@@ -21,6 +21,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { b2bAdminService } from '../../services/b2bAdmin.service'
+import { filterB2BRateCardCouriers } from '../../utils/b2bCourierFilters'
 import Card from '../Card/Card'
 import CardBody from '../Card/CardBody'
 import CardHeader from '../Card/CardHeader'
@@ -79,6 +80,7 @@ const B2BQuoteCalculator = ({ planId }) => {
     queryKey: ['couriers'],
     queryFn: () => fetch('/api/couriers').then((r) => r.json()),
   })
+  const b2bCouriers = filterB2BRateCardCouriers(couriers)
 
   const handleCalculate = async () => {
     if (!formData.originPincode || !formData.destinationPincode || !formData.weightKg) {
@@ -264,11 +266,11 @@ const B2BQuoteCalculator = ({ planId }) => {
               <FormControl>
                 <FormLabel>Courier</FormLabel>
                 <Select
-                  placeholder="All Couriers"
+                  placeholder="Select courier"
                   value={formData.courierId}
                   onChange={(e) => setFormData({ ...formData, courierId: e.target.value })}
                 >
-                  {couriers.map((c) => (
+                  {b2bCouriers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>

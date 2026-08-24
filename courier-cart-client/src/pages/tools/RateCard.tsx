@@ -29,6 +29,7 @@ import { courierLogos, defaultLogo } from '../../utils/constants'
 
 const INR_SYMBOL = '\u20B9'
 const CANONICAL_B2C_ZONE_CODES = ['A', 'B', 'C', 'D', 'E', 'F']
+const HIDDEN_B2B_COURIER_NAMES = new Set(['global rates', 'global rate', 'movin express ez'])
 const LEGACY_ZONE_RATE_KEYS: Record<string, string[]> = {
   A: ['Within City', 'Within city', 'Local', 'Within city and local shipments.'],
   B: ['Metro to Metro', 'Metro city to metro city', 'Metro city to metro city.'],
@@ -39,6 +40,8 @@ const LEGACY_ZONE_RATE_KEYS: Record<string, string[]> = {
 }
 
 const normalizeZoneCode = (zone: { code?: string }) => String(zone?.code || '').trim().toUpperCase()
+const isHiddenB2BCourierName = (value: unknown) =>
+  HIDDEN_B2B_COURIER_NAMES.has(String(value || '').trim().toLowerCase())
 const isCanonicalZoneName = (zone: { code?: string; name?: string }) =>
   new RegExp(`^zone\\s*${normalizeZoneCode(zone)}$`, 'i').test(String(zone?.name || '').trim())
 
@@ -256,13 +259,15 @@ const RateCard = () => {
   const { data: couriers } = useAllCouriers()
   const { data, isLoading, isError } = useShippingRates({ ...filters, businessType: businessType })
 
-  const rates: ShippingRate[] = [...((data || []) as ShippingRate[])].sort((a, b) =>
-    getCourierDisplayName(a).localeCompare(getCourierDisplayName(b)),
-  )
+  const rates: ShippingRate[] = [...((data || []) as ShippingRate[])]
+    .filter((rate) => businessType !== 'b2b' || !isHiddenB2BCourierName(getCourierDisplayName(rate)))
+    .sort((a, b) => getCourierDisplayName(a).localeCompare(getCourierDisplayName(b)))
   const b2cDisplayZones = getB2CDisplayZones(zones)
   const courierOptions = Array.from(
     new Set([
-      ...((couriers || []) as string[]),
+      ...((couriers || []) as string[]).filter(
+        (courier) => businessType !== 'b2b' || !isHiddenB2BCourierName(courier),
+      ),
       ...rates.map((rate) => rate.courier_name).filter(Boolean),
     ]),
   ).sort((a, b) => a.localeCompare(b))

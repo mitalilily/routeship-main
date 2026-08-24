@@ -4,11 +4,14 @@ import { couriers } from '../models/schema/couriers'
 import { MOVIN_COURIERS } from '../models/services/couriers/movin.service'
 
 const MOVIN_PROVIDER = 'movin'
+const SYNCABLE_B2B_MOVIN_COURIERS = MOVIN_COURIERS.filter(
+  (courier) => courier.name !== 'Movin Express Ez',
+)
 
 const main = async () => {
   const synced = []
 
-  for (const courier of MOVIN_COURIERS) {
+  for (const courier of SYNCABLE_B2B_MOVIN_COURIERS) {
     await db
       .insert(couriers)
       .values({

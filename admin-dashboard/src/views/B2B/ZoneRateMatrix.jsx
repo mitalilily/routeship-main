@@ -479,7 +479,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
         <FormControl maxW={{ base: '100%', md: '250px' }}>
           <FormLabel>Courier</FormLabel>
           <Select
-            placeholder="Global Rates"
+            placeholder="Select courier"
             value={filters.courierId}
             onChange={(e) => setFilters((prev) => ({ ...prev, courierId: e.target.value }))}
           >
@@ -523,7 +523,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       {sortedZones.length > 0 && (
         <Box>
           <Text fontWeight="semibold" mb={3}>
-            Zone-to-Zone Matrix ({filters.courierId ? 'Courier specific' : 'Global'})
+            Zone-to-Zone Matrix ({filters.courierId ? 'Courier specific' : 'Select courier'})
           </Text>
           <TableContainer borderWidth="1px" borderRadius="md" overflow="auto">
             <Table size="sm" variant="simple">
