@@ -8,6 +8,7 @@ export default function MetricTile({
   muted,
   onClick,
   active = false,
+  compact = false,
 }) {
   const bg = useColorModeValue('white', 'rgba(14, 23, 43, 0.9)')
   const activeBorderColor = useColorModeValue(
@@ -39,9 +40,9 @@ export default function MetricTile({
     <Flex
       direction="column"
       justify="space-between"
-      minH="136px"
-      p={4.5}
-      borderRadius="22px"
+      minH={compact ? '92px' : '136px'}
+      p={compact ? 3 : 4.5}
+      borderRadius={compact ? '16px' : '22px'}
       borderWidth="1px"
       borderColor={borderColor}
       bg={bg}
@@ -59,16 +60,24 @@ export default function MetricTile({
       }
       onClick={onClick}
     >
-      <Flex align="center" justify="space-between" mb={5}>
-        <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="0.1em" color={titleColor}>
+      <Flex align="center" justify="space-between" mb={compact ? 2 : 5} gap={2}>
+        <Text
+          fontSize={compact ? '10px' : 'xs'}
+          fontWeight="700"
+          textTransform="uppercase"
+          letterSpacing={compact ? '0.08em' : '0.1em'}
+          color={titleColor}
+          noOfLines={1}
+        >
           {label}
         </Text>
         <Flex
           align="center"
           justify="center"
-          w="42px"
-          h="42px"
-          borderRadius="16px"
+          flexShrink={0}
+          w={compact ? '30px' : '42px'}
+          h={compact ? '30px' : '42px'}
+          borderRadius={compact ? '12px' : '16px'}
           bg={iconBg}
           color={accent}
         >
@@ -76,11 +85,17 @@ export default function MetricTile({
         </Flex>
       </Flex>
       <Box>
-        <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="800" letterSpacing="-0.03em" color={valueColor}>
+        <Text
+          fontSize={compact ? { base: 'xl', md: '2xl' } : { base: '2xl', md: '3xl' }}
+          fontWeight="800"
+          letterSpacing="0"
+          lineHeight="1"
+          color={valueColor}
+        >
           {value}
         </Text>
         {muted ? (
-          <Text mt={1.5} fontSize="sm" color={titleColor}>
+          <Text mt={compact ? 1 : 1.5} fontSize={compact ? 'xs' : 'sm'} color={titleColor} noOfLines={1}>
             {muted}
           </Text>
         ) : null}

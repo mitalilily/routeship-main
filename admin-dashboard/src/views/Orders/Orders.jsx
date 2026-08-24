@@ -290,91 +290,101 @@ const Orders = () => {
       <Grid
         templateColumns={{
           base: '1fr',
-          md: 'repeat(2, 1fr)',
-          xl: 'repeat(4, 1fr)',
+          sm: 'repeat(2, minmax(0, 1fr))',
+          lg: 'repeat(3, minmax(0, 1fr))',
+          '2xl': 'repeat(9, minmax(0, 1fr))',
         }}
-        gap={4}
+        gap={3}
         mb={5}
       >
         <MetricTile
           label="Total"
           value={stats.total}
           muted="All orders in current result set"
-          icon={<Icon as={FiPackage} w={5} h={5} />}
+          icon={<Icon as={FiPackage} w={4} h={4} />}
           onClick={() => handleStatusFilter('')}
           active={isStatusActive('')}
+          compact
         />
         <MetricTile
           label="Pending"
           value={stats.pending}
           muted="Pending or booked"
-          icon={<Icon as={FiRefreshCw} w={5} h={5} />}
+          icon={<Icon as={FiRefreshCw} w={4} h={4} />}
           accent="orange.500"
           onClick={() => handleStatusGroupFilter('pending')}
           active={isStatusGroupActive('pending')}
+          compact
         />
         <MetricTile
           label="Pickup"
           value={stats.pickup}
           muted="Pickup or manifest flow"
-          icon={<Icon as={FiTruck} w={5} h={5} />}
+          icon={<Icon as={FiTruck} w={4} h={4} />}
           accent="brand.500"
           onClick={() => handleStatusGroupFilter('pickup')}
           active={isStatusGroupActive('pickup')}
+          compact
         />
         <MetricTile
           label="Shipped"
           value={stats.shipped}
           muted="Created, in transit, or OFD"
-          icon={<Icon as={FiTruck} w={5} h={5} />}
+          icon={<Icon as={FiTruck} w={4} h={4} />}
           accent="teal.500"
           onClick={() => handleStatusGroupFilter('shipped')}
           active={isStatusGroupActive('shipped')}
+          compact
         />
         <MetricTile
           label="NDR"
           value={stats.ndr}
           muted="Need intervention"
-          icon={<Icon as={FiAlertTriangle} w={5} h={5} />}
+          icon={<Icon as={FiAlertTriangle} w={4} h={4} />}
           accent="secondary.500"
           onClick={() => handleStatusGroupFilter('ndr')}
           active={isStatusGroupActive('ndr')}
+          compact
         />
         <MetricTile
           label="Delivered"
           value={stats.delivered}
           muted="Closed successfully"
-          icon={<Icon as={FiCheckCircle} w={5} h={5} />}
+          icon={<Icon as={FiCheckCircle} w={4} h={4} />}
           accent="green.500"
           onClick={() => handleStatusGroupFilter('delivered')}
           active={isStatusGroupActive('delivered')}
+          compact
         />
         <MetricTile
           label="RTO"
           value={stats.rto}
           muted="Return flow orders"
-          icon={<Icon as={FiRefreshCw} w={5} h={5} />}
+          icon={<Icon as={FiRefreshCw} w={4} h={4} />}
           accent="purple.500"
           onClick={() => handleStatusGroupFilter('rto')}
           active={isStatusGroupActive('rto')}
+          compact
         />
         <MetricTile
           label="Failed"
           value={stats.failed + (stats.other || 0)}
           muted={stats.other ? `${stats.other} uncategorised statuses` : 'Failed or manifest failed'}
-          icon={<Icon as={FiAlertTriangle} w={5} h={5} />}
+          icon={<Icon as={FiAlertTriangle} w={4} h={4} />}
           accent="red.500"
           onClick={() => handleStatusGroupFilter('failed')}
           active={isStatusGroupActive('failed')}
+          compact
         />
         <MetricTile
           label="Cancelled"
           value={stats.cancelled}
           muted="Cancelled or requested"
-          icon={<Icon as={FiXCircle} w={5} h={5} />}
+          icon={<Icon as={FiXCircle} w={4} h={4} />}
           accent="red.500"
           onClick={() => handleStatusGroupFilter('cancelled')}
           active={isStatusGroupActive('cancelled')}
+          compact
         />
       </Grid>
 
