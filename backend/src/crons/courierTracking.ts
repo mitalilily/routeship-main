@@ -10,6 +10,9 @@ const supportedTrackingProviders = [
   'amazon',
   'xpressbees',
   'ekart',
+  'dtdc',
+  'movin',
+  'innofulfill',
 ] as const
 
 type TrackingProvider = (typeof supportedTrackingProviders)[number]
@@ -49,6 +52,7 @@ const parseProviderFilter = (providers?: string[]) => {
 const courierPartnerNeedle = (provider: TrackingProvider) => {
   if (provider === 'xpressbees') return 'xpress'
   if (provider === 'amazon') return 'amazon'
+  if (provider === 'innofulfill') return 'shreemaruti'
   return provider
 }
 

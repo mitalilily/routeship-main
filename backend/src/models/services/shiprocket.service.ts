@@ -16886,17 +16886,27 @@ const mapDtdcTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrack
     })
   }
 
-  const status = sanitizeString(
-    payload?.status ||
-      payload?.customer_update ||
-      header?.strStatus ||
-      payload?.status ||
-      payload?.statusFlag ||
-      payload?.errorDetails?.[0]?.value ||
-      history[0]?.message ||
-      order.order_status,
-    order.order_status || 'In Transit',
-  )
+  // DTDC wraps the actual shipment state in `trackHeader`/`trackDetails`.
+  // The top-level `status` is often only the API envelope (`SUCCESS`/`OK`),
+  // which must never replace the shipment's real tracking state.
+  const genericEnvelopeStatuses = new Set(['success', 'ok', 'true', '1'])
+  const statusCandidates = [
+    header?.strStatus,
+    header?.strStatusCode,
+    history[0]?.status_code,
+    history[0]?.message,
+    payload?.customer_update,
+    payload?.statusFlag,
+    payload?.errorDetails?.[0]?.value,
+    payload?.status,
+    order.order_status,
+  ]
+  const status =
+    statusCandidates
+      .map((candidate) => sanitizeString(candidate))
+      .find((candidate) => candidate && !genericEnvelopeStatuses.has(candidate.toLowerCase())) ||
+    order.order_status ||
+    'In Transit'
 
   return {
     history,
