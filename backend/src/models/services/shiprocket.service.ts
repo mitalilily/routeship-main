@@ -17249,6 +17249,48 @@ const mapMovinTracking = (raw: any, order: OrderSummary): ProviderNormalizedTrac
   }
 }
 
+const mapApptmyzTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const payload = raw?.data || raw?.payload || raw || {}
+  const record = Array.isArray(payload) ? payload[0] : payload?.data?.[0] || payload?.shipment || payload
+  const history: TrackingHistoryItem[] = []
+  const events = Array.isArray(record?.eventList) ? record.eventList : []
+
+  events.forEach((entry: any) => {
+    pushHistoryEvent(history, {
+      statusCode: entry?.statusCode || entry?.event,
+      message: entry?.eventDescription || entry?.eventStatus || entry?.event,
+      location: entry?.eventLocation || entry?.eventCity,
+      time: entry?.eventDateTime,
+    })
+  })
+
+  const status = sanitizeString(
+    record?.docketTrackingStatus ||
+      record?.currentStatus ||
+      events[events.length - 1]?.eventDescription ||
+      events[events.length - 1]?.eventStatus ||
+      order.order_status,
+    order.order_status || 'Shipment Created',
+  )
+
+  if (!history.length) {
+    pushHistoryEvent(history, {
+      statusCode: status,
+      message: status,
+      location: record?.currentLocation || record?.currentCity,
+      time: order.updated_at || order.created_at || new Date(),
+    })
+  }
+
+  return {
+    history,
+    status,
+    courier_name: 'Ekart B2B/LTL',
+    edd: sanitizeString(record?.edd || '') || undefined,
+    shipment_info: sanitizeString(record?.currentLocation || record?.currentCity || '', '') || undefined,
+  }
+}
+
 const normalizeLiveTrackingStatusText = (value: unknown) =>
   sanitizeString(value)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -18958,9 +19000,15 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const raw = await dtdcService.trackShipment(awb)
       providerData = mapDtdcTracking(raw, order)
     } else if (providerKey === 'ekart') {
-      const ekartService = new EkartService()
-      const raw = await ekartService.track(awb)
-      providerData = mapEkartTracking(raw, order)
+      if (order.source_type === 'b2b' && String(order.integration_type || '').trim().toLowerCase() === 'apptmyz') {
+        const apptmyz = new ApptmyzService()
+        const raw = await apptmyz.trackOrders([awb])
+        providerData = mapApptmyzTracking(raw, order)
+      } else {
+        const ekartService = new EkartService()
+        const raw = await ekartService.track(awb)
+        providerData = mapEkartTracking(raw, order)
+      }
     } else if (providerKey === 'movin') {
       const movinService = new MovinService()
       const raw = await movinService.trackShipments([awb])
