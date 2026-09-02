@@ -65,7 +65,7 @@ export const RateCardContainer = ({
       return;
     }
     if (
-      selectedBusinessType === "b2c" &&
+      ["b2b", "b2c"].includes(selectedBusinessType) &&
       plans.length &&
       !plans.some((plan) => plan.id === selectedPlanId)
     ) {
@@ -132,7 +132,25 @@ export const RateCardContainer = ({
         </Box>
       ) : isB2BSelected ? (
         <Box pt={4}>
-          <ZoneRateMatrix embedded />
+          {!forcePlanId && plans.length > 0 && (
+            <HStack bg="white" p={4} border="1px solid" borderColor="gray.100" mb={4}>
+              <Text fontSize="sm" fontWeight="600">
+                Rate Card Plan
+              </Text>
+              <Select
+                value={selectedPlanId}
+                onChange={(event) => setSelectedPlanId(event.target.value)}
+                maxW="320px"
+              >
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </option>
+                ))}
+              </Select>
+            </HStack>
+          )}
+          <ZoneRateMatrix embedded planId={selectedPlanId} />
         </Box>
       ) : (
         <>

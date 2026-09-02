@@ -6059,6 +6059,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     const zoneToZoneRates = await db
       .select({
         id: b2bZoneToZoneRates.id,
+        planId: b2bZoneToZoneRates.plan_id,
         courierId: b2bZoneToZoneRates.courier_id,
         serviceProvider: b2bZoneToZoneRates.service_provider,
         ratePerKg: b2bZoneToZoneRates.rate_per_kg,
@@ -6066,7 +6067,12 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       })
       .from(b2bZoneToZoneRates)
       .where(and(...rateConditions))
-      .orderBy(desc(b2bZoneToZoneRates.effective_from))
+      .orderBy(
+        activePlanId
+          ? sql`case when ${b2bZoneToZoneRates.plan_id} = ${activePlanId} then 0 else 1 end`
+          : sql`0`,
+        desc(b2bZoneToZoneRates.effective_from),
+      )
 
     // Step 6: Build courier list with rates
     const courierMap = new Map<number, any>()

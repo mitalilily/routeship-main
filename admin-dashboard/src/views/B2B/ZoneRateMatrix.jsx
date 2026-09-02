@@ -149,7 +149,7 @@ const createStaticDefinition = (label, unit = 'INR') => ({
   unit,
 })
 
-export const ZoneRateMatrix = ({ embedded = false } = {}) => {
+export const ZoneRateMatrix = ({ embedded = false, planId = '' } = {}) => {
   const toast = useToast()
   const queryClient = useQueryClient()
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -177,6 +177,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
     'zone-rate-matrix',
     courierScope.courierId || 'global',
     courierScope.serviceProvider || 'global',
+    planId || 'default',
   ]
 
   const { rates, isLoading, upsertRate, deleteRate, importRates } = useB2BZoneRates({
@@ -184,6 +185,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
     service_provider: courierScope.serviceProvider,
     origin_zone_id: filters.originZoneId || undefined,
     destination_zone_id: filters.destinationZoneId || undefined,
+    plan_id: planId || undefined,
   })
 
   const { data: additionalCharges, isFetching: isChargesLoading } = useQuery({
@@ -192,6 +194,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
       b2bAdminService.getAdditionalCharges({
         courier_id: courierScope.courierId || undefined,
         service_provider: courierScope.serviceProvider || undefined,
+        plan_id: planId || undefined,
       }),
   })
 
@@ -304,6 +307,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
         minCharge: rateForm.minCharge ? Number(rateForm.minCharge) : undefined,
         maxWeightLimit: rateForm.maxWeightLimit ? Number(rateForm.maxWeightLimit) : undefined,
         courierScope,
+        planId: planId || undefined,
       },
       {
         onSuccess: () => {
@@ -326,6 +330,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
     if (courierScope.courierId) formData.append('courier_id', courierScope.courierId)
     if (courierScope.serviceProvider)
       formData.append('service_provider', courierScope.serviceProvider)
+    if (planId) formData.append('plan_id', planId)
 
     try {
       setUploading(true)
@@ -374,6 +379,7 @@ export const ZoneRateMatrix = ({ embedded = false } = {}) => {
     const payload = {
       courier_id: courierScope.courierId || undefined,
       service_provider: courierScope.serviceProvider || undefined,
+      plan_id: planId || undefined,
       customFields,
       fieldDefinitions,
     }

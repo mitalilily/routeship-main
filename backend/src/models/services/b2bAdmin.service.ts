@@ -9,6 +9,7 @@ import {
   inArray,
   isNull,
   lte,
+  ne,
   or,
   sql,
   SQLWrapper,
@@ -95,6 +96,28 @@ const getDefaultB2BPlanId = async () => {
     .limit(1)
 
   return basicPlan?.id || null
+}
+
+const deactivateDuplicateZoneRates = async (record: typeof b2bZoneToZoneRates.$inferSelect) => {
+  const conditions: SQLWrapper[] = [
+    eq(b2bZoneToZoneRates.origin_zone_id, record.origin_zone_id),
+    eq(b2bZoneToZoneRates.destination_zone_id, record.destination_zone_id),
+    ne(b2bZoneToZoneRates.id, record.id),
+  ]
+
+  if (record.courier_id != null) conditions.push(eq(b2bZoneToZoneRates.courier_id, record.courier_id))
+  else conditions.push(isNull(b2bZoneToZoneRates.courier_id))
+
+  if (record.service_provider) conditions.push(eq(b2bZoneToZoneRates.service_provider, record.service_provider))
+  else conditions.push(isNull(b2bZoneToZoneRates.service_provider))
+
+  if (record.plan_id) conditions.push(eq(b2bZoneToZoneRates.plan_id, record.plan_id))
+  else conditions.push(isNull(b2bZoneToZoneRates.plan_id))
+
+  await db
+    .update(b2bZoneToZoneRates)
+    .set({ is_active: false, updated_at: new Date() })
+    .where(and(...conditions))
 }
 
 const isGreenTaxRule = (rule: {
@@ -656,6 +679,7 @@ export const listZoneToZoneRates = async (params: {
     const { courierId, serviceProvider } = normalizeCourierScope(params.courierScope)
 
     const filters: SQLWrapper[] = []
+    filters.push(eq(b2bZoneToZoneRates.is_active, true))
 
     if (params.originZoneId) {
       if (!b2bZoneToZoneRates.origin_zone_id) {
@@ -751,6 +775,9 @@ export const listZoneToZoneRates = async (params: {
       query = query.orderBy(
         b2bZoneToZoneRates.origin_zone_id,
         b2bZoneToZoneRates.destination_zone_id,
+        effectivePlanId
+          ? sql`case when ${b2bZoneToZoneRates.plan_id} = ${effectivePlanId} then 0 else 1 end`
+          : sql`0`,
         desc(b2bZoneToZoneRates.updated_at),
       ) as any
     }
@@ -773,7 +800,7 @@ export const listZoneToZoneRates = async (params: {
           '[listZoneToZoneRates] plan_id column not available in database, retrying without plan filter',
         )
         // Rebuild filters without plan_id
-        const filtersWithoutPlan: SQLWrapper[] = []
+        const filtersWithoutPlan: SQLWrapper[] = [eq(b2bZoneToZoneRates.is_active, true)]
         if (params.originZoneId && b2bZoneToZoneRates.origin_zone_id) {
           filtersWithoutPlan.push(eq(b2bZoneToZoneRates.origin_zone_id, params.originZoneId))
         }
@@ -905,6 +932,11 @@ export const upsertZoneToZoneRate = async (payload: {
         origin_zone_id: payload.originZoneId,
         destination_zone_id: payload.destinationZoneId,
         rate_per_kg: payload.ratePerKg.toString(),
+        metadata: {
+          source: 'admin-rate-card',
+          updatedVia: 'zone-rate-matrix',
+        },
+        is_active: true,
         updated_at: new Date(),
       }
 
@@ -922,6 +954,7 @@ export const upsertZoneToZoneRate = async (payload: {
         throw new Error(`Zone rate not found for id ${payload.id}`)
       }
 
+      await deactivateDuplicateZoneRates(updated)
       return updated
     }
 
@@ -972,6 +1005,11 @@ export const upsertZoneToZoneRate = async (payload: {
     const updateData = {
       rate_per_kg: payload.ratePerKg.toString(),
       plan_id: effectivePlanId ?? null,
+      metadata: {
+        source: 'admin-rate-card',
+        updatedVia: 'zone-rate-matrix',
+      },
+      is_active: true,
       updated_at: new Date(),
     }
 
@@ -995,6 +1033,11 @@ export const upsertZoneToZoneRate = async (payload: {
           courier_id: courierId,
           service_provider: serviceProvider,
           plan_id: effectivePlanId ?? null,
+          metadata: {
+            source: 'admin-rate-card',
+            updatedVia: 'zone-rate-matrix',
+          },
+          is_active: true,
         })
         .returning()
       record = inserted
@@ -1004,6 +1047,7 @@ export const upsertZoneToZoneRate = async (payload: {
       throw new Error('Failed to upsert zone rate: no record returned from database')
     }
 
+    await deactivateDuplicateZoneRates(record)
     return record
   } catch (error: any) {
     console.error('[upsertZoneToZoneRate] Error:', {
@@ -1776,6 +1820,7 @@ export const calculateB2BRate = async (params: {
     courierId,
     serviceProvider,
     effectiveDate,
+    planId: params.planId,
   })
 
   if (!rate) {
@@ -2962,8 +3007,10 @@ export const findZoneRate = async (params: {
   courierId: number | null
   serviceProvider: string | null
   effectiveDate?: Date
+  planId?: string | null
 }) => {
   const effectiveDate = params.effectiveDate ?? new Date()
+  const planScopes = params.planId ? [params.planId, null] : [null]
   const scopes: (CourierScope | null)[] = [
     {
       courierId: params.courierId ?? undefined,
@@ -2976,34 +3023,37 @@ export const findZoneRate = async (params: {
   for (const scope of scopes) {
     const { courierId, serviceProvider } = normalizeCourierScope(scope ?? undefined)
 
-    const [row] = await db
-      .select()
-      .from(b2bZoneToZoneRates)
-      .where(
-        and(
-          eq(b2bZoneToZoneRates.origin_zone_id, params.originZoneId),
-          eq(b2bZoneToZoneRates.destination_zone_id, params.destinationZoneId),
-          eq(b2bZoneToZoneRates.is_active, true),
-          or(
-            isNull(b2bZoneToZoneRates.effective_from),
-            lte(b2bZoneToZoneRates.effective_from, effectiveDate),
+    for (const planId of planScopes) {
+      const [row] = await db
+        .select()
+        .from(b2bZoneToZoneRates)
+        .where(
+          and(
+            eq(b2bZoneToZoneRates.origin_zone_id, params.originZoneId),
+            eq(b2bZoneToZoneRates.destination_zone_id, params.destinationZoneId),
+            eq(b2bZoneToZoneRates.is_active, true),
+            or(
+              isNull(b2bZoneToZoneRates.effective_from),
+              lte(b2bZoneToZoneRates.effective_from, effectiveDate),
+            ),
+            or(
+              isNull(b2bZoneToZoneRates.effective_to),
+              gte(b2bZoneToZoneRates.effective_to, effectiveDate),
+            ),
+            courierId
+              ? eq(b2bZoneToZoneRates.courier_id, courierId)
+              : isNull(b2bZoneToZoneRates.courier_id),
+            serviceProvider
+              ? eq(b2bZoneToZoneRates.service_provider, serviceProvider)
+              : isNull(b2bZoneToZoneRates.service_provider),
+            planId ? eq(b2bZoneToZoneRates.plan_id, planId) : isNull(b2bZoneToZoneRates.plan_id),
           ),
-          or(
-            isNull(b2bZoneToZoneRates.effective_to),
-            gte(b2bZoneToZoneRates.effective_to, effectiveDate),
-          ),
-          courierId
-            ? eq(b2bZoneToZoneRates.courier_id, courierId)
-            : isNull(b2bZoneToZoneRates.courier_id),
-          serviceProvider
-            ? eq(b2bZoneToZoneRates.service_provider, serviceProvider)
-            : isNull(b2bZoneToZoneRates.service_provider),
-        ),
-      )
-      .orderBy(desc(b2bZoneToZoneRates.effective_from))
-      .limit(1)
+        )
+        .orderBy(desc(b2bZoneToZoneRates.effective_from))
+        .limit(1)
 
-    if (row) return row
+      if (row) return row
+    }
   }
 
   return null

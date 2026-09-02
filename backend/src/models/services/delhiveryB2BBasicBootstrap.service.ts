@@ -298,6 +298,10 @@ const seedRateMatrixForCourier = async (
       }
 
       if (existing) {
+        if (existing.metadata?.source !== RATECARD_SOURCE) {
+          continue
+        }
+
         if (
           normalizedExistingRate === normalizedConfiguredRate &&
           existing.metadata?.source === RATECARD_SOURCE &&

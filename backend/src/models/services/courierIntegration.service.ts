@@ -333,8 +333,8 @@ const getB2BShippingRatesForPlan = async (
     .where(and(...conditions))
     .orderBy(
       asc(couriers.name),
-      sql`case when ${b2bZoneToZoneRates.plan_id} = ${planId} then 1 else 0 end`,
-      asc(b2bZoneToZoneRates.created_at),
+      sql`case when ${b2bZoneToZoneRates.plan_id} = ${planId} then 0 else 1 end`,
+      desc(b2bZoneToZoneRates.updated_at),
     )
 
   const filteredRows = rows.filter((row) => {
