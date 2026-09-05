@@ -206,6 +206,15 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
     setValue('courierCod', 0)
   }, [isReverseOrder, setValue])
 
+  useEffect(() => {
+    if (orderType !== 'prepaid') return
+    setValue('prepaidAmount', 0, {
+      shouldDirty: true,
+      shouldTouch: false,
+      shouldValidate: true,
+    })
+  }, [orderType, setValue])
+
   const subtotal = fields.reduce(
     (sum, _, idx) =>
       sum +
@@ -914,30 +923,32 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
                               />
                             </Grid>
 
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                              <Controller
-                                name="prepaidAmount"
-                              control={control}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  fullWidth
-                                  type="number"
-                                  label="Prepaid Amount"
-                                  size="small"
-                                  variant="outlined"
-                                  InputProps={{
-                                    startAdornment: (
-                                      <Typography sx={{ color: ACCENT, fontSize: '0.9rem', mr: 1 }}>
-                                        -{INR_SYMBOL}
-                                      </Typography>
-                                    ),
-                                  }}
-                                  sx={compactChargeFieldSx}
+                            {orderType !== 'prepaid' && (
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Controller
+                                  name="prepaidAmount"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      fullWidth
+                                      type="number"
+                                      label="Prepaid Amount"
+                                      size="small"
+                                      variant="outlined"
+                                      InputProps={{
+                                        startAdornment: (
+                                          <Typography sx={{ color: ACCENT, fontSize: '0.9rem', mr: 1 }}>
+                                            -{INR_SYMBOL}
+                                          </Typography>
+                                        ),
+                                      }}
+                                      sx={compactChargeFieldSx}
+                                    />
+                                  )}
                                 />
-                              )}
-                              />
-                            </Grid>
+                              </Grid>
+                            )}
                           </Grid>
                         </Paper>
 

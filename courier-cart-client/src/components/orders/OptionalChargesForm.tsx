@@ -7,6 +7,7 @@ const OptionalChargesForm = () => {
   const { control, watch } = useFormContext()
   const orderType = String(watch('orderType') || '').trim().toLowerCase()
   const isCod = orderType === 'cod'
+  const showPrepaidAmount = orderType !== 'prepaid'
 
   return (
     <Grid container spacing={2}>
@@ -99,20 +100,22 @@ const OptionalChargesForm = () => {
         />
       </Grid>
 
-      <Grid size={{ md: 4, xs: 12 }}>
-        <Controller
-          name="prepaidAmount"
-          control={control}
-          render={({ field }) => (
-            <CustomInput
-              label="Prepaid Amount (Optional Rs.)"
-              type="number"
-              prefix="- Rs."
-              {...field}
-            />
-          )}
-        />
-      </Grid>
+      {showPrepaidAmount && (
+        <Grid size={{ md: 4, xs: 12 }}>
+          <Controller
+            name="prepaidAmount"
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                label="Prepaid Amount (Optional Rs.)"
+                type="number"
+                prefix="- Rs."
+                {...field}
+              />
+            )}
+          />
+        </Grid>
+      )}
     </Grid>
   )
 }
